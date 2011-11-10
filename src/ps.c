@@ -1,0 +1,192 @@
+/*
+ * This file is part of nps.
+ * Copyright (C) 2011 Richard Kettlewell
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA
+ */
+#include <config.h>
+#include "selectors.h"
+#include "format.h"
+#include "process.h"
+#include "utils.h"
+#include <getopt.h>
+#include <stdio.h>
+#include <errno.h>
+#include <termios.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <limits.h>
+
+enum {
+  OPT_HELP = 256,
+  OPT_HELP_FORMAT,
+  OPT_VERSION,
+};
+
+const struct option options[] = {
+  { "help", no_argument, 0, OPT_HELP },
+  { "help-format", no_argument, 0, OPT_HELP_FORMAT },
+  { "version", no_argument, 0, OPT_VERSION },
+  { 0, 0, 0, 0 },
+};
+
+int main(int argc, char **argv) {
+  int n, width = 80;
+  union arg *args;
+  size_t nargs, npids;
+  pid_t *pids;
+  size_t i;
+  int set_format = 0;
+  char buffer[1024];
+  struct winsize ws;
+  const char *s;
+
+  /* Parse command line */
+  while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:p:t:u:U:", 
+                         options, NULL)) >= 0) {
+    switch(n) {
+    case 'a':
+      select_add(select_has_terminal, NULL, 0);
+      break;
+    case 'A': case 'e':
+      select_add(select_all, NULL, 0);
+      break;
+    case 'd':
+      select_add(select_not_session_leader, NULL, 0);
+      break;
+    case 'f':
+      format_clear();
+      format_add("user=UID");
+      format_add("pid,ppid,pcpu=C");
+      format_add("stime,tty=TTY");
+      format_add("time,args=CMD");
+      set_format = 1;
+      break;
+    case 'l':
+      format_clear();
+      format_add("flags,state,uid,pid,ppid,pcpu=C");
+      format_add("pri,nice,addr,vsz=SZ");
+      format_add("wchan,tty=TTY");
+      format_add("time,comm=CMD");
+      set_format = 1;
+      break;
+    case 'g':
+      args = split_arg(optarg, arg_process, &nargs);
+      select_add(select_leader, args, nargs);
+      break;
+    case 'G':
+      args = split_arg(optarg, arg_group, &nargs);
+      select_add(select_rgid, args, nargs);
+      break;
+    case 'n':
+      /* ignored */
+      break;
+    case 'o':
+      format_add(optarg);
+      set_format = 1;
+      break;
+    case 'p':
+      args = split_arg(optarg, arg_process, &nargs);
+      select_add(select_pid, args, nargs);
+      break;
+    case 't':
+      args = split_arg(optarg, arg_tty, &nargs);
+      select_add(select_terminal, args, nargs);
+      break;
+    case 'u':
+      args = split_arg(optarg, arg_user, &nargs);
+      select_add(select_euid, args, nargs);
+      break;
+    case 'U':
+      args = split_arg(optarg, arg_user, &nargs);
+      select_add(select_ruid, args, nargs);
+      break;
+    case OPT_HELP:
+      printf("Usage:\n"
+             "  ps [OPTIONS]\n"
+             "Options:\n"
+             "  -a                Select process with a terminal\n"
+             "  -A, -e            Select all processes\n"
+             "  -d                Select non-session-leaders\n"
+             "  -f                Full output\n"
+             "  -l                Long output\n"
+             "  -g SID,SID....    Select processes by session ID\n"
+             "  -G GID,GID,...    Select processes by real group ID\n"
+             "  -o FMT,FMT,...    Set output format\n"
+             "  -p PID,PID,...    Select processes by process ID\n"
+             "  -t TERM,TERM,...  Select processes by terminal\n"
+             "  -u UID,UID,...    Select processes by real user ID\n"
+             "  -U UID,UID,...    Select processes by effective user ID\n"
+             "  --help            Display option summary\n"
+             "  --help-format     Display formatting help\n"
+             "  --version         Display version string\n");
+      return 0;
+    case OPT_HELP_FORMAT:
+      printf("The following properties can be used with the -o option:\n"
+             "\n");
+      format_help();
+      printf("\n"
+             "Multiple properties can be specified in one -o option, separated by\n"
+             "commas or spaces. Multiple -o options accumulate rather than overriding\n"
+             "one another.\n"
+             "\n"
+             "Use property=heading to override the heading (but only for the last\n"
+             "property in each argument).\n");
+      return 0;
+    case OPT_VERSION:
+      printf("%s\n", PACKAGE_VERSION);
+      return 0;
+    default:
+      exit(1);
+    }
+  }
+  if(optind < argc)
+    fatal(0, "excess arguments");
+  /* Set the default format */
+  if(!set_format) {
+    format_add("pid,tty=TTY");
+    format_add("time,comm=CMD");
+  }
+  /* Set the default selection */
+  select_default(select_uid_tty, NULL, 0);
+  /* Get the list of processes */
+  proc_enumerate();
+  pids = proc_get_selected(&npids);
+  /* Set up output formatting */
+  format_columns(pids, npids);
+  format_heading(buffer, sizeof buffer);
+  /* Figure out the display width */
+  if((s = getenv("COLUMNS")) && (n = atoi(s)))
+    width = n;
+  else if(isatty(1)
+          && ioctl(1, TIOCGWINSZ, &ws) >= 0 
+          && ws.ws_col > 0)
+    width = ws.ws_col;
+  else
+    width = INT_MAX;            /* don't truncate */
+  /* Generate the output */
+  if(*buffer && printf("%.*s\n", width, buffer) < 0) 
+    fatal(errno, "writing to stdout");
+  for(i = 0; i < npids; ++i) {
+    format_process(pids[i], buffer, sizeof buffer);
+    if(printf("%.*s\n", width, buffer) < 0) 
+      fatal(errno, "writing to stdout");
+  }
+  if(fclose(stdout) < 0)
+    fatal(errno, "writing to stdout");
+  exit(0);
+}

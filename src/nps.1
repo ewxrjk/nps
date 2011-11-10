@@ -1,0 +1,181 @@
+.TH nps 1
+.SH NAME
+nps \- list processes
+.SH SYNOPSIS
+.B nps
+.RI [ OPTIONS ]
+.SH DESCRIPTIONS
+.B nps
+writes a snapshot of information about processes running on the system.
+.SH OPTIONS
+.IP \fB-a
+Select processes which have a controlling terminal.
+.IP "\fB-A\fR, \fB-e"
+Select all processes.
+.IP \fB-d
+Select all processes that are not session leaders.
+.IP \fB-f
+Set the "full" output format.
+.IP \fB-l
+Set the "long" output format.
+.IP \fB-g \fILIST
+Select all processes whose sessions are in \fILIST\fR.
+.IP \fB-G \fILIST
+Select all processes whose real group ID is in \fILIST\fR (by name or
+number).
+.IP \fB-n \fIANYTHING
+Ignored.
+.IP \fB-o \fIFORMAT
+Set a specific format.
+If multiple \fB-o\fR options are given then they are cumulative.
+See \fBFORMATTING\fR below.
+.IP \fB-p \fILIST
+Select all the processes in \fILIST\fR.
+.IP \fB-t \fILIST
+Select all the processes whose controlling terminals are in \fILIST\fR.
+Terminal names may be abbreviated by ommitting the initial \fB/dev\fR.
+.IP \fB-u \fILIST
+Select all the processes whose effective user ID is in \fILIST\fR (by
+name or number).
+.IP \fB-U \fILIST
+Select all the processes whose real user ID is in \fILIST\fR (by
+name or number).
+.IP \fB--help
+Display a usage message.
+.IP \fB--help-format
+Displays help for the \fB-o\fR option.
+.IP \fB--version
+Display a version string.
+.PP
+All \fILIST\fR options consists of elements separated by spaces or
+commas.
+.PP
+Process selection is cumulative, i.e. if multiple process selection
+options are given then the any process which is selected by at least
+one of them is selected.
+If no selection options are given then only processes that share an
+effective UID and terminal with the current process are selected.
+.SH FORMATTING
+The \fB-o\fR option specifies a list of process properties to display,
+separated by spaces or commas.
+The available properties are:
+.IP \fBaddr
+The current instruction pointer (hex).
+.IP \fBargs
+Name and arguments.
+.IP \fBcomm
+Name.
+.IP \fBetime
+Time elapsed since the process started.
+.IP \fBflags
+Flags word from the kernel (octal).
+.IP \fBgid
+Effective group ID (decimal).
+.IP \fBgroup
+Effective group ID as a string.
+.IP \fBnice
+Nice value.
+Higher values mean lower priority ("nicer").
+.IP \fBpcpu
+Recent CPU usage, as a percentage.
+.IP \fBpgid
+Process group ID.
+.IP \fBpid
+Process ID.
+.IP \fBppid
+Parent process ID.
+.IP \fBpri
+Priority.
+.IP \fBrgid
+Real group ID (decimal).
+.IP \fBrgroup
+Real group ID as a string.
+.IP \fBrss
+Resident set size, i.e. the amount of RAM used, in kilobytes.
+.IP \fBruid
+Real user ID (decimal).
+.IP \fBruser
+Real user ID as a string.
+.IP \fBstate
+Process state.
+The possible states are:
+.RS
+.IP \fBR
+Running.
+.IP \fBS
+Sleeping.
+.IP \fBD
+Disk wait.
+.IP \fBZ
+Exited but not yet reaped (a "zombie" process).
+.IP \fBT
+Traced or stopped due to a signal.
+.IP \fBW
+Paging.
+.RE
+.IP \fBstime
+Start time.
+.IP \fBtime
+CPU time used over the process's lifetime (user and kernel).
+.IP \fBtty
+Controlling terminal.
+The leading \fI/dev/tty\fR or \fI/dev\fR is stripped for compactness.
+.IP \fBuid
+Effective user ID (decimal).
+.IP \fBuser
+Effective user ID as a string.
+.IP \fBvsz
+Virtual memory size, in kilobytes.
+.IP \fBwchan
+Wait channel.
+.PP
+To give a property a different heading, use the syntax
+\fIPROPERTY\fB=\fIHEADING\fR.
+This only works on the last property in a single argument
+use multiple \fB-o\fR options to work around this.
+.PP
+Time intervals (such as \fBetime\fR) are represented as
+[[\fIdd\fB-\fR]\fIhh\fB:\fR]\fImm\fB:\fIss\fR, with \fIdd\fR
+representing the number of days, \fIhh\fR the number of hours,
+\fImm\fR the number of minutes and \fIss\fR the number of seconds.
+.PP
+Timestamps (such as \fBstime\fR) are represented as
+\fIYYYY\fB-\fIMM\fB-\fIDD\fR for times outside than
+the current day and \fIHH\fB:\fIMM\fB:\fISS\fR for times during the
+current day.
+They are always given in the local timezone.
+.PP
+If no formatting options at all are specified then the default is
+equivalent to:
+.PP
+.RS
+\fB-opid,tty=TTY -otime,comm=CMD
+.RE
+.PP
+The \fB-f\fR option is equivalent to:
+.PP
+.RS
+\fB-ouser=UID -opid,ppid,pcpu=C -ostime,tty=TTY -otime,comm=CMD
+.RE
+.PP
+The \fB-l\fR option is equivalent to:
+.PP
+.RS
+\fB-oflags,state,uid,pid,ppid,pcpu=C -opri,nice,addr,vsz=SZ -owchan,tty=TTY -otime,arg=CMD
+.RE
+.SH ENVIRONMENT
+.TP
+.B COLUMNS
+The maximum line length.
+If \fBCOLUMNS\fR is not set then window width is used when writing to
+a terminal, and no truncation takes place when writing to any other
+kind of output.
+.SH BUGS
+\fBpcpu\fR is computed over the process's entire lifetime, which is
+stretching the definition of "recent".
+.PP
+The meaning of \fBflags\fR is not very clear.
+.SH STANDARDS
+Intended to follow SUS v7.
+.SH AUTHOR
+Richard Kettlewell <rjk@greenend.org.uk>
