@@ -103,7 +103,7 @@ char *device_path(int type, dev_t device) {
       r = m - 1;
     else if(type > devices[m].type)
       l = m + 1;
-    if(device < devices[m].device)
+    else if(device < devices[m].device)
       r = m - 1;
     else if(device > devices[m].device)
       l = m + 1;
