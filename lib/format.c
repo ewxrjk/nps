@@ -60,7 +60,7 @@ static void format_octal(uintmax_t im, struct buffer *b) {
 
 static void format_hex(uintmax_t im, struct buffer *b) {
   char t[64];
-  if(im > 0xFFFFFFFFFFFF)
+  if(im > 0xFFFFFFFFFFFFLL)
     snprintf(t, sizeof t, "%016jx", im);
   else if(im > 0xFFFFFFFF)
     snprintf(t, sizeof t, "%012jx", im);

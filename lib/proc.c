@@ -453,7 +453,7 @@ const char *proc_get_cmdline(pid_t pid) {
   return proc_getprop(p, "cmdline");
 }
 
-long proc_get_scheduled_time(pid_t pid) {
+intmax_t proc_get_scheduled_time(pid_t pid) {
   struct process *p = proc_find(pid);
   
   proc_stat(p);
@@ -461,7 +461,7 @@ long proc_get_scheduled_time(pid_t pid) {
                           + conv(proc_getprop(p, "stime")));
 }
 
-long proc_get_elapsed_time(pid_t pid) {
+intmax_t proc_get_elapsed_time(pid_t pid) {
   struct process *p = proc_find(pid);
   const char *s;
   char t[64];
@@ -491,13 +491,13 @@ uintmax_t proc_get_flags(pid_t pid) {
   return conv(proc_getprop(p, "flags"));
 }
 
-long proc_get_nice(pid_t pid) {
+intmax_t proc_get_nice(pid_t pid) {
   struct process *p = proc_find(pid);
   proc_stat(p);
   return conv(proc_getprop(p, "nice"));
 }
 
-long proc_get_priority(pid_t pid) {
+intmax_t proc_get_priority(pid_t pid) {
   struct process *p = proc_find(pid);
   proc_stat(p);
   return conv(proc_getprop(p, "priority"));
