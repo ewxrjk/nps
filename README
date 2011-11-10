@@ -1,7 +1,7 @@
 nps
 ===
 
-This is an implementation of SUSv7 'ps' for Linux.
+This is an implementation of SUSv4 'ps' for Linux.
 
 * Installation
 
