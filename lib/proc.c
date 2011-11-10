@@ -29,26 +29,78 @@
 #include <time.h>
 #include <unistd.h>
 #include <inttypes.h>
+#include <stddef.h>
+#include <sys/stat.h>
 
-// TODO the current strategy generates an awful lot of memory
-// allocations - perhaps we can do better.
+/* Know /proc/$PID/stat fields (after the first three); S for signed
+ * and U for unsigned. */
+#define STAT_PROPS(U,S) S(ppid)                 \
+  S(pgrp)                                       \
+  S(session)                                    \
+  S(tty_nr)                                     \
+  S(tpgid)                                      \
+  U(flags)                                      \
+  U(minflt)                                     \
+  U(cminflt)                                    \
+  U(majflt)                                     \
+  U(cmajflt)                                    \
+  U(utime)                                      \
+  U(stime)                                      \
+  S(cutime)                                     \
+  S(cstime)                                     \
+  S(priority)                                   \
+  S(nice)                                       \
+  S(num_threads)                                \
+  S(itrealvalue)                                \
+  U(starttime)                                  \
+  U(vsize)                                      \
+  U(rss)                                        \
+  U(rsslim)                                     \
+  U(startcode)                                  \
+  U(endcode)                                    \
+  U(startstack)                                 \
+  U(kstkesp)                                    \
+  U(kstkeip)                                    \
+  U(signal)                                     \
+  U(blocked)                                    \
+  U(sigignore)                                  \
+  U(sigcatch)                                   \
+  U(wchan)                                      \
+  U(nswap)                                      \
+  U(cnswap)                                     \
+  S(exit_signal)                                \
+  S(processor)                                  \
+  U(rt_priority)                                \
+  U(policy)                                     \
+  U(delayacct_blkio_ticks)                      \
+  U(guest_time)                                 \
+  S(cguest_time)
 
-struct property {
-  char *name;
-  char *value;
-};
+#define SMEMBER(X) intmax_t prop_##X;
+#define UMEMBER(X) uintmax_t prop_##X;
+#define OFFSET(X) offsetof(struct process, prop_##X),
 
 struct process {
   pid_t pid;                    /* process ID */
+  size_t link;                  /* hash table linkage */
   unsigned selected:1;          /* nonzero if selected */
   unsigned stat:1;              /* nonzero if proc_stat() called */
   unsigned status:1;            /* nonzero if proc_status() called */
-  unsigned cmdline:1;           /* nonzero if proc_cmdline() called */
   unsigned sorted:1;            /* nonzero if properties sorted */
   unsigned vanished:1;          /* nonzero if process vanished */
-  size_t nprops, npropslots;
-  struct property *props;
-  size_t link;                  /* hash table linkage */
+  unsigned elapsed_set:1;       /* nonzero if elapsed has been set */
+  unsigned eid_set:1;           /* nonzero if e[ug]id have been set */
+  char *prop_comm;
+  char *prop_cmdline;
+  int prop_state;
+  intmax_t elapsed;
+  uid_t prop_euid, prop_ruid;
+  gid_t prop_egid, prop_rgid;
+  STAT_PROPS(SMEMBER,UMEMBER)
+};
+
+static const size_t propinfo_stat[] = {
+  STAT_PROPS(OFFSET,OFFSET)
 };
 
 #define HASH_SIZE 256           /* hash table size */
@@ -65,27 +117,11 @@ static uintmax_t conv(const char *s) {
 
 // ----------------------------------------------------------------------------
 
-#if 0
-static int compare_proc(const void *av, const void *bv) {
-  const struct process *a = av, *b = bv;
-  if(a->pid < b->pid)
-    return -1;
-  else if(a->pid > b->pid)
-    return 1;
-  else
-    return 0;
-}
-#endif
-
 static void proc_clear(void) {
   size_t n;
   for(n = 0; n < nprocs; ++n) {
-    size_t i;
-    for(i = 0; i < procs[n].nprops; ++i) {
-      free(procs[n].props[i].name);
-      free(procs[n].props[i].value);
-    }
-    free(procs[n].props);
+    free(procs[n].prop_comm);
+    free(procs[n].prop_cmdline);
   }
   nprocs = 0;
 }
@@ -140,62 +176,6 @@ static struct process *proc_find(pid_t pid) {
   return n != SIZE_MAX ? &procs[n] : NULL;
 }
 
-static void proc_setprop(struct process *p,
-                         const char *name,
-                         const char *value) {
-  if(p->nprops >= p->npropslots) {
-    if((ssize_t)(p->npropslots = p->npropslots ? 2 * p->npropslots : 64) <= 0)
-      fatal(0, "too many process properties");
-    p->props = xrecalloc(p->props, p->npropslots, sizeof *p->props);
-  }
-  p->props[p->nprops].name = xstrdup(name);
-  p->props[p->nprops].value = xstrdup(value);
-  ++p->nprops;
-  p->sorted = 0;
-}
-
-static int proc_delprop(struct process *p,
-                        const char *name) {
-  size_t n;
-  for(n = 0; n < p->nprops && strcmp(name, p->props[n].name); ++n)
-    ;
-  if(n < p->nprops) {
-    free(p->props[n].name);
-    free(p->props[n].value);
-    memmove(&p->props[n], &p->props[n+1],
-            ((p->nprops - n) - 1) * sizeof *p->props);
-    --p->nprops;
-    return 1;
-  }
-  return 0;
-}
-
-static int compare_prop(const void *av, const void *bv) {
-  const struct property *a = av, *b = bv;
-
-  return strcmp(a->name, b->name);
-}
-
-static const char *proc_getprop(struct process *p, const char *name) {
-  ssize_t l = 0, r = p->nprops - 1, m;
-  int c;
-  if(!p->sorted) {
-    qsort(p->props, p->nprops, sizeof *p->props, compare_prop);
-    p->sorted = 1;
-  }
-  while(l <= r) {
-    m = l + (r - l) / 2;
-    c = strcmp(name, p->props[m].name);
-    if(c < 0)
-      r = m - 1;
-    else if(c > 0)
-      l = m + 1;
-    else
-      return p->props[m].value;
-  }
-  return NULL;
-}
-
 // ----------------------------------------------------------------------------
 
 static void proc_stat(struct process *p) {
@@ -203,53 +183,8 @@ static void proc_stat(struct process *p) {
   char buffer[1024];
   int c;
   size_t field, i;
-
-  /* proc/PID/stat fields in order */
-  static const char *fields[] = {
-    "pid",
-    "comm",
-    "state",
-    "ppid",
-    "pgrp",
-    "session",
-    "tty_nr",
-    "tpgid",
-    "flags",
-    "minflt",
-    "cminflt",
-    "majflt",
-    "cmajflt",
-    "utime",
-    "stime",
-    "cutime",
-    "cstime",
-    "priority",
-    "nice",
-    "num_threads",
-    "itrealvalue",
-    "starttime",
-    "vsize",
-    "rss",
-    "rsslim",
-    "startcode",
-    "endcode",
-    "startstack",
-    "kstkesp",
-    "kstkeip",
-    "signal",
-    "blocked",
-    "sigignore",
-    "sigcatch",
-    "wchan",
-    "nswap",
-    "cnswap",
-    "exit_signal",
-    "processor",
-    "rt_priority",
-    "policy",
-    "delayacct_blkio_ticks",
-  };
-  static const size_t nfields = sizeof fields / sizeof *fields;
+  size_t *ptr;
+  struct stat sb;
 
   if(p->stat || p->vanished)
     return;
@@ -258,6 +193,17 @@ static void proc_stat(struct process *p) {
   if(!(fp = fopen(buffer, "r"))) {
     p->vanished = 1;
     return;
+  }
+  /* The owner/group of the file are the euid/egid of the process,
+   * except that for some ("undumpable") processes it is forced to 0.
+   * (See kernel change 87bfbf679ffb1e95dd9ada694f66aafc4bfa5959 for
+   * discussion.) */
+  if(!p->eid_set
+     && fstat(fileno(fp), &sb) >= 0
+     && (sb.st_uid || sb.st_gid)) {
+    p->prop_euid = sb.st_uid;
+    p->prop_egid = sb.st_gid;
+    p->eid_set = 1;
   }
   field = i = 0;
   while((c = getc(fp)) != EOF) {
@@ -270,8 +216,20 @@ static void proc_stat(struct process *p) {
       if(field == 1 && i > 0 && buffer[i - 1] == ')')
         --i;                    /* special-case comm */
       buffer[i] = 0;
-      if(field < nfields)
-        proc_setprop(p, fields[field], buffer);
+      switch(field) {
+      case 0:                   /* pid */
+        break;
+      case 1:                   /* comm */
+        p->prop_comm = xstrdup(buffer);
+        break;
+      case 2:                   /* state */
+        p->prop_state = buffer[0];
+        break;
+      default:
+        ptr = (uintmax_t *)((char *)p + propinfo_stat[field - 3]);
+        *ptr = strtoumax(buffer, NULL, 10);
+        break;
+      }
       i = 0;
       ++field;
     }
@@ -284,6 +242,7 @@ static void proc_status(struct process *p) {
   size_t i;
   FILE *fp;
   int c;
+  long e, r;
 
   if(p->status || p->vanished)
     return;
@@ -304,11 +263,18 @@ static void proc_status(struct process *p) {
         *s++ = 0;
         while(*s && (*s == ' ' || *s == '\t'))
           ++s;
-        proc_setprop(p, buffer, s);
+        if(!strcmp(buffer, "Uid") && sscanf(s, "%ld %ld", &e, &r) == 2) {
+          p->prop_euid = e;
+          p->prop_ruid = r;
+        } else if(!strcmp(buffer, "Gid") && sscanf(s, "%ld %ld", &e, &r) == 2){
+          p->prop_egid = e;
+          p->prop_rgid = r;
+        }
       }
       i = 0;
     }
   }
+  p->eid_set = 1;
   fclose(fp);
 }
 
@@ -318,9 +284,8 @@ static void proc_cmdline(struct process *p) {
   FILE *fp;
   int c;
 
-  if(p->cmdline || p->vanished)
+  if(p->prop_cmdline || p->vanished)
     return;
-  p->cmdline = 1;
   snprintf(buffer, sizeof buffer, "/proc/%ld/cmdline", (long)p->pid);
   if(!(fp = fopen(buffer, "r"))) {
     p->vanished = 1;
@@ -335,180 +300,140 @@ static void proc_cmdline(struct process *p) {
   }
   fclose(fp);
   buffer[i] = 0;
-  proc_setprop(p, "cmdline", buffer);
+  p->prop_cmdline = xstrdup(buffer);
 }
 
 // ----------------------------------------------------------------------------
 
 pid_t proc_get_session(pid_t pid) {
   struct process *p = proc_find(pid);
-  const char *s;
 
   proc_stat(p);
-  if((s = proc_getprop(p, "session")) && *s)
-    return conv(s);
-  return -1;
+  return p->prop_session;
 }
 
 uid_t proc_get_ruid(pid_t pid) {
   struct process *p = proc_find(pid);
-  const char *s;
 
   proc_status(p);
-  if((s = proc_getprop(p, "Uid")) && *s)
-    return conv(s);
-  return -1;
+  return p->prop_ruid;
 }
 
 uid_t proc_get_euid(pid_t pid) {
   struct process *p = proc_find(pid);
-  const char *s;
 
-  proc_status(p);
-  if((s = proc_getprop(p, "Uid"))) {
-    while(*s && *s != ' ' && *s != '\t')
-      ++s;
-    if(*s)
-      return conv(s);
-  }
-  return -1;
+  if(!p->eid_set)
+    proc_status(p);
+  return p->prop_euid;
 }
 
 gid_t proc_get_rgid(pid_t pid) {
   struct process *p = proc_find(pid);
-  const char *s;
 
   proc_status(p);
-  if((s = proc_getprop(p, "Gid")) && *s)
-    return conv(s);
-  return -1;
+  return p->prop_rgid;
 }
 
 gid_t proc_get_egid(pid_t pid) {
   struct process *p = proc_find(pid);
-  const char *s;
 
+  if(!p->eid_set)
+    proc_status(p);
   proc_status(p);
-  if((s = proc_getprop(p, "Gid"))) {
-    while(*s && *s != ' ' && *s != '\t')
-      ++s;
-    if(*s)
-      return conv(s);
-  }
-  return -1;
+  return p->prop_egid;
 }
 
 pid_t proc_get_ppid(pid_t pid) {
   struct process *p = proc_find(pid);
-  const char *s;
 
   proc_stat(p);
-  if((s = proc_getprop(p, "ppid")))
-    return conv(s);
-  return -1;
+  return p->prop_ppid;
 }
 
 pid_t proc_get_pgid(pid_t pid) {
   struct process *p = proc_find(pid);
-  const char *s;
 
-  proc_status(p);
-  if((s = proc_getprop(p, "ptpgd")))
-    return conv(s);
-  return -1;
+  proc_stat(p);
+  return p->prop_tpgid;
 }
 
 int proc_get_tty(pid_t pid) {
   struct process *p = proc_find(pid);
-  const char *s;
 
   proc_stat(p);
-  if((s = proc_getprop(p, "tty_nr")) && *s)
-    return atoi(s);
-  return 0;
+  return p->prop_tty_nr;
 }
 
 const char *proc_get_comm(pid_t pid) {
   struct process *p = proc_find(pid);
 
   proc_stat(p);
-  return proc_getprop(p, "comm");
+  return p->prop_comm;
 }
 
 const char *proc_get_cmdline(pid_t pid) {
   struct process *p = proc_find(pid);
-  const char *s;
-  char *t;
 
   proc_cmdline(p);
-  if((s = proc_getprop(p, "cmdline")) && *s)
-    return s;
-  /* "Failing this, the command name, as it would appear without the
-   * option -f, is written in square brackets. */
-  if(asprintf(&t, "[%s]", proc_getprop(p, "comm")) < 0)
-    fatal(errno, "asprintf");
-  proc_delprop(p, "cmdline");
-  proc_setprop(p, "cmdline", t);
-  free(t);
-  return proc_getprop(p, "cmdline");
+  if(!*p->prop_cmdline) {
+    /* "Failing this, the command name, as it would appear without the
+     * option -f, is written in square brackets. */
+    free(p->prop_cmdline);
+    proc_stat(p);
+    if(asprintf(&p->prop_cmdline, "[%s]", p->prop_comm) < 0)
+      fatal(errno, "asprintf");
+  }
+  return p->prop_cmdline;
 }
 
 intmax_t proc_get_scheduled_time(pid_t pid) {
   struct process *p = proc_find(pid);
   
   proc_stat(p);
-  return clock_to_seconds(conv(proc_getprop(p, "utime"))
-                          + conv(proc_getprop(p, "stime")));
+  return clock_to_seconds(p->prop_utime + p->prop_stime);
 }
 
 intmax_t proc_get_elapsed_time(pid_t pid) {
   struct process *p = proc_find(pid);
-  const char *s;
-  char t[64];
   
-  proc_stat(p);
   /* We have to return consistent values, otherwise the column size
    * computation becomes inconsistent */
-  s = proc_getprop(p, "__elapsed__");
-  if(s)
-    return conv(s);
-  snprintf(t, sizeof t, "%ld",
-           (long)(time(NULL) 
-                  - clock_to_time(conv(proc_getprop(p, "starttime")))));
-  proc_setprop(p, "__elapsed__", t);
-  return conv(t);
+  if(!p->elapsed_set) {
+    proc_stat(p);
+    p->elapsed = time(NULL) - clock_to_time(p->prop_starttime);
+    p->elapsed_set = 1;
+  }
+  return p->elapsed;
 }
 
 time_t proc_get_start_time(pid_t pid) {
   struct process *p = proc_find(pid);
   proc_stat(p);
-  return clock_to_time(conv(proc_getprop(p, "starttime")));
+  return clock_to_time(p->prop_starttime);
 }
 
 uintmax_t proc_get_flags(pid_t pid) {
   struct process *p = proc_find(pid);
   proc_stat(p);
-  return conv(proc_getprop(p, "flags"));
+  return p->prop_flags;
 }
 
 intmax_t proc_get_nice(pid_t pid) {
   struct process *p = proc_find(pid);
   proc_stat(p);
-  return conv(proc_getprop(p, "nice"));
+  return p->prop_nice;
 }
 
 intmax_t proc_get_priority(pid_t pid) {
   struct process *p = proc_find(pid);
   proc_stat(p);
-  return conv(proc_getprop(p, "priority"));
+  return p->prop_priority;
 }
 
 int proc_get_state(pid_t pid) {
   struct process *p = proc_find(pid);
-  const char *s;
   proc_stat(p);
-  s = proc_getprop(p, "state");
-  return s && *s ? *s : '?';
+  return p->prop_state;
 }
 
 int proc_get_pcpu(pid_t pid) {
@@ -516,8 +441,6 @@ int proc_get_pcpu(pid_t pid) {
    * return the process's %cpu usage over its entire history, which is
    * really stretching the definition.  The fix is to sample it twice
    * but we are not currently set up for that. */
-  struct process *p = proc_find(pid);
-  proc_stat(p);
   long scheduled = proc_get_scheduled_time(pid);
   long elapsed = proc_get_elapsed_time(pid);
   return elapsed ? scheduled * 100 / elapsed : 0;
@@ -526,25 +449,25 @@ int proc_get_pcpu(pid_t pid) {
 uintmax_t proc_get_vsize(pid_t pid) {
   struct process *p = proc_find(pid);
   proc_stat(p);
-  return conv(proc_getprop(p, "vsize"));
+  return p->prop_vsize;
 }
 
 uintmax_t proc_get_rss(pid_t pid) {
   struct process *p = proc_find(pid);
   proc_stat(p);
-  return conv(proc_getprop(p, "rss")) * sysconf(_SC_PAGESIZE);
+  return p->prop_rss * sysconf(_SC_PAGESIZE);
 }
 
 uintmax_t proc_get_insn_pointer(pid_t pid) {
   struct process *p = proc_find(pid);
   proc_stat(p);
-  return conv(proc_getprop(p, "kstkeip"));
+  return p->prop_kstkeip;
 }
 
 uintmax_t proc_get_wchan(pid_t pid) {
   struct process *p = proc_find(pid);
   proc_stat(p);
-  return conv(proc_getprop(p, "wchan"));
+  return p->prop_wchan;
 }
 
 // ----------------------------------------------------------------------------
