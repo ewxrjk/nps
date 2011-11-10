@@ -183,7 +183,7 @@ static void proc_stat(struct process *p) {
   char buffer[1024];
   int c;
   size_t field, i;
-  size_t *ptr;
+  uintmax_t *ptr;
   struct stat sb;
 
   if(p->stat || p->vanished)
