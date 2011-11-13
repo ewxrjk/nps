@@ -263,5 +263,17 @@ int select_ruid(struct procinfo *pi, pid_t pid,
 int select_uid_tty(struct procinfo *pi, pid_t pid, union arg *args,
                    size_t nargs);
 
+/** @brief Select non-idle processes
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @param args Selector argument as passed to @ref select_add()
+ * @param nargs Argument cout as passed to @ref select_add()
+ * @return Nonzero to select @p pid
+ *
+ * @p args and @p nargs are not used.
+ */
+int select_nonidle(struct procinfo *pi, pid_t pid, union arg *args,
+                   size_t nargs);
+
 #endif /* SELECTORS_H */
 

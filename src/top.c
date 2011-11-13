@@ -49,12 +49,13 @@ static void loop(void);
 int main(int argc, char **argv) {
   int n;
   int set_format = 0, set_order = 0;
+  int show_idle = 1;
 
   /* Set locale */
   if(!setlocale(LC_ALL, ""))
     fatal(errno, "setlocale");
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+o:s:", 
+  while((n = getopt_long(argc, argv, "+o:s:i", 
                          options, NULL)) >= 0) {
     switch(n) {
     case 'o':
@@ -65,12 +66,16 @@ int main(int argc, char **argv) {
       format_ordering(optarg);
       set_order = 1;
       break;
+    case 'i':
+      show_idle = 0;
+      break;
     case OPT_HELP:
       printf("Usage:\n"
              "  top [OPTIONS]\n"
              "Options:\n"
              "  -o FMT,FMT,...    Set output format\n"
              "  -s [+/-]FMT,...   Set ordering\n"
+             "  -i                Hide idle processes\n"
              "  --help            Display option summary\n"
              "  --help-format     Display formatting help\n"
              "  --version         Display version string\n");
@@ -99,7 +104,10 @@ int main(int argc, char **argv) {
   if(!set_order)
     format_ordering("+pcpu,+rss,+vsz");
   /* Set the default selection */
-  select_default(select_all, NULL, 0);
+  if(show_idle)
+    select_default(select_all, NULL, 0);
+  else
+    select_default(select_nonidle, NULL, 0);
   /* Set the default format */
   if(!set_format) {
     format_add("user,pid,rss,vsz,pcpu,tty=TTY");

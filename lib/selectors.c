@@ -127,3 +127,10 @@ int select_uid_tty(struct procinfo *pi, pid_t pid,
   return proc_get_euid(pi, pid) == geteuid()
          && proc_get_tty(pi, pid) == proc_get_tty(pi, getpid());
 }
+
+int select_nonidle(struct procinfo *pi, pid_t pid,
+                   union arg attribute((unused)) *args, 
+                   size_t attribute((unused)) nargs) {
+  return proc_get_state(pi, pid) != 'Z'
+    && proc_get_pcpu(pi, pid) > 0;
+}
