@@ -330,6 +330,10 @@ static void proc_cmdline(struct process *p) {
 
 // ----------------------------------------------------------------------------
 
+pid_t proc_get_pid(struct procinfo attribute((unused)) *pi, pid_t pid) {
+  return pid;
+}
+
 pid_t proc_get_session(struct procinfo *pi, pid_t pid) {
   struct process *p = proc_find(pi, pid);
 

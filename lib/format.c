@@ -34,10 +34,34 @@
 
 // ----------------------------------------------------------------------------
 
-typedef void formatfn(struct buffer *b, struct procinfo *pi, pid_t pid);
+struct propinfo;
+
+typedef void formatfn(const struct propinfo *prop, struct buffer *b,
+                      struct procinfo *pi, pid_t pid);
+
+typedef int comparefn(const struct propinfo *prop, struct procinfo *pi, 
+                      pid_t a, pid_t b);
+
+struct propinfo {
+  const char *name;
+  const char *heading;
+  const char *description;
+  formatfn *format;
+  comparefn *compare;
+  union {
+    int (*fetch_int)(struct procinfo *, pid_t);
+    intmax_t (*fetch_intmax)(struct procinfo *, pid_t);
+    uintmax_t (*fetch_uintmax)(struct procinfo *, pid_t);
+    pid_t (*fetch_pid)(struct procinfo *, pid_t);
+    uid_t (*fetch_uid)(struct procinfo *, pid_t);
+    gid_t (*fetch_gid)(struct procinfo *, pid_t);
+    double (*fetch_double)(struct procinfo *, pid_t);
+    const char *(*fetch_string)(struct procinfo *, pid_t);
+  } fetch;
+};
 
 struct column {
-  size_t id;
+  const struct propinfo *prop;
   size_t width;
   char *heading;
 };
@@ -47,7 +71,7 @@ static struct column *columns;
 
 // ----------------------------------------------------------------------------
 
-static void format_integer(intmax_t im, struct buffer *b) {
+static void format_decimal(intmax_t im, struct buffer *b) {
   char t[64];
   snprintf(t, sizeof t, "%jd", im);
   buffer_append(b, t);
@@ -75,7 +99,7 @@ static void format_user(uid_t uid, struct buffer *b) {
   if(pw)
     buffer_append(b, pw->pw_name);
   else
-    format_integer(uid, b);
+    format_decimal(uid, b);
 }
 
 static void format_group(gid_t gid, struct buffer *b) {
@@ -83,7 +107,7 @@ static void format_group(gid_t gid, struct buffer *b) {
   if(gr)
     buffer_append(b, gr->gr_name);
   else
-    return format_integer(gid, b);
+    return format_decimal(gid, b);
 }
 
 static void format_interval(long seconds, struct buffer *b,
@@ -127,54 +151,68 @@ static void format_time(time_t when, struct buffer *b) {
 
 // ----------------------------------------------------------------------------
 
-static void property_ruser(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return format_user(proc_get_ruid(pi, pid), b);
+/* generic properties */
+
+static void property_decimal(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_decimal(prop->fetch.fetch_intmax(pi, pid), b);
 }
 
-static void property_euser(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return format_user(proc_get_euid(pi, pid), b);
+static void property_uoctal(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_octal(prop->fetch.fetch_uintmax(pi, pid), b);
 }
 
-static void property_rgroup(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return format_group(proc_get_rgid(pi, pid), b);
+static void property_uhex(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+  format_hex(prop->fetch.fetch_uintmax(pi, pid), b);
 }
 
-static void property_egroup(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return format_group(proc_get_egid(pi, pid), b);
+static void property_pid(const struct propinfo *prop, struct buffer *b, 
+                         struct procinfo *pi, pid_t pid) {
+  return format_decimal(prop->fetch.fetch_pid(pi, pid), b);
 }
 
-static void property_ruid(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return format_integer(proc_get_ruid(pi, pid), b);
+static void property_uid(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_decimal(prop->fetch.fetch_uid(pi, pid), b);
 }
 
-static void property_euid(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return format_integer(proc_get_euid(pi, pid), b);
+static void property_user(const struct propinfo *prop, struct buffer *b,
+                           struct procinfo *pi, pid_t pid) {
+  return format_user(prop->fetch.fetch_uid(pi, pid), b);
 }
 
-static void property_rgid(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return format_integer(proc_get_rgid(pi, pid), b);
+static void property_gid(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_decimal(prop->fetch.fetch_gid(pi, pid), b);
 }
 
-static void property_egid(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return format_integer(proc_get_egid(pi, pid), b);
+static void property_group(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_group(prop->fetch.fetch_gid(pi, pid), b);
 }
 
-static void property_pid(struct buffer *b, 
-                         struct procinfo attribute((unused)) *pi, pid_t pid) {
-  return format_integer(pid, b);
+static void property_char(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+  buffer_putc(b, prop->fetch.fetch_int(pi, pid));
 }
 
-static void property_ppid(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return format_integer(proc_get_ppid(pi, pid), b);
+/* time properties */
+
+static void property_time(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+  /* time wants [dd-]hh:mm:ss */
+  return format_interval(prop->fetch.fetch_intmax(pi, pid), b, 1);
 }
 
-static void property_pgid(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return format_integer(proc_get_pgid(pi, pid), b);
+static void property_etime(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+  /* etime wants [[dd-]hh:]mm:ss */
+  return format_interval(prop->fetch.fetch_intmax(pi, pid), b, 0);
 }
 
-static void property_tty(struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_stime(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_time(prop->fetch.fetch_intmax(pi, pid), b);
+}
+
+/* specific properties */
+
+static void property_tty(const struct propinfo *prop,
+                         struct buffer *b, struct procinfo *pi, pid_t pid) {
   const char *path;
-  int tty = proc_get_tty(pi, pid);
+  int tty = prop->fetch.fetch_int(pi, pid);
   if(tty <= 0) {
     buffer_putc(b, '-');
     return;
@@ -195,24 +233,9 @@ static void property_tty(struct buffer *b, struct procinfo *pi, pid_t pid) {
   buffer_append(b, path);
 }
 
-static void property_time(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  /* time wants [dd-]hh:mm:ss */
-  return format_interval(proc_get_scheduled_time(pi, pid), b, 1);
-}
-
-static void property_etime(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  /* etime wants [[dd-]hh:]mm:ss */
-  return format_interval(proc_get_elapsed_time(pi, pid), b, 0);
-}
-
-static void property_stime(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return format_time(proc_get_start_time(pi, pid), b);
-}
-
-static void property_comm_args(struct buffer *b, struct procinfo *pi, pid_t pid, 
-                               const char *(*get)(struct procinfo *, pid_t)) {
+static void property_command(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
   char *t;
-  const char *comm = get(pi, pid);
+  const char *comm = prop->fetch.fetch_string(pi, pid);
   /* "A process that has exited and has a parent, but has not yet been
    * waited for by the parent, shall be marked defunct." */
   if(proc_get_state(pi, pid) != 'Z')
@@ -225,48 +248,16 @@ static void property_comm_args(struct buffer *b, struct procinfo *pi, pid_t pid,
   }
 }
 
-static void property_comm(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return property_comm_args(b, pi, pid, proc_get_comm);
+static void property_pcpu(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+  format_decimal(100 * prop->fetch.fetch_double(pi, pid), b);
 }
 
-static void property_args(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return property_comm_args(b, pi, pid, proc_get_cmdline);
+static void property_mem(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+  format_decimal(prop->fetch.fetch_uintmax(pi, pid) / 1024, b);
 }
 
-static void property_flags(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return format_octal(proc_get_flags(pi, pid), b);
-}
-
-static void property_nice(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  format_integer(proc_get_nice(pi, pid), b);
-}
-
-static void property_pri(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  format_integer(proc_get_priority(pi, pid), b);
-}
-
-static void property_state(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  buffer_putc(b, proc_get_state(pi, pid));
-}
-
-static void property_pcpu(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  format_integer(100 * proc_get_pcpu(pi, pid), b);
-}
-
-static void property_vsize(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  format_integer(proc_get_vsize(pi, pid) / 1024, b);
-}
-
-static void property_rss(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  format_integer(proc_get_rss(pi, pid) / 1024, b);
-}
-
-static void property_addr(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  format_hex(proc_get_insn_pointer(pi, pid), b);
-}
-
-static void property_wchan(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  unsigned long long wchan = proc_get_wchan(pi, pid);
+static void property_wchan(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+  unsigned long long wchan = prop->fetch.fetch_uintmax(pi, pid);
   if(wchan && wchan + 1)
     format_hex(wchan, b);
   else
@@ -276,44 +267,217 @@ static void property_wchan(struct buffer *b, struct procinfo *pi, pid_t pid) {
 
 // ----------------------------------------------------------------------------
 
-static const struct {
-  const char *name;
-  const char *heading;
-  formatfn *property;
-  const char *description;
-} properties[] = {
-  { "addr", "ADDR", property_addr, "Instruction pointer address (hex)" },
-  { "args", "COMMAND", property_args, "Command with arguments" },
-  { "comm", "COMMAND", property_comm, "Command" },
-  { "etime", "ELAPSED", property_etime, "Elapsed time" },
-  { "flags", "F", property_flags, "Flags (octal)" },
-  { "gid", "GID", property_egid, "Effective group ID (decimal)" },
-  { "group", "GROUP", property_egroup, "Effective group ID (name)" },
-  { "nice", "NI", property_nice, "Nice value" },
-  { "pcpu", "%CPU", property_pcpu, "%age CPU used" },
-  { "pgid", "PGID", property_pgid, "Process group ID" },
-  { "pid", "PID", property_pid, "Process ID" },
-  { "ppid", "PPID", property_ppid, "Parent process ID" },
-  { "pri", "PRI", property_pri, "Priority" },
-  { "rgid", "RGID", property_rgid, "Real group ID (decimal)" },
-  { "rgroup", "RGROUP", property_rgroup, "Real group ID (name)" },
-  { "rss", "RSS", property_rss, "Resident set size (1024 bytes)" },
-  { "ruid", "RUID", property_ruid, "Real user ID (decimal)" },
-  { "ruser", "RUSER", property_ruser, "Real user ID (name)" },
-  { "state", "S", property_state, "Process state" },
-  { "stime", "STIME", property_stime, "Start time" },
-  { "time", "TIME", property_time, "Scheduled time" },
-  { "tty", "TT", property_tty, "Terminal" },
-  { "uid", "UID", property_euid, "Effective user ID (decimal)" },
-  { "user", "USER", property_euser, "Effective user ID (name)" },
-  { "vsz", "VSZ", property_vsize, "Virtual memory used (1024 bytes)" },
-  { "wchan", "WCHAN", property_wchan, "Wait channel (hex)" },
+static int compare_int(const struct propinfo *prop, struct procinfo *pi,
+                           pid_t a, pid_t b) {
+  int av = prop->fetch.fetch_int(pi, a);
+  int bv = prop->fetch.fetch_int(pi, b);
+  return av < bv ? -1 : av > bv ? 1 : 0;
+}
+
+static int compare_intmax(const struct propinfo *prop, struct procinfo *pi,
+                          pid_t a, pid_t b) {
+  intmax_t av = prop->fetch.fetch_intmax(pi, a);
+  intmax_t bv = prop->fetch.fetch_intmax(pi, b);
+  return av < bv ? -1 : av > bv ? 1 : 0;
+}
+
+static int compare_uintmax(const struct propinfo *prop, struct procinfo *pi,
+                           pid_t a, pid_t b) {
+  uintmax_t av = prop->fetch.fetch_uintmax(pi, a);
+  uintmax_t bv = prop->fetch.fetch_uintmax(pi, b);
+  return av < bv ? -1 : av > bv ? 1 : 0;
+}
+
+static int compare_pid(const struct propinfo *prop, struct procinfo *pi,
+                          pid_t a, pid_t b) {
+  pid_t av = prop->fetch.fetch_pid(pi, a);
+  pid_t bv = prop->fetch.fetch_pid(pi, b);
+  return av < bv ? -1 : av > bv ? 1 : 0;
+}
+
+static int compare_uid(const struct propinfo *prop, struct procinfo *pi,
+                       pid_t a, pid_t b) {
+  uid_t av = prop->fetch.fetch_uid(pi, a);
+  uid_t bv = prop->fetch.fetch_uid(pi, b);
+  return av < bv ? -1 : av > bv ? 1 : 0;
+}
+
+static int compare_user(const struct propinfo *prop, struct procinfo *pi,
+                        pid_t a, pid_t b) {
+  uid_t av = prop->fetch.fetch_uid(pi, a);
+  uid_t bv = prop->fetch.fetch_uid(pi, b);
+  struct passwd *pw = getpwuid(av);
+  char *ua = xstrdup(pw ? pw->pw_name : "");
+  int rc;
+  pw = getpwuid(bv);
+  rc = strcmp(ua, pw ? pw->pw_name : "");
+  free(ua);
+  return rc;
+}
+
+static int compare_gid(const struct propinfo *prop, struct procinfo *pi,
+                       pid_t a, pid_t b) {
+  gid_t av = prop->fetch.fetch_gid(pi, a);
+  gid_t bv = prop->fetch.fetch_gid(pi, b);
+  return av < bv ? -1 : av > bv ? 1 : 0;
+}
+
+static int compare_group(const struct propinfo *prop, struct procinfo *pi,
+                       pid_t a, pid_t b) {
+  uid_t av = prop->fetch.fetch_uid(pi, a);
+  uid_t bv = prop->fetch.fetch_uid(pi, b);
+  struct group *gr = getgrgid(av);
+  char *ga = xstrdup(gr ? gr->gr_name : "");
+  int rc;
+  gr = getgrgid(bv);
+  rc = strcmp(ga, gr ? gr->gr_name : "");
+  free(ga);
+  return rc;
+}
+
+static int compare_double(const struct propinfo *prop, struct procinfo *pi,
+                          pid_t a, pid_t b) {
+  double av = prop->fetch.fetch_double(pi, a);
+  double bv = prop->fetch.fetch_double(pi, b);
+  return av < bv ? -1 : av > bv ? 1 : 0;
+}
+
+static int compare_string(const struct propinfo *prop, struct procinfo *pi,
+                          pid_t a, pid_t b) {
+  const char *av = prop->fetch.fetch_string(pi, a);
+  const char *bv = prop->fetch.fetch_string(pi, b);
+  return strcmp(av, bv);
+}
+
+// ----------------------------------------------------------------------------
+
+static const struct propinfo properties[] = {
+  {
+    "addr", "ADDR", "Instruction pointer address (hex)",
+    property_uhex, compare_uintmax, { .fetch_uintmax = proc_get_insn_pointer }
+  },
+  {
+    "args", "COMMAND", "Command with arguments",
+    property_command, compare_string, { .fetch_string = proc_get_cmdline }
+  },
+  {
+    "comm", "COMMAND", "Command",
+    property_command, compare_string, { .fetch_string = proc_get_comm }
+  },
+  {
+    "etime", "ELAPSED", "Elapsed time",
+    property_etime, compare_intmax, { .fetch_intmax = proc_get_elapsed_time }
+  },
+  {
+    "flags", "F", "Flags (octal)",
+    property_uoctal, compare_uintmax, { .fetch_uintmax = proc_get_flags }
+  },
+  {
+    "gid", "GID","Effective group ID (decimal)",
+    property_gid, compare_gid, { .fetch_gid = proc_get_egid }
+  },
+  {
+    "group", "GROUP", "Effective group ID (name)",
+    property_group, compare_group, { .fetch_gid = proc_get_egid }
+  },
+  {
+    "nice", "NI", "Nice value",
+    property_decimal, compare_intmax, { .fetch_intmax = proc_get_nice }
+  },
+  {
+    "pcpu", "%CPU", "%age CPU used",
+    property_pcpu, compare_double, { .fetch_double = proc_get_pcpu }
+  },
+  {
+    "pgid", "PGID", "Process group ID",
+    property_pid, compare_pid, { .fetch_pid = proc_get_pgid }
+  },
+  {
+    "pid", "PID", "Process ID",
+    property_pid, compare_pid, { .fetch_pid = proc_get_pid }
+  },
+  {
+    "ppid", "PPID", "Parent process ID",
+    property_pid, compare_pid, { .fetch_pid = proc_get_ppid }
+  },
+  {
+    "pri", "PRI", "Priority",
+    property_decimal, compare_intmax, { .fetch_intmax = proc_get_priority }
+  },
+  {
+    "rgid", "RGID", "Real group ID (decimal)",
+    property_gid, compare_gid, { .fetch_gid = proc_get_rgid }
+  },
+  {
+    "rgroup", "RGROUP", "Real group ID (name)",
+    property_group, compare_group, { .fetch_gid = proc_get_rgid }
+  },
+  {
+    "rss", "RSS", "Resident set size (1024 bytes)",
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_rss }
+  },
+  {
+    "ruid", "RUID", "Real user ID (decimal)",
+    property_uid, compare_uid, { .fetch_uid = proc_get_ruid }
+  },
+  {
+    "ruser", "RUSER", "Real user ID (name)",
+    property_user, compare_user, { .fetch_uid = proc_get_ruid }
+  },
+  {
+    "state", "S", "Process state",
+    property_char, compare_int, { .fetch_int = proc_get_state }
+  },
+  {
+    "stime", "STIME", "Start time",
+    property_stime, compare_intmax, { .fetch_intmax = proc_get_start_time }
+  },
+  {
+    "time", "TIME", "Scheduled time",
+    property_time, compare_intmax, { .fetch_intmax = proc_get_scheduled_time }
+  },
+  {
+    "tty", "TT", "Terminal",
+    property_tty, compare_int, { .fetch_int = proc_get_tty }
+  },
+  {
+    "uid", "UID", "Effective user ID (decimal)",
+    property_uid, compare_uid, { .fetch_uid = proc_get_euid }
+  },
+  {
+    "user", "USER", "Effective user ID (name)",
+    property_user, compare_user, { .fetch_uid = proc_get_euid }
+  },
+  {
+    "vsz", "VSZ", "Virtual memory used (1024 bytes)",
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_vsize }
+  },
+  {
+    "wchan", "WCHAN", "Wait channel (hex)",
+    property_wchan, compare_uintmax, { .fetch_uintmax = proc_get_wchan }
+  },
 };
 #define NPROPERTIES (sizeof properties / sizeof *properties)
 
+static const struct propinfo *find_property(const char *name) {
+  size_t l = 0, r = NPROPERTIES - 1, m;
+  int c;
+  while(l <= r) {
+    m = l + (r - l) / 2;
+    c = strcmp(name, properties[m].name);
+    if(c < 0)
+      r = m - 1;
+    else if(c > 0)
+      l = m + 1;
+    else
+      return &properties[m];
+  }
+  fatal(0, "unknown process property '%s'", name);
+}
+
 void format_add(const char *f) {
   char buffer[128], *heading;
-  size_t i, n;
+  size_t i;
   int seen_equals;
   while(*f) {
     if(*f == ' ' || *f == ',') {
@@ -337,16 +501,12 @@ void format_add(const char *f) {
     buffer[i] = 0;
     if((heading = strchr(buffer, '=')))
       *heading++ = 0;
-    for(n = 0; n < NPROPERTIES; ++n)
-      if(!strcmp(properties[n].name, buffer))
-        break;
-    if(n >= NPROPERTIES)
-      fatal(0, "unknown column format '%s'", buffer);
     if((ssize_t)(ncolumns + 1) < 0)
       fatal(0, "too many columns");
     columns = xrecalloc(columns, ncolumns + 1, sizeof *columns);
-    columns[ncolumns].id = n;
-    columns[ncolumns].heading = xstrdup(heading ? heading : properties[n].heading);
+    columns[ncolumns].prop = find_property(buffer);
+    columns[ncolumns].heading = xstrdup(heading ? heading 
+                                          : columns[ncolumns].prop->heading);
     ++ncolumns;
   }
 }
@@ -362,6 +522,7 @@ void format_clear(void) {
 
 void format_columns(struct procinfo *pi, const pid_t *pids, size_t npids) {
   size_t n = 0, c;
+
   /* "The field widths shall be selected by the system to be at least
    * as wide as the header text (default or overridden value). If the
    * header text is null, such as -o user=, the field width shall be
@@ -369,7 +530,7 @@ void format_columns(struct procinfo *pi, const pid_t *pids, size_t npids) {
   for(c = 0; c < ncolumns; ++c)
     columns[c].width = strlen(*columns[c].heading
                               ? columns[c].heading
-                              : properties[columns[c].id].heading);
+                              : columns[c].prop->heading);
   // We actually make columns wide enough for everything that may be
   // put in them.
   for(n = 0; n < npids; ++n) {
@@ -379,7 +540,7 @@ void format_columns(struct procinfo *pi, const pid_t *pids, size_t npids) {
       b->base = 0;
       b->pos = 0;
       b->size = 0;
-      properties[columns[c].id].property(b, pi, pids[n]);
+      columns[c].prop->format(columns[c].prop, b, pi, pids[n]);
       if(b->pos > columns[c].width)
         columns[c].width = b->pos;
     }
@@ -398,18 +559,17 @@ void format_heading(struct procinfo *pi, char *buffer, size_t bufsize) {
 
 void format_process(struct procinfo *pi, pid_t pid,
                     char *buffer, size_t bufsize) {
-  size_t w, left, id, c, start;
+  size_t w, left, c, start;
   struct buffer b[1];
   b->base = buffer;
   b->pos = 0;
   b->size = bufsize;
   for(c = 0; c < ncolumns; ++c) {
-    id = columns[c].id;
     start = b->pos;
     if(pid == -1)
       buffer_append(b, columns[c].heading);
     else
-      properties[id].property(b, pi, pid);
+      columns[c].prop->format(columns[c].prop, b, pi, pid);
     /* Figure out how much we wrote */
     w = b->pos - start;
     /* For non-final columns, pad to the column width and one more for
@@ -421,6 +581,24 @@ void format_process(struct procinfo *pi, pid_t pid,
     }
   }
   buffer_terminate(b);
+}
+
+int format_compare(struct procinfo *pi, const char *field, pid_t a, pid_t b) {
+  const struct propinfo *prop;
+  int sign = -1;
+
+  switch(field[0]) {
+  case '+':
+    sign = -1;
+    ++field;
+    break;
+  case '-':
+    sign = 1;
+    ++field;
+    break;
+  }
+  prop = find_property(field);
+  return sign * prop->compare(prop, pi, a, b);
 }
 
 void format_help(void) {

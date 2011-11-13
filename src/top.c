@@ -125,15 +125,7 @@ static struct procinfo *pi;
 static int compare_pid(const void *av, const void *bv) {
   pid_t a = *(const pid_t *)av;
   pid_t b = *(const pid_t *)bv;
-  
-  double cpua = proc_get_pcpu(pi, a);
-  double cpub = proc_get_pcpu(pi, b);
-  if(cpua > cpub)
-    return -1;
-  else if(cpua < cpub)
-    return 1;
-  else
-    return 0;
+  return format_compare(pi, "+pcpu", a, b);
 }
 
 static void loop(void) {

@@ -66,6 +66,15 @@ void format_heading(struct procinfo *pi, char *buffer, size_t bufsize);
 void format_process(struct procinfo *pi, pid_t pid,
                     char *buffer, size_t bufsize);
 
+/** @brief Compare process properties
+ * @param pi Pointer to process information
+ * @param a First process ID
+ * @param b Second process ID
+ * @param field Field to compare on
+ * @return -1, 0 or -1
+ */
+int format_compare(struct procinfo *pi, const char *field, pid_t a, pid_t b);
+
 /** @brief Display formatting help */
 void format_help(void);
 

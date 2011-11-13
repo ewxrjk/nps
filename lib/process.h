@@ -43,6 +43,13 @@ struct procinfo *proc_enumerate(struct procinfo *last);
  */
 void proc_free(struct procinfo *pi);
 
+/** @brief Retrieve the ID of a process
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @return Process ID
+ */
+pid_t proc_get_pid(struct procinfo *pi, pid_t pid);
+
 /** @brief Retrieve the session ID of a process
  * @param pi Pointer to process information
  * @param pid Process ID
