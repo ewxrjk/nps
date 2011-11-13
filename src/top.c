@@ -77,11 +77,11 @@ int main(int argc, char **argv) {
              "  -s [+/-]FMT,...   Set ordering\n"
              "  -i                Hide idle processes\n"
              "  --help            Display option summary\n"
-             "  --help-format     Display formatting help\n"
+             "  --help-format     Display formatting and ordering help\n"
              "  --version         Display version string\n");
       return 0;
     case OPT_HELP_FORMAT:
-      printf("The following properties can be used with the -o option:\n"
+      printf("The following properties can be used with the -o and -s option:\n"
              "\n");
       format_help();
       printf("\n"
@@ -90,7 +90,11 @@ int main(int argc, char **argv) {
              "one another.\n"
              "\n"
              "Use property=heading to override the heading (but only for the last\n"
-             "property in each argument).\n");
+             "property in each argument).\n"
+             "\n"
+             "Multiple properties can also be specified with -s.  Later properties are\n"
+             "used to order processes that match in earlier properties.  To reverse the\n"
+             "sense of an ordering, prefix it with '-'.\n");
       return 0;
     case OPT_VERSION:
       printf("%s\n", PACKAGE_VERSION);
