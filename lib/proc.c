@@ -190,6 +190,10 @@ struct procinfo *proc_enumerate(struct procinfo *last) {
   return pi;
 }
 
+int proc_count(struct procinfo *pi) {
+  return pi->nprocs;
+}
+
 // ----------------------------------------------------------------------------
 
 static struct process *proc_find(const struct procinfo *pi, pid_t pid) {

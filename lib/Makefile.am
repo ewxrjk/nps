@@ -17,6 +17,6 @@
 # USA
 noinst_LIBRARIES=libps.a
 
-libps_a_SOURCES=buffer.h format.h process.h selectors.h utils.h		\
-device.c error.c format.c memory.c proc.c select.c selectors.c split.c	\
-time.c
+libps_a_SOURCES=buffer.h format.h process.h selectors.h sysinfo.h	\
+utils.h device.c error.c format.c memory.c proc.c select.c selectors.c	\
+split.c sysinfo.c time.c

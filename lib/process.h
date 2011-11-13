@@ -43,6 +43,12 @@ struct procinfo *proc_enumerate(struct procinfo *last);
  */
 void proc_free(struct procinfo *pi);
 
+/** @brief Count the number of processes
+ * @param pi Pointer to process information
+ * @return Number of processes
+ */
+int proc_count(struct procinfo *pi);
+
 /** @brief Retrieve the ID of a process
  * @param pi Pointer to process information
  * @param pid Process ID

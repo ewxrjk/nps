@@ -21,6 +21,7 @@
 #include "selectors.h"
 #include "format.h"
 #include "process.h"
+#include "sysinfo.h"
 #include "utils.h"
 #include <getopt.h>
 #include <stdio.h>
@@ -34,12 +35,14 @@
 enum {
   OPT_HELP = 256,
   OPT_HELP_FORMAT,
+  OPT_HELP_SYSINFO,
   OPT_VERSION,
 };
 
 const struct option options[] = {
   { "help", no_argument, 0, OPT_HELP },
   { "help-format", no_argument, 0, OPT_HELP_FORMAT },
+  { "help-sysinfo", no_argument, 0, OPT_HELP_SYSINFO },
   { "version", no_argument, 0, OPT_VERSION },
   { 0, 0, 0, 0 },
 };
@@ -48,12 +51,16 @@ static void loop(void);
 
 int main(int argc, char **argv) {
   int n;
-  int set_format = 0, set_order = 0;
+  int set_format = 0;
   int show_idle = 1;
 
   /* Set locale */
   if(!setlocale(LC_ALL, ""))
     fatal(errno, "setlocale");
+  /* Set the system info to display */
+  sysinfo_format("time,uptime,processes");
+  /* Set the default ordering */
+  format_ordering("+pcpu,+rss,+vsz");
   /* Parse command line */
   while((n = getopt_long(argc, argv, "+o:s:i", 
                          options, NULL)) >= 0) {
@@ -64,10 +71,12 @@ int main(int argc, char **argv) {
       break;
     case 's':
       format_ordering(optarg);
-      set_order = 1;
       break;
     case 'i':
       show_idle = 0;
+      break;
+    case 'I':
+      sysinfo_format(optarg);
       break;
     case OPT_HELP:
       printf("Usage:\n"
@@ -76,8 +85,10 @@ int main(int argc, char **argv) {
              "  -o FMT,FMT,...    Set output format\n"
              "  -s [+/-]FMT,...   Set ordering\n"
              "  -i                Hide idle processes\n"
+             "  -I PROP,PROP,...  Set system information format\n"
              "  --help            Display option summary\n"
-             "  --help-format     Display formatting and ordering help\n"
+             "  --help-format     Display formatting & ordering help (-o/-s)\n"
+             "  --help-sysinfo    Display system information help (-I)\n"
              "  --version         Display version string\n");
       return 0;
     case OPT_HELP_FORMAT:
@@ -96,6 +107,14 @@ int main(int argc, char **argv) {
              "used to order processes that match in earlier properties.  To reverse the\n"
              "sense of an ordering, prefix it with '-'.\n");
       return 0;
+    case OPT_HELP_SYSINFO:
+      printf("The following properties can be used with the -I option:\n"
+             "\n");
+      sysinfo_help();
+      printf("\n"
+             "Multiple properties can be specified in one -I option, separated by\n"
+             "commas or spaces.\n");
+      return 0;
     case OPT_VERSION:
       printf("%s\n", PACKAGE_VERSION);
       return 0;
@@ -104,9 +123,6 @@ int main(int argc, char **argv) {
 
     }
   }
-  /* Set the default ordering */
-  if(!set_order)
-    format_ordering("+pcpu,+rss,+vsz");
   /* Set the default selection */
   if(show_idle)
     select_default(select_all, NULL, 0);
@@ -153,7 +169,7 @@ static void loop(void) {
   struct procinfo *last = NULL;
   char buffer[1024];
   int x, y, maxx, maxy;
-  size_t n, npids;
+  size_t n, npids, ninfos, len;
   pid_t *pids;
 
   for(;;) {
@@ -169,7 +185,26 @@ static void loop(void) {
     getmaxyx(stdscr, maxy, maxx);
 
     /* System information */
-    // TODO
+    ninfos = sysinfo_reset();
+    for(n = 0; n < ninfos; ++n) {
+      if(!sysinfo_get(pi, n, buffer, sizeof buffer)) {
+        len = strlen(buffer);
+        if(x && x + len > (size_t)maxx) {
+          ++y;
+          x = 0;
+        }
+        if(y >= maxy)
+          break;
+        if(mvaddnstr(y, x, buffer, maxx - x) == ERR)
+          fatal(0, "mvaddstr %d,%d failed", y, x);
+        x += strlen(buffer) + 2;
+      }
+    }
+
+    if(x) {
+      ++y;
+      x = 0;
+    }
 
     /* Heading */
     if(y < maxy) {
