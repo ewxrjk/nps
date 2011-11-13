@@ -1,0 +1,11 @@
+#! /usr/bin/perl -w
+use strict;
+while(<>) {
+    if(/^#include (.*)/) {
+        my $rc = system("cat", $1);
+        die "cat: $rc\n" if $rc;
+    } else {
+        print $_ or die "stdout: $!\n";
+    }
+}
+close STDOUT or die "stdout: $!\n";

@@ -16,7 +16,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 bin_PROGRAMS=nps nps-top
-man_MANS=nps.1
+man_MANS=nps.1 nps-top.1
 
 nps_SOURCES=ps.c
 nps_LDADD=../lib/libps.a
@@ -26,4 +26,16 @@ nps_top_LDADD=../lib/libps.a $(CURSES)
 
 AM_CPPFLAGS=-I${top_srcdir}/lib
 
-EXTRA_DIST=${man_MANS}
+${srcdir}/nps.1: nps.1.in mkmanpage formatting.1
+	${srcdir}/mkmanpage ${srcdir}/nps.1.in > ${srcdir}/nps.1.new
+	mv ${srcdir}/nps.1.new ${srcdir}/nps.1
+
+${srcdir}/nps-top.1: nps-top.1.in mkmanpage formatting.1 sysinfo.1
+	${srcdir}/mkmanpage ${srcdir}/nps-top.1.in > ${srcdir}/nps-top.1.new
+	mv ${srcdir}/nps-top.1.new ${srcdir}/nps-top.1
+
+EXTRA_DIST=${man_MANS} formatting.1 nps.1.in nps-top.1.in formatting.1	\
+sysinfo.1 mkmanpage
+
+maintainer-clean-local:
+	rm -f ${srcdir}/nps.1 ${srcdir}/nps-top.1

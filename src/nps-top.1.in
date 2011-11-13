@@ -1,0 +1,73 @@
+.TH nps-top 1
+.SH NAME
+nps-top \- constantly display process information
+.B nps-top
+.RI [ OPTIONS ]
+.SH DESCRIPTION
+.B nps-top
+displays a constantly-updating snapshot of information about processes
+running on the system.
+.SH OPTIONS
+.IP \fB-o \fIFORMAT
+Set a specific format.
+If multiple \fB-o\fR options are given then they are cumulative.
+See \fBFORMATTING\fR below.
+.IP \fB-i
+Display only non-idle processes.
+.IP \fB-I \fISYSINFO
+Sets the system information format.
+See \fBSYSTEM INFORMATION\fR below.
+.IP \fB-s \fOORDER
+Set the order in which processes are listed.
+See \fBSORTING\fR below.
+.IP \fB--help
+Display a usage message.
+.IP \fB--help-format
+Displays help for the \fB-o\fR and \fB-s\fR options.
+.IP \fB--help-format
+Displays help for the \fB-I\fR option.
+.IP \fB--version
+Display a version string.
+.SH FORMATTING
+The \fB-o\fR option specifies a list of process properties to display,
+separated by spaces or commas.
+The available properties are:
+#include formatting.1
+.PP
+If no formatting options at all are specified then the default is
+equivalent to:
+.PP
+.RS
+\fB-o user,pid,rss,vsz,pcpu,tty=TTY -o time,args=CMD
+.RE
+.SH SORTING
+The \fB-s\fR option specifies the properties which control the order
+in which processes are displayed, separate by spaces or commas.
+The available properties are as define above in \fBFORMATTING\fR.
+.PP
+If more than one property is specified the second and subsequent are
+only considered when ordering processes which cannot be distinguished
+by the first (and on).
+.PP
+Each property name may be prefix with \fB+\fR to specify descending
+order (the default) and \fB-\fR to specify ascending order.
+.PP
+If no ordering option is specified then the default is equivalent to:
+.PP
+.RS
+\fB -s +pcpu,+rss,+vsz
+.RE
+.SH "SYSTEM INFORMATION"
+The \fB-I\fR option specifies which whole-system properties should be
+displayed, separated by spaces or commas.
+The available system properties are:
+#include sysinfo.1
+.SH BUGS
+On the first iteration, \fBpcpu\fR is computed over the process's
+entire lifetime.
+(On subsequent iterations it reflects the usage since the previous
+iteration.)
+.PP
+The meaning of \fBflags\fR is not very clear.
+.SH AUTHOR
+Richard Kettlewell <rjk@greenend.org.uk>

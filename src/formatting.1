@@ -1,0 +1,93 @@
+.IP \fBaddr
+The current instruction pointer (hex).
+.IP \fBargs
+Name and arguments.
+If these cannot be determined then the value of \fBcomm\fR is used, in
+square brackets.
+.IP \fBcomm
+Name.
+.IP \fBetime
+Time elapsed since the process started.
+.IP \fBflags
+Flags word from the kernel (octal).
+You will need a copy of the kernel sources to be able to interpret this.
+.IP \fBgid
+Effective group ID (decimal).
+.IP \fBgroup
+Effective group ID as a string.
+.IP \fBnice
+Nice value.
+Higher values mean lower priority ("nicer").
+.IP \fBpcpu
+Recent CPU usage, as a percentage.
+(See \fBBUGS\fR below.)
+.IP \fBpgid
+Process group ID.
+.IP \fBpid
+Process ID.
+.IP \fBppid
+Parent process ID.
+.IP \fBpri
+Priority.
+.IP \fBrgid
+Real group ID (decimal).
+.IP \fBrgroup
+Real group ID as a string.
+.IP \fBrss
+Resident set size in kilobytes.
+This the total amount of RAM used by the process.
+.IP \fBruid
+Real user ID (decimal).
+.IP \fBruser
+Real user ID as a string.
+.IP \fBstate
+Process state.
+The possible states are:
+.RS
+.IP \fBR
+Running.
+.IP \fBS
+Sleeping.
+.IP \fBD
+Disk wait.
+.IP \fBZ
+Exited but not yet reaped (a "zombie" process).
+.IP \fBT
+Traced or stopped due to a signal.
+.IP \fBW
+Paging.
+.RE
+.IP \fBstime
+The time that the process started.
+.IP \fBtime
+The cumulative CPU time used over the process's lifetime (user and kernel).
+.IP \fBtty
+Controlling terminal.
+The leading \fI/dev/tty\fR or \fI/dev\fR is stripped for compactness.
+.IP \fBuid
+Effective user ID (decimal).
+.IP \fBuser
+Effective user ID as a string.
+.IP \fBvsz
+Virtual memory size, in kilobytes.
+This is the total address space used by the process.
+Note that it may be misleadingly large as a measure of memory
+consumption due to \fBPROT_NONE\fR mappings.
+.IP \fBwchan
+Wait channel.
+.PP
+To give a property a different heading, use the syntax
+\fIPROPERTY\fB=\fIHEADING\fR.
+This only works on the last property in a single argument
+use multiple \fB-o\fR options to work around this.
+.PP
+Time intervals (such as \fBetime\fR) are represented as
+[[\fIdd\fB-\fR]\fIhh\fB:\fR]\fImm\fB:\fIss\fR, with \fIdd\fR
+representing the number of days, \fIhh\fR the number of hours,
+\fImm\fR the number of minutes and \fIss\fR the number of seconds.
+.PP
+Timestamps (such as \fBstime\fR) are represented as
+\fIYYYY\fB-\fIMM\fB-\fIDD\fR for times outside than
+the current day and \fIHH\fB:\fIMM\fB:\fISS\fR for times during the
+current day.
+They are always given in the local timezone.
