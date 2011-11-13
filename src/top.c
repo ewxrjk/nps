@@ -152,20 +152,20 @@ static void loop(void) {
 
     /* Heading */
     if(y < maxy) {
+      attron(A_REVERSE);
       format_heading(pi, buffer, sizeof buffer);
-      if(strlen(buffer) > (size_t)maxx)
-        buffer[maxx] = 0;
-      if(mvaddstr(y, 0, buffer) == ERR)
+      if(mvaddnstr(y, 0, buffer, maxx) == ERR)
         fatal(0, "mvaddstr %d failed", y);
       ++y;
+      for(x = strlen(buffer); x < maxx; ++x)
+        addch(' ');
+      attroff(A_REVERSE);
     }
 
     /* Processes */
     for(n = 0; n < npids && y < maxy; ++n) {
       format_process(pi, pids[n], buffer, sizeof buffer);
-      if(strlen(buffer) > (size_t)maxx)
-        buffer[maxx] = 0;
-      if(mvaddstr(y, 0, buffer) == ERR)
+      if(mvaddnstr(y, 0, buffer, maxx) == ERR)
         fatal(0, "mvaddstr %d failed", y);
       ++y;
     }
