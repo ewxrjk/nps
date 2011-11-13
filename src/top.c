@@ -48,24 +48,29 @@ static void loop(void);
 
 int main(int argc, char **argv) {
   int n;
-  int set_format = 0;
+  int set_format = 0, set_order = 0;
 
   /* Set locale */
   if(!setlocale(LC_ALL, ""))
     fatal(errno, "setlocale");
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+o:", 
+  while((n = getopt_long(argc, argv, "+o:s:", 
                          options, NULL)) >= 0) {
     switch(n) {
     case 'o':
       format_add(optarg);
       set_format = 1;
       break;
+    case 's':
+      format_ordering(optarg);
+      set_order = 1;
+      break;
     case OPT_HELP:
       printf("Usage:\n"
              "  top [OPTIONS]\n"
              "Options:\n"
              "  -o FMT,FMT,...    Set output format\n"
+             "  -s [+/-]FMT,...   Set ordering\n"
              "  --help            Display option summary\n"
              "  --help-format     Display formatting help\n"
              "  --version         Display version string\n");
@@ -90,6 +95,9 @@ int main(int argc, char **argv) {
 
     }
   }
+  /* Set the default ordering */
+  if(!set_order)
+    format_ordering("+pcpu,+rss,+vsz");
   /* Set the default selection */
   select_default(select_all, NULL, 0);
   /* Set the default format */
@@ -111,6 +119,7 @@ int main(int argc, char **argv) {
     fatal(0, "initrflush failed");
   if(keypad(stdscr, TRUE) == ERR) /* Enable keypad support */
     fatal(0, "keypad failed");
+  curs_set(0);                  /* Hide cursor */
   /* Loop until quit */
   loop();
   /* Deinitialize curses */
@@ -125,7 +134,7 @@ static struct procinfo *pi;
 static int compare_pid(const void *av, const void *bv) {
   pid_t a = *(const pid_t *)av;
   pid_t b = *(const pid_t *)bv;
-  return format_compare(pi, "+pcpu", a, b);
+  return format_compare(pi, a, b);
 }
 
 static void loop(void) {
@@ -165,7 +174,8 @@ static void loop(void) {
     /* Processes */
     for(n = 0; n < npids && y < maxy; ++n) {
       format_process(pi, pids[n], buffer, sizeof buffer);
-      if(mvaddnstr(y, 0, buffer, maxx) == ERR)
+      // curses seems to have trouble with the last position on the screen
+      if(mvaddnstr(y, 0, buffer, y == maxy - 1 ? maxx - 1 : maxx) == ERR)
         fatal(0, "mvaddstr %d failed", y);
       ++y;
     }

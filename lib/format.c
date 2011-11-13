@@ -69,6 +69,14 @@ struct column {
 static size_t ncolumns;
 static struct column *columns;
 
+struct order {
+  const struct propinfo *prop;
+  int sign;
+};
+
+static size_t norders;
+static struct order *orders;
+
 // ----------------------------------------------------------------------------
 
 static void format_decimal(intmax_t im, struct buffer *b) {
@@ -583,22 +591,51 @@ void format_process(struct procinfo *pi, pid_t pid,
   buffer_terminate(b);
 }
 
-int format_compare(struct procinfo *pi, const char *field, pid_t a, pid_t b) {
-  const struct propinfo *prop;
-  int sign = -1;
-
-  switch(field[0]) {
-  case '+':
-    sign = -1;
-    ++field;
-    break;
-  case '-':
-    sign = 1;
-    ++field;
-    break;
+void format_ordering(const char *ordering) {
+  char buffer[128], *b;
+  size_t i;
+  free(orders);
+  orders = NULL;
+  norders = 0;
+  while(*ordering) {
+    if(*ordering == ' ' || *ordering == ',') {
+      ++ordering;
+      continue;
+    }
+    i = 0;
+    while(*ordering && *ordering != ' ' && *ordering != ',') {
+      if(i < sizeof buffer - 1)
+        buffer[i++] = *ordering;
+      ++ordering;
+    }
+    buffer[i] = 0;
+    if((ssize_t)(norders + 1) < 0)
+      fatal(0, "too many columns");
+    orders = xrecalloc(orders, norders + 1, sizeof *orders);
+    orders[norders].sign = -1;
+    b = buffer;
+    switch(*b) {
+    case '+':
+      ++b;
+      orders[norders].sign = -1;
+      break;
+    case '-':
+      ++b;
+      orders[norders].sign = 1;
+      break;
+    }
+    orders[norders].prop = find_property(b);
+    ++norders;
   }
-  prop = find_property(field);
-  return sign * prop->compare(prop, pi, a, b);
+}
+
+int format_compare(struct procinfo *pi, pid_t a, pid_t b) {
+  size_t n;
+  int c;
+  for(n = 0; n < norders; ++n)
+    if((c = orders[n].prop->compare(orders[n].prop, pi, a, b)))
+      return orders[n].sign < 0 ? -c : c;
+  return 0;
 }
 
 void format_help(void) {
