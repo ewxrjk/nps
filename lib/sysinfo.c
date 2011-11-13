@@ -40,19 +40,6 @@ static void parse_uptime(double *up, double *idle) {
 
 // ----------------------------------------------------------------------------
 
-static void sysprop_localtime(struct procinfo attribute((unused)) *pi,
-                              char *buffer, size_t bufsize) {
-  time_t now;
-  struct tm now_tm;
-  time(&now);
-  localtime_r(&now, &now_tm);
-  strftime(buffer, bufsize, "Time: %Y-%m-%d %H:%M:%S", &now_tm);
-}
-
-static void sysprop_processes(struct procinfo *pi, char *buffer, size_t bufsize) {
-  snprintf(buffer, bufsize, "Tasks: %d", proc_count(pi));
-}
-
 static void sysprop_format_time(const char *what, double t,
                                 char *buffer, size_t bufsize) {
   double id;
@@ -72,6 +59,40 @@ static void sysprop_format_time(const char *what, double t,
     snprintf(buffer, bufsize, "%s: %d:%02d:%02d", what, h, m, s);
 }
 
+static void sysprop_format_meminfo(const char *what, const char *tag,
+                                   char *buffer, size_t bufsize) {
+  FILE *fp;
+  char input[128], *colon;
+  if(!(fp = fopen("/proc/meminfo", "r")))
+    fatal(errno, "opening /proc/meminfo");
+  while(fgets(input, sizeof input, fp)) {
+    if((colon = strchr(input, ':'))) {
+      *colon++ = 0;
+      if(!strcmp(input, tag)) {
+        unsigned long long value = strtoull(colon, &colon, 10);
+        snprintf(buffer, bufsize, "%s: %llu", what, value);
+        break;
+      }
+    }
+  }
+  fclose(fp);
+}
+
+// ----------------------------------------------------------------------------
+
+static void sysprop_localtime(struct procinfo attribute((unused)) *pi,
+                              char *buffer, size_t bufsize) {
+  time_t now;
+  struct tm now_tm;
+  time(&now);
+  localtime_r(&now, &now_tm);
+  strftime(buffer, bufsize, "Time: %Y-%m-%d %H:%M:%S", &now_tm);
+}
+
+static void sysprop_processes(struct procinfo *pi, char *buffer, size_t bufsize) {
+  snprintf(buffer, bufsize, "Tasks: %d", proc_count(pi));
+}
+
 static void sysprop_uptime(struct procinfo attribute((unused)) *pi,
                            char *buffer, size_t bufsize) {
   double u;
@@ -86,6 +107,28 @@ static void sysprop_idletime(struct procinfo attribute((unused)) *pi,
   sysprop_format_time("Idle", i, buffer, bufsize);
 }
 
+static void sysprop_load(struct procinfo attribute((unused)) *pi,
+                         char *buffer, size_t bufsize) {
+  FILE *fp;
+  double l1, l2, l3;
+  if(!(fp = fopen("/proc/loadavg", "r")))
+    fatal(errno, "opening /proc/loadavg");
+  if(fscanf(fp, "%lg %lg %lg", &l1, &l2, &l3) < 0)
+    fatal(errno, "reading /proc/loadavg");
+  fclose(fp);
+  snprintf(buffer, bufsize, "Load: %.1f %.1f %.1f", l1, l2, l3);
+}
+
+static void sysprop_memfree(struct procinfo attribute((unused)) *pi,
+                            char *buffer, size_t bufsize) {
+  sysprop_format_meminfo("Free", "MemFree", buffer, bufsize);
+}
+
+static void sysprop_swapfree(struct procinfo attribute((unused)) *pi,
+                            char *buffer, size_t bufsize) {
+  sysprop_format_meminfo("Swap free", "SwapFree", buffer, bufsize);
+}
+
 // ----------------------------------------------------------------------------
 
 const struct sysprop {
@@ -98,14 +141,26 @@ const struct sysprop {
     sysprop_idletime
   },
   {
+    "load", "System load",
+    sysprop_load
+  },
+  {
+    "memfree", "Amount of RAM free (1024 bytes)",
+    sysprop_memfree
+  },
+  {
     "processes", "Number of processes",
     sysprop_processes
+  },
+  {
+    "swapfree", "Amount of swap space (1024 bytes)",
+    sysprop_swapfree
   },
   {
     "time", "Current (local) time",
     sysprop_localtime
   },
-  { 
+  {
     "uptime", "Time since system booted",
     sysprop_uptime
   },

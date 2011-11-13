@@ -155,8 +155,16 @@ displayed, separated by spaces or commas.
 The available system properties are:
 .IP \fBidletime
 The cumulative time the system has spent idle.
+.IP \fBload
+The system load averages.
+These three figures are the number of tasks either runnable or blocked
+on disk IO averaged over 1, 5 and 15 minutes.
+.IP \fBmemfree
+Amount of free RAM in kilobytes.
 .IP \fBprocesses
 The current number of processes.
+.IP \fBswapfree
+Amount of free swap space in kilobytes.
 .IP \fBtime
 The current time (using the local timezone).
 .IP \fBuptime

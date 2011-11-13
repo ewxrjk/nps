@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
   if(!setlocale(LC_ALL, ""))
     fatal(errno, "setlocale");
   /* Set the system info to display */
-  sysinfo_format("time,uptime,processes");
+  sysinfo_format("time,uptime,processes,load,memfree");
   /* Set the default ordering */
   format_ordering("+pcpu,+rss,+vsz");
   /* Parse command line */
