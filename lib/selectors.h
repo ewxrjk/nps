@@ -26,6 +26,8 @@
 
 #include <sys/types.h>
 
+struct procinfo;
+
 /** @brief Argument type for selectors
  *
  * Use split_arg() to split an argument string into argument objects.
@@ -95,12 +97,14 @@ union arg *split_arg(char *arg,
 // ----------------------------------------------------------------------------
 
 /** @brief Signature of a selector function
+ * @param pi Pointer to process information
  * @param pid Process ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
  */
-typedef int select_function(pid_t pid, union arg *args, size_t nargs);
+typedef int select_function(struct procinfo *pi, pid_t pid,
+                            union arg *args, size_t nargs);
 
 /** @brief Register a selector function
  * @param sfn Selector function
@@ -110,6 +114,7 @@ typedef int select_function(pid_t pid, union arg *args, size_t nargs);
 void select_add(select_function *sfn, union arg *args, size_t nargs);
 
 /** @brief Test whether a proces should be selected
+ * @param pi Pointer to process information
  * @param pid Process ID
  * @return Nonzero to select @p pid
  *
@@ -117,7 +122,7 @@ void select_add(select_function *sfn, union arg *args, size_t nargs);
  * the return value is 0.  If all return zero then the return value is
  * zero.
  */
-int select_test(pid_t pid);
+int select_test(struct procinfo *pi, pid_t pid);
 
 /** @brief Set the default selector
  * @param sfn Selector function
@@ -132,6 +137,7 @@ void select_default(select_function *sfn, union arg *args, size_t nargs);
 // ---------------------------------------------------------------------------
 
 /** @brief Select processes that have a controlling terminal
+ * @param pi Pointer to process information
  * @param pid Process ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
@@ -139,9 +145,11 @@ void select_default(select_function *sfn, union arg *args, size_t nargs);
  *
  * @p args and @p nargs are not used.
  */
-int select_has_terminal(pid_t pid, union arg *args, size_t nargs);
+int select_has_terminal(struct procinfo *pi, pid_t pid,
+                        union arg *args, size_t nargs);
 
 /** @brief Select all processes
+ * @param pi Pointer to process information
  * @param pid Process ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
@@ -149,9 +157,10 @@ int select_has_terminal(pid_t pid, union arg *args, size_t nargs);
  *
  * @p args and @p nargs are not used.
  */
-int select_all(pid_t pid, union arg *args, size_t nargs);
+int select_all(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs);
 
 /** @brief Select processes that are not session leaders
+ * @param pi Pointer to process information
  * @param pid Process ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
@@ -159,9 +168,11 @@ int select_all(pid_t pid, union arg *args, size_t nargs);
  *
  * @p args and @p nargs are not used.
  */
-int select_not_session_leader(pid_t pid, union arg *args, size_t nargs);
+int select_not_session_leader(struct procinfo *pi,
+                              pid_t pid, union arg *args, size_t nargs);
 
 /** @brief Select specific processes
+ * @param pi Pointer to process information
  * @param pid Process ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
@@ -169,9 +180,10 @@ int select_not_session_leader(pid_t pid, union arg *args, size_t nargs);
  *
  * Parse the argument string with @ref arg_process().
  */
-int select_pid(pid_t pid, union arg *args, size_t nargs);
+int select_pid(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs);
 
 /** @brief Select processes by controlling terminal
+ * @param pi Pointer to process information
  * @param pid Process ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
@@ -179,9 +191,11 @@ int select_pid(pid_t pid, union arg *args, size_t nargs);
  *
  * Parse the argument string with @ref arg_tty().
  */
-int select_terminal(pid_t pid, union arg *args, size_t nargs);
+int select_terminal(struct procinfo *pi, pid_t pid,
+                    union arg *args, size_t nargs);
 
 /** @brief Select processes by session leader
+ * @param pi Pointer to process information
  * @param pid Process ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
@@ -189,9 +203,11 @@ int select_terminal(pid_t pid, union arg *args, size_t nargs);
  *
  * Parse the argument string with @ref arg_process().
  */
-int select_leader(pid_t pid, union arg *args, size_t nargs);
+int select_leader(struct procinfo *pi, pid_t pid,
+                  union arg *args, size_t nargs);
 
 /** @brief Select processes by real GID
+ * @param pi Pointer to process information
  * @param pid Process ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
@@ -199,9 +215,10 @@ int select_leader(pid_t pid, union arg *args, size_t nargs);
  *
  * Parse the argument string with @ref arg_group().
  */
-int select_rgid(pid_t pid, union arg *args, size_t nargs);
+int select_rgid(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs);
 
 /** @brief Select processes by effective GID
+ * @param pi Pointer to process information
  * @param pid Process ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
@@ -209,9 +226,10 @@ int select_rgid(pid_t pid, union arg *args, size_t nargs);
  *
  * Parse the argument string with @ref arg_group().
  */
-int select_egid(pid_t pid, union arg *args, size_t nargs);
+int select_egid(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs);
 
 /** @brief Select processes by real UID
+ * @param pi Pointer to process information
  * @param pid Process ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
@@ -219,9 +237,10 @@ int select_egid(pid_t pid, union arg *args, size_t nargs);
  *
  * Parse the argument string with @ref arg_user().
  */
-int select_euid(pid_t pid, union arg *args, size_t nargs);
+int select_euid(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs);
 
 /** @brief Select processes by effective UID
+ * @param pi Pointer to process information
  * @param pid Process ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
@@ -229,9 +248,11 @@ int select_euid(pid_t pid, union arg *args, size_t nargs);
  *
  * Parse the argument string with @ref arg_user().
  */
-int select_ruid(pid_t pid, union arg *args, size_t nargs);
+int select_ruid(struct procinfo *pi, pid_t pid,
+                union arg *args, size_t nargs);
 
 /** @brief Select processes with current effective UID and terminal
+ * @param pi Pointer to process information
  * @param pid Process ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
@@ -239,7 +260,8 @@ int select_ruid(pid_t pid, union arg *args, size_t nargs);
  *
  * @p args and @p nargs are not used.
  */
-int select_uid_tty(pid_t pid, union arg *args, size_t nargs);
+int select_uid_tty(struct procinfo *pi, pid_t pid, union arg *args,
+                   size_t nargs);
 
 #endif /* SELECTORS_H */
 

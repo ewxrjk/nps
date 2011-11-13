@@ -26,6 +26,8 @@
 
 #include <sys/types.h>
 
+struct procinfo;
+
 /** @brief Add to the format list
  * @param f Format string
  *
@@ -38,27 +40,31 @@ void format_add(const char *f);
 void format_clear(void);
 
 /** @brief Set internal column sizes
+ * @param pi Pointer to process information
  * @param pids Process IDs
  * @param npids Number of processes
  */
-void format_columns(const pid_t *pids, size_t npids);
+void format_columns(struct procinfo *pi, const pid_t *pids, size_t npids);
 
 /** @brief Construct the heading
+ * @param pi Pointer to process information
  * @param buffer Where to put heading string
  * @param bufsize Size of buffer
  *
  * format_columns() must have been called.
  */
-void format_heading(char *buffer, size_t bufsize);
+void format_heading(struct procinfo *pi, char *buffer, size_t bufsize);
 
 /** @brief Construct the output for one process
+ * @param pi Pointer to process information
  * @param pid Process ID
  * @param buffer Where to put header string
  * @param bufsize Size of buffer
  *
  * format_columns() must have been called.
  */
-void format_process(pid_t pid, char *buffer, size_t bufsize);
+void format_process(struct procinfo *pi, pid_t pid,
+                    char *buffer, size_t bufsize);
 
 /** @brief Display formatting help */
 void format_help(void);

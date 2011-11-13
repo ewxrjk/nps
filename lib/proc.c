@@ -105,9 +105,11 @@ static const size_t propinfo_stat[] = {
 
 #define HASH_SIZE 256           /* hash table size */
 
-static size_t nprocs, nslots;
-static struct process *procs;
-static size_t lookup[HASH_SIZE];
+struct procinfo {
+  size_t nprocs, nslots;
+  struct process *procs;
+  size_t lookup[HASH_SIZE];
+};
 
 // ----------------------------------------------------------------------------
 
@@ -117,22 +119,24 @@ static uintmax_t conv(const char *s) {
 
 // ----------------------------------------------------------------------------
 
-static void proc_clear(void) {
+void proc_free(struct procinfo *pi) {
   size_t n;
-  for(n = 0; n < nprocs; ++n) {
-    free(procs[n].prop_comm);
-    free(procs[n].prop_cmdline);
+  for(n = 0; n < pi->nprocs; ++n) {
+    free(pi->procs[n].prop_comm);
+    free(pi->procs[n].prop_cmdline);
   }
-  nprocs = 0;
+  free(pi->procs);
+  free(pi);
 }
 
-void proc_enumerate(void) {
+struct procinfo *proc_enumerate(void) {
   DIR *dp;
   struct dirent *de;
   size_t n;
+  struct procinfo *pi;
 
-  /* Ditch any existing data */
-  proc_clear();
+  pi = xmalloc(sizeof *pi);
+  memset(pi, 0, sizeof *pi);
   /* Look through /proc for process information */
   if(!(dp = opendir("/proc")))
     fatal(errno, "opening /proc");
@@ -142,38 +146,39 @@ void proc_enumerate(void) {
     /* Only consider files that look like processes */
     if(strspn(de->d_name, "0123456789") == strlen(de->d_name)) {
       /* Make sure the array is big enough */
-      if(nprocs >= nslots) {
-        if((ssize_t)(nslots = nslots ? 2 * nslots : 64) <= 0)
+      if(pi->nprocs >= pi->nslots) {
+        if((ssize_t)(pi->nslots = pi->nslots ? 2 * pi->nslots : 64) <= 0)
           fatal(0, "too many processes");
-        procs = xrecalloc(procs, nslots, sizeof *procs);
+        pi->procs = xrecalloc(pi->procs, pi->nslots, sizeof *pi->procs);
       }
-      memset(&procs[nprocs], 0, sizeof *procs);
-      procs[nprocs++].pid = conv(de->d_name);
+      memset(&pi->procs[pi->nprocs], 0, sizeof *pi->procs);
+      pi->procs[pi->nprocs++].pid = conv(de->d_name);
     }
   }
   if(errno)
     fatal(errno, "reading /proc");
   closedir(dp);
   for(n = 0; n < HASH_SIZE; ++n)
-    lookup[n] = SIZE_MAX;
-  for(n = 0; n < nprocs; ++n) {
-    size_t h = procs[n].pid % HASH_SIZE;
-    if(lookup[h] != SIZE_MAX)
-      procs[n].link = lookup[h];
-    lookup[h] = n;
+    pi->lookup[n] = SIZE_MAX;
+  for(n = 0; n < pi->nprocs; ++n) {
+    size_t h = pi->procs[n].pid % HASH_SIZE;
+    if(pi->lookup[h] != SIZE_MAX)
+      pi->procs[n].link = pi->lookup[h];
+    pi->lookup[h] = n;
   }
-  for(n = 0; n < nprocs; ++n) {
-    procs[n].selected = select_test(procs[n].pid);
+  for(n = 0; n < pi->nprocs; ++n) {
+    pi->procs[n].selected = select_test(pi, pi->procs[n].pid);
   }
+  return pi;
 }
 
 // ----------------------------------------------------------------------------
 
-static struct process *proc_find(pid_t pid) {
-  size_t n = lookup[pid % HASH_SIZE];
-  while(n != SIZE_MAX && procs[n].pid != pid)
-    n = procs[n].link;
-  return n != SIZE_MAX ? &procs[n] : NULL;
+static struct process *proc_find(const struct procinfo *pi, pid_t pid) {
+  size_t n = pi->lookup[pid % HASH_SIZE];
+  while(n != SIZE_MAX && pi->procs[n].pid != pid)
+    n = pi->procs[n].link;
+  return n != SIZE_MAX ? &pi->procs[n] : NULL;
 }
 
 // ----------------------------------------------------------------------------
@@ -305,37 +310,37 @@ static void proc_cmdline(struct process *p) {
 
 // ----------------------------------------------------------------------------
 
-pid_t proc_get_session(pid_t pid) {
-  struct process *p = proc_find(pid);
+pid_t proc_get_session(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
 
   proc_stat(p);
   return p->prop_session;
 }
 
-uid_t proc_get_ruid(pid_t pid) {
-  struct process *p = proc_find(pid);
+uid_t proc_get_ruid(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
 
   proc_status(p);
   return p->prop_ruid;
 }
 
-uid_t proc_get_euid(pid_t pid) {
-  struct process *p = proc_find(pid);
+uid_t proc_get_euid(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
 
   if(!p->eid_set)
     proc_status(p);
   return p->prop_euid;
 }
 
-gid_t proc_get_rgid(pid_t pid) {
-  struct process *p = proc_find(pid);
+gid_t proc_get_rgid(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
 
   proc_status(p);
   return p->prop_rgid;
 }
 
-gid_t proc_get_egid(pid_t pid) {
-  struct process *p = proc_find(pid);
+gid_t proc_get_egid(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
 
   if(!p->eid_set)
     proc_status(p);
@@ -343,36 +348,36 @@ gid_t proc_get_egid(pid_t pid) {
   return p->prop_egid;
 }
 
-pid_t proc_get_ppid(pid_t pid) {
-  struct process *p = proc_find(pid);
+pid_t proc_get_ppid(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
 
   proc_stat(p);
   return p->prop_ppid;
 }
 
-pid_t proc_get_pgid(pid_t pid) {
-  struct process *p = proc_find(pid);
+pid_t proc_get_pgid(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
 
   proc_stat(p);
   return p->prop_tpgid;
 }
 
-int proc_get_tty(pid_t pid) {
-  struct process *p = proc_find(pid);
+int proc_get_tty(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
 
   proc_stat(p);
   return p->prop_tty_nr;
 }
 
-const char *proc_get_comm(pid_t pid) {
-  struct process *p = proc_find(pid);
+const char *proc_get_comm(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
 
   proc_stat(p);
   return p->prop_comm;
 }
 
-const char *proc_get_cmdline(pid_t pid) {
-  struct process *p = proc_find(pid);
+const char *proc_get_cmdline(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
 
   proc_cmdline(p);
   if(!*p->prop_cmdline) {
@@ -386,15 +391,15 @@ const char *proc_get_cmdline(pid_t pid) {
   return p->prop_cmdline;
 }
 
-intmax_t proc_get_scheduled_time(pid_t pid) {
-  struct process *p = proc_find(pid);
+intmax_t proc_get_scheduled_time(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
   
   proc_stat(p);
   return clock_to_seconds(p->prop_utime + p->prop_stime);
 }
 
-intmax_t proc_get_elapsed_time(pid_t pid) {
-  struct process *p = proc_find(pid);
+intmax_t proc_get_elapsed_time(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
   
   /* We have to return consistent values, otherwise the column size
    * computation becomes inconsistent */
@@ -406,83 +411,83 @@ intmax_t proc_get_elapsed_time(pid_t pid) {
   return p->elapsed;
 }
 
-time_t proc_get_start_time(pid_t pid) {
-  struct process *p = proc_find(pid);
+time_t proc_get_start_time(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
   proc_stat(p);
   return clock_to_time(p->prop_starttime);
 }
 
-uintmax_t proc_get_flags(pid_t pid) {
-  struct process *p = proc_find(pid);
+uintmax_t proc_get_flags(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
   proc_stat(p);
   return p->prop_flags;
 }
 
-intmax_t proc_get_nice(pid_t pid) {
-  struct process *p = proc_find(pid);
+intmax_t proc_get_nice(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
   proc_stat(p);
   return p->prop_nice;
 }
 
-intmax_t proc_get_priority(pid_t pid) {
-  struct process *p = proc_find(pid);
+intmax_t proc_get_priority(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
   proc_stat(p);
   return p->prop_priority;
 }
 
-int proc_get_state(pid_t pid) {
-  struct process *p = proc_find(pid);
+int proc_get_state(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
   proc_stat(p);
   return p->prop_state;
 }
 
-int proc_get_pcpu(pid_t pid) {
+int proc_get_pcpu(struct procinfo *pi, pid_t pid) {
   /* TODO PCPU is supposed to describe "recent" usage; we actually
    * return the process's %cpu usage over its entire history, which is
    * really stretching the definition.  The fix is to sample it twice
    * but we are not currently set up for that. */
-  long scheduled = proc_get_scheduled_time(pid);
-  long elapsed = proc_get_elapsed_time(pid);
+  long scheduled = proc_get_scheduled_time(pi, pid);
+  long elapsed = proc_get_elapsed_time(pi, pid);
   return elapsed ? scheduled * 100 / elapsed : 0;
 }
 
-uintmax_t proc_get_vsize(pid_t pid) {
-  struct process *p = proc_find(pid);
+uintmax_t proc_get_vsize(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
   proc_stat(p);
   return p->prop_vsize;
 }
 
-uintmax_t proc_get_rss(pid_t pid) {
-  struct process *p = proc_find(pid);
+uintmax_t proc_get_rss(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
   proc_stat(p);
   return p->prop_rss * sysconf(_SC_PAGESIZE);
 }
 
-uintmax_t proc_get_insn_pointer(pid_t pid) {
-  struct process *p = proc_find(pid);
+uintmax_t proc_get_insn_pointer(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
   proc_stat(p);
   return p->prop_kstkeip;
 }
 
-uintmax_t proc_get_wchan(pid_t pid) {
-  struct process *p = proc_find(pid);
+uintmax_t proc_get_wchan(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
   proc_stat(p);
   return p->prop_wchan;
 }
 
 // ----------------------------------------------------------------------------
 
-pid_t *proc_get_selected(size_t *npids) {
+pid_t *proc_get_selected(struct procinfo *pi, size_t *npids) {
   size_t n, count = 0;
   pid_t *pids;
-  for(n = 0; n < nprocs; ++n)
-    if(procs[n].selected && !procs[n].vanished)
+  for(n = 0; n < pi->nprocs; ++n)
+    if(pi->procs[n].selected && !pi->procs[n].vanished)
       ++count;
   pids = xrecalloc(NULL, count, sizeof *pids);
   count = 0;
-  for(n = 0; n < nprocs; ++n)
-    if(procs[n].selected && !procs[n].vanished)
-      pids[count++] = procs[n].pid;
+  for(n = 0; n < pi->nprocs; ++n)
+    if(pi->procs[n].selected && !pi->procs[n].vanished)
+      pids[count++] = pi->procs[n].pid;
   *npids = count;
   return pids; 
 }

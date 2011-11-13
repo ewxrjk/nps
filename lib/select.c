@@ -39,11 +39,11 @@ void select_add(select_function *sfn, union arg *args, size_t nargs) {
   ++nselectors;
 }
 
-int select_test(pid_t pid) {
+int select_test(struct procinfo *pi, pid_t pid) {
   size_t n;
   assert(nselectors > 0);
   for(n = 0; n < nselectors; ++n)
-    if(selectors[n].sfn(pid, selectors[n].args, selectors[n].nargs))
+    if(selectors[n].sfn(pi, pid, selectors[n].args, selectors[n].nargs))
       return 1;
   return 0;
 }

@@ -33,7 +33,7 @@
 
 // ----------------------------------------------------------------------------
 
-typedef void formatfn(struct buffer *b, pid_t pid);
+typedef void formatfn(struct buffer *b, struct procinfo *pi, pid_t pid);
 
 struct column {
   size_t id;
@@ -126,53 +126,54 @@ static void format_time(time_t when, struct buffer *b) {
 
 // ----------------------------------------------------------------------------
 
-static void property_ruser(struct buffer *b, pid_t pid) {
-  return format_user(proc_get_ruid(pid), b);
+static void property_ruser(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_user(proc_get_ruid(pi, pid), b);
 }
 
-static void property_euser(struct buffer *b, pid_t pid) {
-  return format_user(proc_get_euid(pid), b);
+static void property_euser(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_user(proc_get_euid(pi, pid), b);
 }
 
-static void property_rgroup(struct buffer *b, pid_t pid) {
-  return format_group(proc_get_rgid(pid), b);
+static void property_rgroup(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_group(proc_get_rgid(pi, pid), b);
 }
 
-static void property_egroup(struct buffer *b, pid_t pid) {
-  return format_group(proc_get_egid(pid), b);
+static void property_egroup(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_group(proc_get_egid(pi, pid), b);
 }
 
-static void property_ruid(struct buffer *b, pid_t pid) {
-  return format_integer(proc_get_ruid(pid), b);
+static void property_ruid(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_integer(proc_get_ruid(pi, pid), b);
 }
 
-static void property_euid(struct buffer *b, pid_t pid) {
-  return format_integer(proc_get_euid(pid), b);
+static void property_euid(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_integer(proc_get_euid(pi, pid), b);
 }
 
-static void property_rgid(struct buffer *b, pid_t pid) {
-  return format_integer(proc_get_rgid(pid), b);
+static void property_rgid(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_integer(proc_get_rgid(pi, pid), b);
 }
 
-static void property_egid(struct buffer *b, pid_t pid) {
-  return format_integer(proc_get_egid(pid), b);
+static void property_egid(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_integer(proc_get_egid(pi, pid), b);
 }
 
-static void property_pid(struct buffer *b, pid_t pid) {
+static void property_pid(struct buffer *b, 
+                         struct procinfo attribute((unused)) *pi, pid_t pid) {
   return format_integer(pid, b);
 }
 
-static void property_ppid(struct buffer *b, pid_t pid) {
-  return format_integer(proc_get_ppid(pid), b);
+static void property_ppid(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_integer(proc_get_ppid(pi, pid), b);
 }
 
-static void property_pgid(struct buffer *b, pid_t pid) {
-  return format_integer(proc_get_pgid(pid), b);
+static void property_pgid(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_integer(proc_get_pgid(pi, pid), b);
 }
 
-static void property_tty(struct buffer *b, pid_t pid) {
+static void property_tty(struct buffer *b, struct procinfo *pi, pid_t pid) {
   const char *path;
-  int tty = proc_get_tty(pid);
+  int tty = proc_get_tty(pi, pid);
   if(tty <= 0) {
     buffer_putc(b, '-');
     return;
@@ -193,27 +194,27 @@ static void property_tty(struct buffer *b, pid_t pid) {
   buffer_append(b, path);
 }
 
-static void property_time(struct buffer *b, pid_t pid) {
+static void property_time(struct buffer *b, struct procinfo *pi, pid_t pid) {
   /* time wants [dd-]hh:mm:ss */
-  return format_interval(proc_get_scheduled_time(pid), b, 1);
+  return format_interval(proc_get_scheduled_time(pi, pid), b, 1);
 }
 
-static void property_etime(struct buffer *b, pid_t pid) {
+static void property_etime(struct buffer *b, struct procinfo *pi, pid_t pid) {
   /* etime wants [[dd-]hh:]mm:ss */
-  return format_interval(proc_get_elapsed_time(pid), b, 0);
+  return format_interval(proc_get_elapsed_time(pi, pid), b, 0);
 }
 
-static void property_stime(struct buffer *b, pid_t pid) {
-  return format_time(proc_get_start_time(pid), b);
+static void property_stime(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_time(proc_get_start_time(pi, pid), b);
 }
 
-static void property_comm_args(struct buffer *b, pid_t pid, 
-                               const char *(*get)(pid_t)) {
+static void property_comm_args(struct buffer *b, struct procinfo *pi, pid_t pid, 
+                               const char *(*get)(struct procinfo *, pid_t)) {
   char *t;
-  const char *comm = get(pid);
+  const char *comm = get(pi, pid);
   /* "A process that has exited and has a parent, but has not yet been
    * waited for by the parent, shall be marked defunct." */
-  if(proc_get_state(pid) != 'Z')
+  if(proc_get_state(pi, pid) != 'Z')
     buffer_append(b, comm);
   else {
     if(asprintf(&t, "%s <defunct>", comm) < 0)
@@ -223,48 +224,48 @@ static void property_comm_args(struct buffer *b, pid_t pid,
   }
 }
 
-static void property_comm(struct buffer *b, pid_t pid) {
-  return property_comm_args(b, pid, proc_get_comm);
+static void property_comm(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return property_comm_args(b, pi, pid, proc_get_comm);
 }
 
-static void property_args(struct buffer *b, pid_t pid) {
-  return property_comm_args(b, pid, proc_get_cmdline);
+static void property_args(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return property_comm_args(b, pi, pid, proc_get_cmdline);
 }
 
-static void property_flags(struct buffer *b, pid_t pid) {
-  return format_octal(proc_get_flags(pid), b);
+static void property_flags(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  return format_octal(proc_get_flags(pi, pid), b);
 }
 
-static void property_nice(struct buffer *b, pid_t pid) {
-  format_integer(proc_get_nice(pid), b);
+static void property_nice(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  format_integer(proc_get_nice(pi, pid), b);
 }
 
-static void property_pri(struct buffer *b, pid_t pid) {
-  format_integer(proc_get_priority(pid), b);
+static void property_pri(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  format_integer(proc_get_priority(pi, pid), b);
 }
 
-static void property_state(struct buffer *b, pid_t pid) {
-  buffer_putc(b, proc_get_state(pid));
+static void property_state(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  buffer_putc(b, proc_get_state(pi, pid));
 }
 
-static void property_pcpu(struct buffer *b, pid_t pid) {
-  format_integer(proc_get_pcpu(pid), b);
+static void property_pcpu(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  format_integer(proc_get_pcpu(pi, pid), b);
 }
 
-static void property_vsize(struct buffer *b, pid_t pid) {
-  format_integer(proc_get_vsize(pid) / 1024, b);
+static void property_vsize(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  format_integer(proc_get_vsize(pi, pid) / 1024, b);
 }
 
-static void property_rss(struct buffer *b, pid_t pid) {
-  format_integer(proc_get_rss(pid) / 1024, b);
+static void property_rss(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  format_integer(proc_get_rss(pi, pid) / 1024, b);
 }
 
-static void property_addr(struct buffer *b, pid_t pid) {
-  format_hex(proc_get_insn_pointer(pid), b);
+static void property_addr(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  format_hex(proc_get_insn_pointer(pi, pid), b);
 }
 
-static void property_wchan(struct buffer *b, pid_t pid) {
-  unsigned long long wchan = proc_get_wchan(pid);
+static void property_wchan(struct buffer *b, struct procinfo *pi, pid_t pid) {
+  unsigned long long wchan = proc_get_wchan(pi, pid);
   if(wchan && wchan + 1)
     format_hex(wchan, b);
   else
@@ -358,7 +359,7 @@ void format_clear(void) {
   columns = NULL;
 }
 
-void format_columns(const pid_t *pids, size_t npids) {
+void format_columns(struct procinfo *pi, const pid_t *pids, size_t npids) {
   size_t n = 0, c;
   /* "The field widths shall be selected by the system to be at least
    * as wide as the header text (default or overridden value). If the
@@ -377,24 +378,25 @@ void format_columns(const pid_t *pids, size_t npids) {
       b->base = 0;
       b->pos = 0;
       b->size = 0;
-      properties[columns[c].id].property(b, pids[n]);
+      properties[columns[c].id].property(b, pi, pids[n]);
       if(b->pos > columns[c].width)
         columns[c].width = b->pos;
     }
   }
 }
 
-void format_heading(char *buffer, size_t bufsize) {
+void format_heading(struct procinfo *pi, char *buffer, size_t bufsize) {
   size_t c;
   for(c = 0; c < ncolumns && !*columns[c].heading; ++c)
     ;
   if(c < ncolumns)
-    format_process(-1, buffer, bufsize);
+    format_process(pi, -1, buffer, bufsize);
   else
     *buffer = 0;
 }
 
-void format_process(pid_t pid, char *buffer, size_t bufsize) {
+void format_process(struct procinfo *pi, pid_t pid,
+                    char *buffer, size_t bufsize) {
   size_t w, left, id, c, start;
   struct buffer b[1];
   b->base = buffer;
@@ -406,7 +408,7 @@ void format_process(pid_t pid, char *buffer, size_t bufsize) {
     if(pid == -1)
       buffer_append(b, columns[c].heading);
     else
-      properties[id].property(b, pid);
+      properties[id].property(b, pi, pid);
     /* Figure out how much we wrote */
     w = b->pos - start;
     /* For non-final columns, pad to the column width and one more for

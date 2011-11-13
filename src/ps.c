@@ -54,6 +54,7 @@ int main(int argc, char **argv) {
   char buffer[1024];
   struct winsize ws;
   const char *s;
+  struct procinfo *pi;
 
   /* Parse command line */
   while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:p:t:u:U:", 
@@ -164,11 +165,11 @@ int main(int argc, char **argv) {
   /* Set the default selection */
   select_default(select_uid_tty, NULL, 0);
   /* Get the list of processes */
-  proc_enumerate();
-  pids = proc_get_selected(&npids);
+  pi = proc_enumerate();
+  pids = proc_get_selected(pi, &npids);
   /* Set up output formatting */
-  format_columns(pids, npids);
-  format_heading(buffer, sizeof buffer);
+  format_columns(pi, pids, npids);
+  format_heading(pi, buffer, sizeof buffer);
   /* Figure out the display width */
   if((s = getenv("COLUMNS")) && (n = atoi(s)))
     width = n;
@@ -182,11 +183,12 @@ int main(int argc, char **argv) {
   if(*buffer && printf("%.*s\n", width, buffer) < 0) 
     fatal(errno, "writing to stdout");
   for(i = 0; i < npids; ++i) {
-    format_process(pids[i], buffer, sizeof buffer);
+    format_process(pi, pids[i], buffer, sizeof buffer);
     if(printf("%.*s\n", width, buffer) < 0) 
       fatal(errno, "writing to stdout");
   }
   if(fclose(stdout) < 0)
     fatal(errno, "writing to stdout");
+  proc_free(pi);
   exit(0);
 }
