@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <errno.h>
+#include <assert.h>
 
 // ----------------------------------------------------------------------------
 
@@ -249,7 +250,7 @@ static void property_state(struct buffer *b, struct procinfo *pi, pid_t pid) {
 }
 
 static void property_pcpu(struct buffer *b, struct procinfo *pi, pid_t pid) {
-  format_integer(proc_get_pcpu(pi, pid), b);
+  format_integer(100 * proc_get_pcpu(pi, pid), b);
 }
 
 static void property_vsize(struct buffer *b, struct procinfo *pi, pid_t pid) {

@@ -15,11 +15,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-bin_PROGRAMS=nps
+bin_PROGRAMS=nps nps-top
 man_MANS=nps.1
 
 nps_SOURCES=ps.c
 nps_LDADD=../lib/libps.a
+
+nps_top_SOURCES=top.c
+nps_top_LDADD=../lib/libps.a $(CURSES)
+
 AM_CPPFLAGS=-I${top_srcdir}/lib
 
 EXTRA_DIST=${man_MANS}

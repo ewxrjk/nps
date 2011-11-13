@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
   /* Set the default selection */
   select_default(select_uid_tty, NULL, 0);
   /* Get the list of processes */
-  pi = proc_enumerate();
+  pi = proc_enumerate(NULL);
   pids = proc_get_selected(pi, &npids);
   /* Set up output formatting */
   format_columns(pi, pids, npids);

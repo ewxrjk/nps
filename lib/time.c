@@ -37,9 +37,9 @@ time_t clock_to_time(unsigned long long ticks) {
     fclose(fp);
     boot_time = time(NULL) - ssb;
   }
-  return boot_time +  clock_to_seconds(ticks);
+  return boot_time + clock_to_seconds(ticks);
 }
 
-long clock_to_seconds(unsigned long long ticks) {
-  return ticks / sysconf(_SC_CLK_TCK);
+double clock_to_seconds(unsigned long long ticks) {
+  return (double)ticks / sysconf(_SC_CLK_TCK);
 }

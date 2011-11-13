@@ -24,9 +24,13 @@
 #include <string.h>
 #include <stdarg.h>
 
+int (*onfatal)(void);
+
 void fatal(int errno_value, const char *fmt, ...) {
   va_list ap;
 
+  if(onfatal)
+    onfatal();
   va_start(ap, fmt);
   fprintf(stderr, "ERROR: ");
   vfprintf(stderr, fmt, ap);

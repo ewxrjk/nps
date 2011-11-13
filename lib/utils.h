@@ -36,7 +36,7 @@ time_t clock_to_time(unsigned long long ticks);
  * @param ticks Ticks since boot
  * @return Equivalent number of seconds
  */
-long clock_to_seconds(unsigned long long ticks);
+double clock_to_seconds(unsigned long long ticks);
 
 // ----------------------------------------------------------------------------
 
@@ -97,6 +97,9 @@ char *xstrdup(const char *s);
 void fatal(int errno_value, const char *fmt, ...)
   attribute((noreturn))
   attribute((format (printf, 2, 3)));
+
+/** @brief Function to call before issuing error message */
+extern int (*onfatal)(void);
 
 // ----------------------------------------------------------------------------
 

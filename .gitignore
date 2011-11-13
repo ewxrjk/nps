@@ -15,5 +15,6 @@ config.log
 config.status
 configure
 src/nps
+src/nps-top
 stamp-h1
 *.tar.gz

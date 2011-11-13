@@ -31,6 +31,7 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 /* Know /proc/$PID/stat fields (after the first three); S for signed
  * and U for unsigned. */
@@ -90,12 +91,15 @@ struct process {
   unsigned vanished:1;          /* nonzero if process vanished */
   unsigned elapsed_set:1;       /* nonzero if elapsed has been set */
   unsigned eid_set:1;           /* nonzero if e[ug]id have been set */
+  unsigned bases_set:1;         /* nonzero if delta bases have been set */
   char *prop_comm;
   char *prop_cmdline;
   int prop_state;
   intmax_t elapsed;
   uid_t prop_euid, prop_ruid;
   gid_t prop_egid, prop_rgid;
+  intmax_t base_utime, base_stime;
+  struct timeval base_time, stat_time;
   STAT_PROPS(SMEMBER,UMEMBER)
 };
 
@@ -111,6 +115,8 @@ struct procinfo {
   size_t lookup[HASH_SIZE];
 };
 
+static struct process *proc_find(const struct procinfo *pi, pid_t pid);
+
 // ----------------------------------------------------------------------------
 
 static uintmax_t conv(const char *s) {
@@ -120,20 +126,23 @@ static uintmax_t conv(const char *s) {
 // ----------------------------------------------------------------------------
 
 void proc_free(struct procinfo *pi) {
-  size_t n;
-  for(n = 0; n < pi->nprocs; ++n) {
-    free(pi->procs[n].prop_comm);
-    free(pi->procs[n].prop_cmdline);
+  if(pi) {
+    size_t n;
+    for(n = 0; n < pi->nprocs; ++n) {
+      free(pi->procs[n].prop_comm);
+      free(pi->procs[n].prop_cmdline);
+    }
+    free(pi->procs);
+    free(pi);
   }
-  free(pi->procs);
-  free(pi);
 }
 
-struct procinfo *proc_enumerate(void) {
+struct procinfo *proc_enumerate(struct procinfo *last) {
   DIR *dp;
   struct dirent *de;
   size_t n;
   struct procinfo *pi;
+  struct process *p, *lastp;
 
   pi = xmalloc(sizeof *pi);
   memset(pi, 0, sizeof *pi);
@@ -151,8 +160,17 @@ struct procinfo *proc_enumerate(void) {
           fatal(0, "too many processes");
         pi->procs = xrecalloc(pi->procs, pi->nslots, sizeof *pi->procs);
       }
-      memset(&pi->procs[pi->nprocs], 0, sizeof *pi->procs);
-      pi->procs[pi->nprocs++].pid = conv(de->d_name);
+      p = &pi->procs[pi->nprocs++];
+      memset(p, 0, sizeof *p);
+      p->pid = conv(de->d_name);
+      /* Retrieve bases for delta values */
+      if(last && (lastp = proc_find(last, p->pid)) && lastp->stat) {
+        p->base_utime = lastp->prop_utime;
+        p->base_stime = lastp->prop_stime;
+        p->base_time = lastp->stat_time;
+        p->bases_set = 1;
+      }
+      p->link = SIZE_MAX;
     }
   }
   if(errno)
@@ -240,6 +258,8 @@ static void proc_stat(struct process *p) {
     }
   }
   fclose(fp);
+  if(gettimeofday(&p->stat_time, NULL) < 0)
+    fatal(errno, "gettimeofday");
 }
 
 static void proc_status(struct process *p) {
@@ -380,7 +400,7 @@ const char *proc_get_cmdline(struct procinfo *pi, pid_t pid) {
   struct process *p = proc_find(pi, pid);
 
   proc_cmdline(p);
-  if(!*p->prop_cmdline) {
+  if(!p->prop_cmdline || !*p->prop_cmdline) {
     /* "Failing this, the command name, as it would appear without the
      * option -f, is written in square brackets. */
     free(p->prop_cmdline);
@@ -441,14 +461,30 @@ int proc_get_state(struct procinfo *pi, pid_t pid) {
   return p->prop_state;
 }
 
-int proc_get_pcpu(struct procinfo *pi, pid_t pid) {
-  /* TODO PCPU is supposed to describe "recent" usage; we actually
-   * return the process's %cpu usage over its entire history, which is
-   * really stretching the definition.  The fix is to sample it twice
-   * but we are not currently set up for that. */
-  long scheduled = proc_get_scheduled_time(pi, pid);
-  long elapsed = proc_get_elapsed_time(pi, pid);
-  return elapsed ? scheduled * 100 / elapsed : 0;
+double proc_get_pcpu(struct procinfo *pi, pid_t pid) {
+  intmax_t ticks;
+  double seconds;
+
+  struct process *p = proc_find(pi, pid);
+  if(p->bases_set) {
+    /* PCPU is supposed to describe "recent" CPU usage.  If we have a
+     * prior samples that's not a problem. */
+    proc_stat(p);
+    ticks = (p->prop_utime + p->prop_stime)
+          - (p->base_utime + p->base_stime);
+    seconds = (p->stat_time.tv_sec - p->base_time.tv_sec)
+                + (p->stat_time.tv_usec - p->base_time.tv_usec) / 1000000.0;
+    if(seconds > 0)
+      return clock_to_seconds(ticks) / seconds;
+    else
+      return 0;
+  } else {
+    /* In the absence of a prior sample we use lifetime CPU usage
+     * instead. */
+    long scheduled = proc_get_scheduled_time(pi, pid);
+    long elapsed = proc_get_elapsed_time(pi, pid);
+    return elapsed ? (double)scheduled / elapsed : 0;
+  }
 }
 
 uintmax_t proc_get_vsize(struct procinfo *pi, pid_t pid) {

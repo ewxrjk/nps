@@ -31,12 +31,12 @@
 struct procinfo;
 
 /** @brief (Re-)enumerate all processes
+ * @param last Previous process list or NULL
  * @return Pointer to process information structure
  *
- * Retrieves a list of processes.  If it has already been called, all
- * existing data is discarded.
+ * Retrieves a list of processes.
  */
-struct procinfo *proc_enumerate(void);
+struct procinfo *proc_enumerate(struct procinfo *last);
 
 /** @brief Free process information
  * @param pi Pointer to process information
@@ -171,7 +171,7 @@ int proc_get_state(struct procinfo *pi, pid_t pid);
  * @param pid Process ID
  * @return CPU utilization
  */
-int proc_get_pcpu(struct procinfo *pi, pid_t pid);
+double proc_get_pcpu(struct procinfo *pi, pid_t pid);
 
 /** @brief Retrieve virtual memory size of a process
  * @param pi Pointer to process information

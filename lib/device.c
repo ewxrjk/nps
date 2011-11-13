@@ -60,6 +60,13 @@ static int device_compare(const void *av, const void *bv) {
     return 0;
 }
 
+static void device_clear(void) {
+  size_t n = 0;
+  for(n = 0; n < ndevices; ++n)
+    free(devices[n].path);
+  ndevices = 0;
+}
+
 static void device_map(const char *dir) {
   char *path;
   struct dirent *de;
@@ -91,24 +98,26 @@ static void device_map(const char *dir) {
 
 char *device_path(int type, dev_t device) {
   ssize_t l, r, m;
-  if(!ndevices) {
+  int i;
+  for(i = 0; i < 2; ++i) {
+    l = 0;
+    r = ndevices - 1;
+    while(l <= r) {
+      m = l + (r - l) / 2;
+      if(type  < devices[m].type)
+        r = m - 1;
+      else if(type > devices[m].type)
+        l = m + 1;
+      else if(device < devices[m].device)
+        r = m - 1;
+      else if(device > devices[m].device)
+        l = m + 1;
+      else
+        return devices[m].path;
+    }
+    device_clear();
     device_map("/dev");
     qsort(devices, ndevices, sizeof *devices, device_compare);
-  }
-  l = 0;
-  r = ndevices - 1;
-  while(l <= r) {
-    m = l + (r - l) / 2;
-    if(type  < devices[m].type)
-      r = m - 1;
-    else if(type > devices[m].type)
-      l = m + 1;
-    else if(device < devices[m].device)
-      r = m - 1;
-    else if(device > devices[m].device)
-      l = m + 1;
-    else
-      return devices[m].path;
   }
   return NULL;
 }
