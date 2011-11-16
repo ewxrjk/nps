@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
   /* Set the system info to display */
   sysinfo_format("time,uptime,processes,load,memfree");
   /* Set the default ordering */
-  format_ordering("+pcpu,+rss,+vsz");
+  format_ordering("+pcpu,+io,+rss,+vsz");
   /* Parse command line */
   while((n = getopt_long(argc, argv, "+o:s:i", 
                          options, NULL)) >= 0) {
@@ -130,8 +130,11 @@ int main(int argc, char **argv) {
     select_default(select_nonidle, NULL, 0);
   /* Set the default format */
   if(!set_format) {
-    format_add("user,pid,rss,vsz,pcpu,tty=TTY");
-    format_add("time,args=CMD");
+    format_add("user,pid,nice,rss,pcpu=%C");
+    if(!getuid())
+      format_add("read,write");
+    format_add("tty=TTY");
+    format_add("args=CMD");
   }
   /* Initialize curses */
   if(!initscr())

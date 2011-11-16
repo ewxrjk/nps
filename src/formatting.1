@@ -15,6 +15,9 @@ You will need a copy of the kernel sources to be able to interpret this.
 Effective group ID (decimal).
 .IP \fBgroup
 Effective group ID as a string.
+.IP \fBio
+Recent IO rate, in kilobytes per second.
+This is the sum of \fBread\fR and \fBwrite\fR.
 .IP \fBnice
 Nice value.
 Higher values mean lower priority ("nicer").
@@ -29,6 +32,8 @@ Process ID.
 Parent process ID.
 .IP \fBpri
 Priority.
+.IP \fBread
+Recent read rate, in kilobytes per second.
 .IP \fBrgid
 Real group ID (decimal).
 .IP \fBrgroup
@@ -75,6 +80,8 @@ Note that it may be misleadingly large as a measure of memory
 consumption due to \fBPROT_NONE\fR mappings.
 .IP \fBwchan
 Wait channel.
+.IP \fBwrite
+Recent write rate, in kilobytes per second.
 .PP
 To give a property a different heading, use the syntax
 \fIPROPERTY\fB=\fIHEADING\fR.

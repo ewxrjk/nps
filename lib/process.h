@@ -216,6 +216,51 @@ uintmax_t proc_get_insn_pointer(struct procinfo *pi, pid_t pid);
  */
 uintmax_t proc_get_wchan(struct procinfo *pi, pid_t pid);
 
+/** @brief Retrieve rate at which bytes have been read recently
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @return Read rate
+ *
+ * This is measured at the read() call, and so includes e.g. tty IO.
+ */
+double proc_get_rchar(struct procinfo *pi, pid_t pid);
+
+/** @brief Retrieve rate at which bytes have been written recently
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @return Write rate
+ *
+ * This is measured at the write() call, and so includes e.g. tty IO.
+ */
+double proc_get_wchar(struct procinfo *pi, pid_t pid);
+
+/** @brief Retrieve rate at which bytes have been read recently
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @return Read rate
+ *
+ * This is measured at the block IO level.
+ */
+double proc_get_read_bytes(struct procinfo *pi, pid_t pid);
+
+/** @brief Retrieve rate at which bytes have been written recently
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @return Write rate
+ *
+ * This is measured at the block IO level.
+ */
+double proc_get_write_bytes(struct procinfo *pi, pid_t pid);
+
+/** @brief Retrieve rate at which bytes have been read and written recently
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @return Combined read + write rate
+ *
+ * This is measured at the block IO level.
+ */
+double proc_get_rw_bytes(struct procinfo *pi, pid_t pid);
+
 /** @brief Retrieve the list of selected processes
  * @param pi Pointer to process information
  * @param npids Where to store number of processes

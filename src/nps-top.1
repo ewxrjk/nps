@@ -49,6 +49,9 @@ You will need a copy of the kernel sources to be able to interpret this.
 Effective group ID (decimal).
 .IP \fBgroup
 Effective group ID as a string.
+.IP \fBio
+Recent IO rate, in kilobytes per second.
+Note that the Linux kernel limits who can see this.
 .IP \fBnice
 Nice value.
 Higher values mean lower priority ("nicer").
@@ -63,6 +66,9 @@ Process ID.
 Parent process ID.
 .IP \fBpri
 Priority.
+.IP \fBread
+Recent read rate, in kilobytes per second.
+Note that the Linux kernel limits who can see this.
 .IP \fBrgid
 Real group ID (decimal).
 .IP \fBrgroup
@@ -109,6 +115,9 @@ Note that it may be misleadingly large as a measure of memory
 consumption due to \fBPROT_NONE\fR mappings.
 .IP \fBwchan
 Wait channel.
+.IP \fBwrite
+Recent write rate, in kilobytes per second.
+Note that the Linux kernel limits who can see this.
 .PP
 To give a property a different heading, use the syntax
 \fIPROPERTY\fB=\fIHEADING\fR.
@@ -130,8 +139,11 @@ If no formatting options at all are specified then the default is
 equivalent to:
 .PP
 .RS
-\fB-o user,pid,rss,vsz,pcpu,tty=TTY -o time,args=CMD
+\fB-o user,pid,nice,rss,pcpu=%C -o read,write,tty=TTY -o time,args=CMD
 .RE
+.PP
+\fBread\fR and \fBwrite\fR are ommitted from the default unless the
+user is \fBroot\fR.
 .SH SORTING
 The \fB-s\fR option specifies the properties which control the order
 in which processes are displayed, separate by spaces or commas.
@@ -147,7 +159,7 @@ order (the default) and \fB-\fR to specify ascending order.
 If no ordering option is specified then the default is equivalent to:
 .PP
 .RS
-\fB -s +pcpu,+rss,+vsz
+\fB -s +pcpu,+io,+rss,+vsz
 .RE
 .SH "SYSTEM INFORMATION"
 The \fB-I\fR option specifies which whole-system properties should be
@@ -172,8 +184,9 @@ The amount of time since the system booted.
 .SH BUGS
 On the first iteration, \fBpcpu\fR is computed over the process's
 entire lifetime.
-(On subsequent iterations it reflects the usage since the previous
-iteration.)
+Similarly, \fBread\fR and \fBwrite\fR are 0.
+On subsequent iterations they reflect the usage since the previous
+iteration.
 .PP
 The meaning of \fBflags\fR is not very clear.
 .SH AUTHOR

@@ -273,6 +273,11 @@ static void property_wchan(const struct propinfo *prop, struct buffer *b, struct
     buffer_putc(b, '-');
 }
 
+static void property_iorate(const struct propinfo *prop, struct buffer *b,
+                            struct procinfo *pi, pid_t pid) {
+  format_decimal(prop->fetch.fetch_double(pi, pid) / 1024, b);
+}
+
 // ----------------------------------------------------------------------------
 
 static int compare_int(const struct propinfo *prop, struct procinfo *pi,
@@ -389,6 +394,10 @@ static const struct propinfo properties[] = {
     property_group, compare_group, { .fetch_gid = proc_get_egid }
   },
   {
+    "io", "IO", "Recent read+write rate (1024 bytes/s)",
+    property_iorate, compare_double, { .fetch_double = proc_get_rw_bytes }
+  },
+  {
     "nice", "NI", "Nice value",
     property_decimal, compare_intmax, { .fetch_intmax = proc_get_nice }
   },
@@ -411,6 +420,10 @@ static const struct propinfo properties[] = {
   {
     "pri", "PRI", "Priority",
     property_decimal, compare_intmax, { .fetch_intmax = proc_get_priority }
+  },
+  {
+    "read", "RD", "Recent read rate (1024 bytes/s)",
+    property_iorate, compare_double, { .fetch_double = proc_get_read_bytes }
   },
   {
     "rgid", "RGID", "Real group ID (decimal)",
@@ -463,6 +476,10 @@ static const struct propinfo properties[] = {
   {
     "wchan", "WCHAN", "Wait channel (hex)",
     property_wchan, compare_uintmax, { .fetch_uintmax = proc_get_wchan }
+  },
+  {
+    "write", "WR", "Recent write rate (1024 bytes/s)",
+    property_iorate, compare_double, { .fetch_double = proc_get_write_bytes }
   },
 };
 #define NPROPERTIES (sizeof properties / sizeof *properties)

@@ -77,9 +77,20 @@
   U(guest_time)                                 \
   S(cguest_time)
 
+#define IO_PROPS(U,S) U(rchar) \
+  U(wchar)                     \
+  U(syscr)                     \
+  U(syscw)                     \
+  U(read_bytes)                \
+  U(write_bytes)               \
+  U(cancelled_write_bytes)
+
 #define SMEMBER(X) intmax_t prop_##X;
+#define BASE_SMEMBER(X) uintmax_t base_##X;
 #define UMEMBER(X) uintmax_t prop_##X;
+#define BASE_UMEMBER(X) uintmax_t base_##X;
 #define OFFSET(X) offsetof(struct process, prop_##X),
+#define UPDATE_BASE(X) p->base_##X = lastp->prop_##X;
 
 struct process {
   pid_t pid;                    /* process ID */
@@ -87,11 +98,11 @@ struct process {
   unsigned selected:1;          /* nonzero if selected */
   unsigned stat:1;              /* nonzero if proc_stat() called */
   unsigned status:1;            /* nonzero if proc_status() called */
+  unsigned io:1;                /* nonzero if proc_io() called */
   unsigned sorted:1;            /* nonzero if properties sorted */
   unsigned vanished:1;          /* nonzero if process vanished */
   unsigned elapsed_set:1;       /* nonzero if elapsed has been set */
   unsigned eid_set:1;           /* nonzero if e[ug]id have been set */
-  unsigned bases_set:1;         /* nonzero if delta bases have been set */
   char *prop_comm;
   char *prop_cmdline;
   int prop_state;
@@ -99,13 +110,22 @@ struct process {
   uid_t prop_euid, prop_ruid;
   gid_t prop_egid, prop_rgid;
   intmax_t base_utime, base_stime;
-  struct timeval base_time, stat_time;
+  struct timeval base_stat_time, stat_time;
+  struct timeval base_io_time, io_time;
   STAT_PROPS(SMEMBER,UMEMBER)
+  IO_PROPS(SMEMBER,UMEMBER)
+  IO_PROPS(BASE_SMEMBER,BASE_UMEMBER)
 };
 
 static const size_t propinfo_stat[] = {
   STAT_PROPS(OFFSET,OFFSET)
 };
+#define NSTATS (sizeof propinfo_stat / sizeof *propinfo_stat)
+
+static const size_t propinfo_io[] = {
+  IO_PROPS(OFFSET,OFFSET)
+};
+#define NIOS (sizeof propinfo_io / sizeof *propinfo_io)
 
 #define HASH_SIZE 256           /* hash table size */
 
@@ -167,8 +187,9 @@ struct procinfo *proc_enumerate(struct procinfo *last) {
       if(last && (lastp = proc_find(last, p->pid)) && lastp->stat) {
         p->base_utime = lastp->prop_utime;
         p->base_stime = lastp->prop_stime;
-        p->base_time = lastp->stat_time;
-        p->bases_set = 1;
+        p->base_stat_time = lastp->stat_time;
+        IO_PROPS(UPDATE_BASE, UPDATE_BASE);
+        p->base_io_time = lastp->io_time;
       }
       p->link = SIZE_MAX;
     }
@@ -253,8 +274,10 @@ static void proc_stat(struct process *p) {
         p->prop_state = buffer[0];
         break;
       default:
-        ptr = (uintmax_t *)((char *)p + propinfo_stat[field - 3]);
-        *ptr = strtoumax(buffer, NULL, 10);
+        if((field - 3) < NSTATS) {
+          ptr = (uintmax_t *)((char *)p + propinfo_stat[field - 3]);
+          *ptr = strtoumax(buffer, NULL, 10);
+        }
         break;
       }
       i = 0;
@@ -330,6 +353,38 @@ static void proc_cmdline(struct process *p) {
   fclose(fp);
   buffer[i] = 0;
   p->prop_cmdline = xstrdup(buffer);
+}
+
+static void proc_io(struct process *p) {
+  FILE *fp;
+  char buffer[1024], *colon;
+  size_t field;
+  uintmax_t *ptr;
+
+  if(p->io || p->vanished)
+    return;
+  p->io = 1;
+  snprintf(buffer, sizeof buffer, "/proc/%ld/io", (long)p->pid);
+  if(!(fp = fopen(buffer, "r"))) {
+    if(errno != EACCES)
+      p->vanished = 1;
+    return;
+  }
+  field = 0;
+  while(fgets(buffer, sizeof buffer, fp)) {
+    colon = strchr(buffer, ':');
+    if(colon) {
+      ++colon;
+      if(field < NIOS) {
+        ptr = (uintmax_t *)((char *)p + propinfo_io[field]);
+        *ptr = strtoumax(colon + 1, NULL, 10);
+      }
+      ++field;
+    }
+  }
+  fclose(fp);
+  if(gettimeofday(&p->io_time, NULL) < 0)
+    fatal(errno, "gettimeofday");
 }
 
 // ----------------------------------------------------------------------------
@@ -474,14 +529,14 @@ double proc_get_pcpu(struct procinfo *pi, pid_t pid) {
   double seconds;
 
   struct process *p = proc_find(pi, pid);
-  if(p->bases_set) {
+  proc_stat(p);
+  if(p->base_stat_time.tv_sec) {
     /* PCPU is supposed to describe "recent" CPU usage.  If we have a
      * prior samples that's not a problem. */
-    proc_stat(p);
     ticks = (p->prop_utime + p->prop_stime)
           - (p->base_utime + p->base_stime);
-    seconds = (p->stat_time.tv_sec - p->base_time.tv_sec)
-                + (p->stat_time.tv_usec - p->base_time.tv_usec) / 1000000.0;
+    seconds = (p->stat_time.tv_sec - p->base_stat_time.tv_sec)
+                + (p->stat_time.tv_usec - p->base_stat_time.tv_usec) / 1000000.0;
     if(seconds > 0)
       return clock_to_seconds(ticks) / seconds;
     else
@@ -517,6 +572,54 @@ uintmax_t proc_get_wchan(struct procinfo *pi, pid_t pid) {
   struct process *p = proc_find(pi, pid);
   proc_stat(p);
   return p->prop_wchan;
+}
+
+static double proc_get_io_rate(struct procinfo *pi, pid_t pid,
+                               size_t base, size_t latest) {
+  struct process *p = proc_find(pi, pid);
+  uintmax_t bytes;
+  double seconds;
+  proc_io(p);
+  if(p->base_io_time.tv_sec) {
+    uintmax_t latest_value = *(uintmax_t *)((char *)p + latest);
+    uintmax_t base_value = *(uintmax_t *)((char *)p + base);
+    bytes = latest_value - base_value;
+    seconds = (p->io_time.tv_sec - p->base_io_time.tv_sec)
+      + (p->io_time.tv_usec - p->base_io_time.tv_usec) / 1000000.0;
+    if(seconds > 0)
+      return bytes / seconds;
+    else
+      return 0;
+  } else
+    return 0;
+}
+
+double proc_get_rchar(struct procinfo *pi, pid_t pid) {
+  return proc_get_io_rate(pi, pid,
+                          offsetof(struct process, base_rchar),
+                          offsetof(struct process, prop_rchar));
+}
+
+double proc_get_wchar(struct procinfo *pi, pid_t pid) {
+  return proc_get_io_rate(pi, pid,
+                          offsetof(struct process, base_wchar),
+                          offsetof(struct process, prop_wchar));
+}
+
+double proc_get_read_bytes(struct procinfo *pi, pid_t pid) {
+  return proc_get_io_rate(pi, pid,
+                          offsetof(struct process, base_read_bytes),
+                          offsetof(struct process, prop_read_bytes));
+}
+
+double proc_get_write_bytes(struct procinfo *pi, pid_t pid) {
+  return proc_get_io_rate(pi, pid,
+                          offsetof(struct process, base_write_bytes),
+                          offsetof(struct process, prop_write_bytes));
+}
+
+double proc_get_rw_bytes(struct procinfo *pi, pid_t pid) {
+  return proc_get_read_bytes(pi, pid) + proc_get_write_bytes(pi, pid);
 }
 
 // ----------------------------------------------------------------------------
