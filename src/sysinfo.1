@@ -1,3 +1,24 @@
+.IP \fBcpu
+CPU usage information.
+The four fields are:
+.RS
+.TP
+.B user
+The percentage of time spent running all user code.
+This includes \fBnice\fR and \fBguest\fR.
+.TP
+.B nice
+The percentage of time spent running niced code.
+.TP
+.B guest
+The percentage of time spent running guest operating systems in a virtual machine.
+.TP
+.B sys
+The percentage of time spent in the kernel.
+.TP
+.B io
+The percentage of time spent blocked on I/O.
+.RE
 .IP \fBidletime
 The cumulative time the system has spent idle.
 .IP \fBload

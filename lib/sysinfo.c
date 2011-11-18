@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <math.h>
+#include <sys/time.h>
 
 static int got_uptime;
 static double up, idle;
@@ -91,14 +92,14 @@ static int got_meminfo;
     X(DirectMap4k, DirectMap4k)                 \
     X(DirectMap2M, DirectMap2M)
 
-#define FIELD(N,F) uintmax_t F;
-#define OFFSET(N,F) offsetof(struct meminfo, F),
-#define NAME(N,F) #N,
-struct meminfo { MEMINFO(FIELD) };
+#define MEMINFO_FIELD(N,F) uintmax_t F;
+#define MEMINFO_OFFSET(N,F) offsetof(struct meminfo, F),
+#define MEMINFO_NAME(N,F) #N,
+struct meminfo { MEMINFO(MEMINFO_FIELD) };
 static struct meminfo meminfo;
 
-static const char *meminfo_names[] = { MEMINFO(NAME) };
-static const size_t meminfo_offsets[] = { MEMINFO(OFFSET) };
+static const char *meminfo_names[] = { MEMINFO(MEMINFO_NAME) };
+static const size_t meminfo_offsets[] = { MEMINFO(MEMINFO_OFFSET) };
 #define NMEMINFOS (sizeof meminfo_names / sizeof *meminfo_names)
 
 static void get_meminfo(void) {
@@ -122,6 +123,57 @@ static void get_meminfo(void) {
     fclose(fp);
     
     got_meminfo = 1;
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+#define CPUINFO(X,XLAST) \
+  X(user) \
+  X(nice) \
+  X(system) \
+  X(idle) \
+  X(iowait) \
+  X(irq) \
+  X(softirq) \
+  X(steal) \
+  X(guest) \
+  XLAST(guest_nice)
+#define CPUINFO_FIELD(F) uintmax_t F;
+#define CPUINFO_FIELD_LAST(F) uintmax_t F
+#define CPUINFO_FORMAT(F) "%ju "
+#define CPUINFO_FORMAT_LAST(F) "%ju"
+#define CPUINFO_ARG(F) &cpuinfo.F,
+#define CPUINFO_ARG_LAST(F) &cpuinfo.F
+
+static int got_stat;
+static struct cpuinfo {
+  CPUINFO(CPUINFO_FIELD,CPUINFO_FIELD_LAST);
+  uintmax_t user_total;
+  uintmax_t guest_total;
+} cpuinfo, cpuinfo_last;
+
+static void get_stat(void) {
+  if(!got_stat) {
+    FILE *fp;
+    char input[256], *ptr;
+    memset(&cpuinfo, 0, sizeof cpuinfo);
+    if(!(fp = fopen("/proc/stat", "r")))
+      fatal(errno, "opening /proc/stat");
+    while(fgets(input, sizeof input, fp)) {
+      if((ptr = strchr(input, ' '))) {
+        *ptr++ = 0;
+        if(!strcmp(input, "cpu")) {
+          sscanf(ptr,
+                 CPUINFO(CPUINFO_FORMAT, CPUINFO_FORMAT_LAST),
+                 CPUINFO(CPUINFO_ARG, CPUINFO_ARG_LAST));
+          cpuinfo.user_total = cpuinfo.user + cpuinfo.nice;
+          cpuinfo.guest_total = cpuinfo.guest + cpuinfo.guest_nice;
+        }
+      }
+    }
+    fclose(fp);
+    got_stat = 1;
   }
 }
 
@@ -218,12 +270,43 @@ static void sysprop_swap(struct procinfo attribute((unused)) *pi,
 }
 
 static void sysprop_swapM(struct procinfo attribute((unused)) *pi,
-                         char *buffer, size_t bufsize) {
+                          char *buffer, size_t bufsize) {
   get_meminfo();
   snprintf(buffer, bufsize, "Swap: %8juM tot %8juM used %8juM free",
            meminfo.SwapTotal / 1024,
            (meminfo.SwapTotal - meminfo.SwapFree) / 1024,
            meminfo.SwapFree / 1024);
+}
+
+static void sysprop_cpu(struct procinfo attribute((unused)) *pi,
+                        char *buffer, size_t bufsize) {
+  uintmax_t total = 0;
+
+  get_stat();
+  /* Figure out the total tick difference
+   *
+   * Observations based on the kernel:
+   * - guest and guest_nice include user and nice respectively
+   *   (account_guest_time)
+   * - user does not include nice (account_user_time)
+   * - idle does not include iowait (account_idle_time)
+   * - irq, softirq and system are exclusive (account_system_time)
+   */
+  total = (cpuinfo.user_total + cpuinfo.system
+           + cpuinfo.idle + cpuinfo.irq + cpuinfo.softirq
+           + cpuinfo.steal)
+    - (cpuinfo_last.user_total + cpuinfo_last.system
+       + cpuinfo_last.idle + cpuinfo_last.irq + cpuinfo_last.softirq
+       + cpuinfo_last.steal);
+  /* How to figure out the percentage differences */
+#define CPUINFO_PCT(F) (int)(100 * (cpuinfo.F - cpuinfo_last.F) / total)
+  /* Display them */
+  snprintf(buffer, bufsize, "CPU: %2d%% user %2d%% nice %2d%% guest %2d%% sys %2d%% io",
+           CPUINFO_PCT(user_total),
+           CPUINFO_PCT(nice),
+           CPUINFO_PCT(guest_total),
+           CPUINFO_PCT(system),
+           CPUINFO_PCT(iowait));
 }
 
 // ----------------------------------------------------------------------------
@@ -233,6 +316,10 @@ const struct sysprop {
   const char *description;
   void (*format)(struct procinfo *pi, char *buffer, size_t bufsize);
 } sysproperties[] = {
+  {
+    "cpu", "CPU usage",
+    sysprop_cpu
+  },
   {
     "idletime", "Cumulative time spent idle",
     sysprop_idletime
@@ -326,6 +413,8 @@ void sysinfo_format(const char *format) {
 size_t sysinfo_reset(void) {
   got_uptime = 0;
   got_meminfo = 0;
+  got_stat = 0;
+  cpuinfo_last = cpuinfo;
   return nsysinfos;
 }
 

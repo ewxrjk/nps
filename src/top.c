@@ -150,9 +150,9 @@ int main(int argc, char **argv) {
   /* Set the system info to display */
   if(!set_sysinfo) {
     if(megabytes)
-      sysinfo_format("time,uptime,processes,load,memM,swapM");
+      sysinfo_format("time,uptime,processes,load,cpu,memM,swapM");
     else
-      sysinfo_format("time,uptime,processes,load,mem,swap");
+      sysinfo_format("time,uptime,processes,load,cpu,mem,swap");
   }
   /* Set the default selection */
   if(show_idle)
