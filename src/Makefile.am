@@ -22,7 +22,7 @@ nps_SOURCES=ps.c
 nps_LDADD=../lib/libps.a
 
 nps_top_SOURCES=top.c
-nps_top_LDADD=../lib/libps.a $(CURSES)
+nps_top_LDADD=../lib/libps.a $(LIBCURSES) $(LIBM)
 
 AM_CPPFLAGS=-I${top_srcdir}/lib
 

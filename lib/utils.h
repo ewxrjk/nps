@@ -38,6 +38,11 @@ time_t clock_to_time(unsigned long long ticks);
  */
 double clock_to_seconds(unsigned long long ticks);
 
+/** @brief Return the current time
+ * @return Timestamp
+ */
+double clock_now(void);
+
 // ----------------------------------------------------------------------------
 
 /** @brief Compute the path of a device given its device number

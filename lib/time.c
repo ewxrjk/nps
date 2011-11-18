@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
+#include <sys/time.h>
 
 time_t clock_to_time(unsigned long long ticks) {
   static time_t boot_time;
@@ -42,4 +43,11 @@ time_t clock_to_time(unsigned long long ticks) {
 
 double clock_to_seconds(unsigned long long ticks) {
   return (double)ticks / sysconf(_SC_CLK_TCK);
+}
+
+double clock_now(void) {
+  struct timeval tv;
+  if(gettimeofday(&tv, NULL) < 0)
+    fatal(errno, "gettimeofday");
+  return tv.tv_sec + tv.tv_usec / 1000000.0;
 }

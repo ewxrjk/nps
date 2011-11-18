@@ -27,8 +27,10 @@ AC_PROG_CC
 AC_PROG_RANLIB
 AC_SET_MAKE
 AC_C_BIGENDIAN
-AC_CHECK_LIB([ncurses],[initscr],[CURSES=-lncurses])
-AC_SUBST([CURSES])
+AC_CHECK_LIB([ncurses],[initscr],[LIBCURSES=-lncurses])
+AC_SUBST([LIBCURSES])
+AC_CHECK_LIB([m],[floor],[LIBM=-lm])
+AC_SUBST([LIBM])
 AC_DEFINE([_GNU_SOURCE], [1], [use GNU extensions])
 if test "x$GCC" = xyes; then
   CC="$CC -Wall -W -Werror -Wpointer-arith -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wshadow"

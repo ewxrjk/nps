@@ -31,6 +31,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 
 enum {
   OPT_HELP = 256,
@@ -48,11 +49,19 @@ const struct option options[] = {
 };
 
 static void loop(void);
+static void await(void);
+static void process_command(int ch);
+
+static double update_interval = 1.0;
+static double update_last;
+static int quit;
+static void (*process_key)(int) = process_command;
 
 int main(int argc, char **argv) {
   int n;
   int set_format = 0;
   int show_idle = 1;
+  char *e;
 
   /* Set locale */
   if(!setlocale(LC_ALL, ""))
@@ -62,7 +71,7 @@ int main(int argc, char **argv) {
   /* Set the default ordering */
   format_ordering("+pcpu,+io,+rss,+vsz");
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+o:s:i", 
+  while((n = getopt_long(argc, argv, "+o:s:id:", 
                          options, NULL)) >= 0) {
     switch(n) {
     case 'o':
@@ -78,6 +87,16 @@ int main(int argc, char **argv) {
     case 'I':
       sysinfo_format(optarg);
       break;
+    case 'd':
+      errno = 0;
+      update_interval = strtod(optarg, &e);
+      if(errno)
+        fatal(errno, "invalid update interval '%s'", optarg);
+      if(e == optarg || *e
+         || isnan(update_interval) || isinf(update_interval)
+         || update_interval <= 0)
+        fatal(0, "invalid update interval '%s'", optarg);
+      break;
     case OPT_HELP:
       printf("Usage:\n"
              "  top [OPTIONS]\n"
@@ -86,6 +105,7 @@ int main(int argc, char **argv) {
              "  -s [+/-]FMT,...   Set ordering\n"
              "  -i                Hide idle processes\n"
              "  -I PROP,PROP,...  Set system information format\n"
+             "  -d SECONDS        Set update interval\n"
              "  --help            Display option summary\n"
              "  --help-format     Display formatting & ordering help (-o/-s)\n"
              "  --help-sysinfo    Display system information help (-I)\n"
@@ -175,7 +195,8 @@ static void loop(void) {
   size_t n, npids, ninfos, len;
   pid_t *pids;
 
-  for(;;) {
+  while(!quit) {
+    update_last = clock_now();
     pi = proc_enumerate(last);
     pids = proc_get_selected(pi, &npids);
     qsort(pids, npids, sizeof *pids, compare_pid);
@@ -236,6 +257,50 @@ static void loop(void) {
 
     proc_free(last);
     last = pi;
-    sleep(1);                   /* TODO but wait for a keypresss... */
+    await();
+  }
+}
+
+static void await(void) {
+  double update_next, now, delta;
+  struct timeval tv;
+  fd_set fdin;
+  int n, ch;
+
+  while(!quit
+        && (now = clock_now()) < (update_next = update_last + update_interval)) {
+    delta = update_next - now;
+    if(delta > 5.0)
+      delta = 5.0;
+    tv.tv_sec = floor(delta);
+    tv.tv_usec = 1000000 * (delta - tv.tv_sec);
+    FD_ZERO(&fdin);
+    FD_SET(0, &fdin);
+    n = select(1, &fdin, NULL, NULL, &tv);
+    if(n < 0) {
+      if(errno == EINTR || errno == EAGAIN)
+        continue;
+      fatal(errno, "select");
+    }
+    if(FD_ISSET(0, &fdin)) {
+      ch = getch();
+      if(ch != ERR)
+        process_key(ch);
+    }
+  }
+}
+
+static void process_command(int ch) {
+  switch(ch) {
+  case 'q':
+  case 'Q':
+    quit = 1;
+    break;
+  case 12:
+    if(redrawwin(stdscr) == ERR)
+      fatal(0, "redrawwin failed");
+    if(refresh() == ERR)
+      fatal(0, "refresh failed");
+    break;
   }
 }

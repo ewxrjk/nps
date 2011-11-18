@@ -17,9 +17,12 @@ Display only non-idle processes.
 .IP \fB-I \fISYSINFO
 Sets the system information format.
 See \fBSYSTEM INFORMATION\fR below.
-.IP \fB-s \fOORDER
+.IP \fB-s \fIORDER
 Set the order in which processes are listed.
 See \fBSORTING\fR below.
+.IP \fB-d \fISECONDS
+Set the time between updates.
+The default is 1 second.
 .IP \fB--help
 Display a usage message.
 .IP \fB--help-format
@@ -51,7 +54,7 @@ Effective group ID (decimal).
 Effective group ID as a string.
 .IP \fBio
 Recent IO rate, in kilobytes per second.
-Note that the Linux kernel limits who can see this.
+This is the sum of \fBread\fR and \fBwrite\fR.
 .IP \fBnice
 Nice value.
 Higher values mean lower priority ("nicer").
@@ -68,7 +71,6 @@ Parent process ID.
 Priority.
 .IP \fBread
 Recent read rate, in kilobytes per second.
-Note that the Linux kernel limits who can see this.
 .IP \fBrgid
 Real group ID (decimal).
 .IP \fBrgroup
@@ -117,7 +119,6 @@ consumption due to \fBPROT_NONE\fR mappings.
 Wait channel.
 .IP \fBwrite
 Recent write rate, in kilobytes per second.
-Note that the Linux kernel limits who can see this.
 .PP
 To give a property a different heading, use the syntax
 \fIPROPERTY\fB=\fIHEADING\fR.
@@ -139,11 +140,8 @@ If no formatting options at all are specified then the default is
 equivalent to:
 .PP
 .RS
-\fB-o user,pid,nice,rss,pcpu=%C -o read,write,tty=TTY -o time,args=CMD
+\fB-o user,pid,rss,vsz,pcpu,tty=TTY -o time,args=CMD
 .RE
-.PP
-\fBread\fR and \fBwrite\fR are ommitted from the default unless the
-user is \fBroot\fR.
 .SH SORTING
 The \fB-s\fR option specifies the properties which control the order
 in which processes are displayed, separate by spaces or commas.
@@ -159,7 +157,7 @@ order (the default) and \fB-\fR to specify ascending order.
 If no ordering option is specified then the default is equivalent to:
 .PP
 .RS
-\fB -s +pcpu,+io,+rss,+vsz
+\fB-s +pcpu,+rss,+vsz
 .RE
 .SH "SYSTEM INFORMATION"
 The \fB-I\fR option specifies which whole-system properties should be
@@ -184,9 +182,8 @@ The amount of time since the system booted.
 .SH BUGS
 On the first iteration, \fBpcpu\fR is computed over the process's
 entire lifetime.
-Similarly, \fBread\fR and \fBwrite\fR are 0.
-On subsequent iterations they reflect the usage since the previous
-iteration.
+(On subsequent iterations it reflects the usage since the previous
+iteration.)
 .PP
 The meaning of \fBflags\fR is not very clear.
 .SH AUTHOR
