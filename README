@@ -1,7 +1,8 @@
 nps
 ===
 
-This is an implementation of SUSv4 'ps' for Linux.
+This is an implementation of SUSv4 'ps', and a compatible 'top', for
+Linux.
 
 * Installation
 
@@ -17,11 +18,17 @@ See 'INSTALL' for generic instructions
     nps --help-format
     man nps
 
+    nps-top --help
+    man nps-top
+
 * Use
 
     nps
     nps -ef
-    alias ps=nps      # if you like it more than the system ps
+    nps-top
+
+    alias ps=nps
+    alias top=nps-top # if you like them more than the system versions
 
 * Maintainer
 
