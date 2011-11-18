@@ -28,11 +28,15 @@ AM_CPPFLAGS=-I${top_srcdir}/lib
 
 ${srcdir}/nps.1: nps.1.in mkmanpage formatting.1
 	${srcdir}/mkmanpage ${srcdir}/nps.1.in > ${srcdir}/nps.1.new
+	rm -f ${srcdir}/nps.1
 	mv ${srcdir}/nps.1.new ${srcdir}/nps.1
+	chmod 444 ${srcdir}/nps.1
 
 ${srcdir}/nps-top.1: nps-top.1.in mkmanpage formatting.1 sysinfo.1
 	${srcdir}/mkmanpage ${srcdir}/nps-top.1.in > ${srcdir}/nps-top.1.new
+	rm -f ${srcdir}/nps-top.1
 	mv ${srcdir}/nps-top.1.new ${srcdir}/nps-top.1
+	chmod 444 ${srcdir}/nps-top.1
 
 EXTRA_DIST=${man_MANS} formatting.1 nps.1.in nps-top.1.in formatting.1	\
 sysinfo.1 mkmanpage

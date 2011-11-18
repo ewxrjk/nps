@@ -1,6 +1,6 @@
 .IP \fBcpu
 CPU usage information.
-The four fields are:
+The fields are:
 .RS
 .TP
 .B user
@@ -27,14 +27,47 @@ These three figures are the number of tasks either runnable or blocked
 on disk IO averaged over 1, 5 and 15 minutes.
 .IP \fBmem
 Memory information (kilobytes).
+The fields are:
+.RS
+.TP
+.B tot
+Total usable memory.
+This will be slightly less than the physical memory fitted, as the
+kernel and some reserved memory are not included in this figure.
+.TP
+.B used
+Memory currently in use for any purpose.
+As above, the kernel is excluded.
+.TP
+.B free
+Memory not in use for any purpose.
+.TP
+.B buf
+Cached blocks.
+.TP
+.B cache
+Cached files.
+.RE
 .IP \fBmemM
 Memory information (megabytes).
 .IP \fBprocesses
 The current number of processes.
 .IP \fBswap
-Swap information (kilobytes)
+Swap information (kilobytes).
+The fields are:
+.RS
+.TP
+.B tot
+Total usable swap space.
+.TP
+.B used
+Swap in use.
+.TP
+.B free
+Swap not in use.
+.RE
 .IP \fBswapM
-Swap information (megabytes)
+Swap information (megabytes).
 .IP \fBtime
 The current time (using the local timezone).
 .IP \fBuptime
