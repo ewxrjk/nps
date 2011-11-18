@@ -78,6 +78,9 @@ Effective group ID (decimal).
 Effective group ID as a string.
 .IP \fBio
 Recent IO rate, in kilobytes per second.
+This is the sum of \fBread\fR and \fBwrite\fR.
+.IP \fBioM
+Recent IO rate, in megabytes per second.
 .IP \fBnice
 Nice value.
 Higher values mean lower priority ("nicer").
@@ -94,6 +97,8 @@ Parent process ID.
 Priority.
 .IP \fBread
 Recent read rate, in kilobytes per second.
+.IP \fBreadM
+Recent read rate, in megabytes per second.
 .IP \fBrgid
 Real group ID (decimal).
 .IP \fBrgroup
@@ -101,6 +106,8 @@ Real group ID as a string.
 .IP \fBrss
 Resident set size in kilobytes.
 This the total amount of RAM used by the process.
+.IP \fBrssM
+Resident set size in megabytes.
 .IP \fBruid
 Real user ID (decimal).
 .IP \fBruser
@@ -138,10 +145,14 @@ Virtual memory size, in kilobytes.
 This is the total address space used by the process.
 Note that it may be misleadingly large as a measure of memory
 consumption due to \fBPROT_NONE\fR mappings.
+.IP \fBvszM
+Virtual memory size, in megabytes.
 .IP \fBwchan
 Wait channel.
 .IP \fBwrite
 Recent write rate, in kilobytes per second.
+.IP \fBwriteM
+Recent write rate, in megabytes per second.
 .PP
 To give a property a different heading, use the syntax
 \fIPROPERTY\fB=\fIHEADING\fR.
@@ -187,8 +198,6 @@ kind of output.
 .SH BUGS
 \fBpcpu\fR is computed over the process's entire lifetime, which is
 stretching the definition of "recent".
-.PP
-\fBread\fR and \fBwrite\fR will always be 0.
 .PP
 The meaning of \fBflags\fR is not very clear.
 .SH STANDARDS

@@ -62,16 +62,16 @@ int main(int argc, char **argv) {
   int set_format = 0;
   int show_idle = 1;
   char *e;
+  int megabytes = 0;
+  int set_sysinfo = 0;
 
   /* Set locale */
   if(!setlocale(LC_ALL, ""))
     fatal(errno, "setlocale");
-  /* Set the system info to display */
-  sysinfo_format("time,uptime,processes,load,memfree");
   /* Set the default ordering */
   format_ordering("+pcpu,+io,+rss,+vsz");
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+o:s:id:", 
+  while((n = getopt_long(argc, argv, "+o:s:id:M", 
                          options, NULL)) >= 0) {
     switch(n) {
     case 'o':
@@ -97,6 +97,9 @@ int main(int argc, char **argv) {
          || update_interval <= 0)
         fatal(0, "invalid update interval '%s'", optarg);
       break;
+    case 'M':
+      megabytes = 1;
+      break;
     case OPT_HELP:
       printf("Usage:\n"
              "  top [OPTIONS]\n"
@@ -106,6 +109,7 @@ int main(int argc, char **argv) {
              "  -i                Hide idle processes\n"
              "  -I PROP,PROP,...  Set system information format\n"
              "  -d SECONDS        Set update interval\n"
+             "  -M                Display memory sizes in megabytes\n"
              "  --help            Display option summary\n"
              "  --help-format     Display formatting & ordering help (-o/-s)\n"
              "  --help-sysinfo    Display system information help (-I)\n"
@@ -143,6 +147,13 @@ int main(int argc, char **argv) {
 
     }
   }
+  /* Set the system info to display */
+  if(!set_sysinfo) {
+    if(megabytes)
+      sysinfo_format("time,uptime,processes,load,memM,swapM");
+    else
+      sysinfo_format("time,uptime,processes,load,mem,swap");
+  }
   /* Set the default selection */
   if(show_idle)
     select_default(select_all, NULL, 0);
@@ -150,7 +161,12 @@ int main(int argc, char **argv) {
     select_default(select_nonidle, NULL, 0);
   /* Set the default format */
   if(!set_format) {
-    format_add("user,pid,nice,rss,pcpu=%C");
+    format_add("user,pid,nice");
+    if(megabytes)
+      format_add("rssM");
+    else
+      format_add("rss");
+    format_add("pcpu=%C");
     if(!getuid())
       format_add("read,write");
     format_add("tty=TTY");

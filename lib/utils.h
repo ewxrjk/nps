@@ -91,6 +91,15 @@ void *xrecalloc(void *ptr, size_t n, size_t s);
  */
 char *xstrdup(const char *s);
 
+/** @brief Duplicate a string
+ * @param s String to duplicate
+ * @param n Length of string
+ * @return Copy of @p s
+ *
+ * Calls fatal() on error.
+ */
+char *xstrndup(const char *s, size_t n);
+
 /** @brief Report a fatal error
  * @param errno_value Error code or 0
  * @param fmt Format string

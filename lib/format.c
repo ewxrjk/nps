@@ -264,6 +264,10 @@ static void property_mem(const struct propinfo *prop, struct buffer *b, struct p
   format_decimal(prop->fetch.fetch_uintmax(pi, pid) / 1024, b);
 }
 
+static void property_memM(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+  format_decimal(prop->fetch.fetch_uintmax(pi, pid) / 1048476, b);
+}
+
 static void property_wchan(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
   unsigned long long wchan = prop->fetch.fetch_uintmax(pi, pid);
   if(wchan && wchan + 1)
@@ -276,6 +280,11 @@ static void property_wchan(const struct propinfo *prop, struct buffer *b, struct
 static void property_iorate(const struct propinfo *prop, struct buffer *b,
                             struct procinfo *pi, pid_t pid) {
   format_decimal(prop->fetch.fetch_double(pi, pid) / 1024, b);
+}
+
+static void property_iorateM(const struct propinfo *prop, struct buffer *b,
+                             struct procinfo *pi, pid_t pid) {
+  format_decimal(prop->fetch.fetch_double(pi, pid) / 1048476, b);
 }
 
 // ----------------------------------------------------------------------------
@@ -398,6 +407,10 @@ static const struct propinfo properties[] = {
     property_iorate, compare_double, { .fetch_double = proc_get_rw_bytes }
   },
   {
+    "ioM", "IO", "Recent read+write rate (megabytes/s)",
+    property_iorateM, compare_double, { .fetch_double = proc_get_rw_bytes }
+  },
+  {
     "nice", "NI", "Nice value",
     property_decimal, compare_intmax, { .fetch_intmax = proc_get_nice }
   },
@@ -426,6 +439,10 @@ static const struct propinfo properties[] = {
     property_iorate, compare_double, { .fetch_double = proc_get_read_bytes }
   },
   {
+    "readM", "RD", "Recent read rate (megabyte/s)",
+    property_iorateM, compare_double, { .fetch_double = proc_get_read_bytes }
+  },
+  {
     "rgid", "RGID", "Real group ID (decimal)",
     property_gid, compare_gid, { .fetch_gid = proc_get_rgid }
   },
@@ -436,6 +453,10 @@ static const struct propinfo properties[] = {
   {
     "rss", "RSS", "Resident set size (1024 bytes)",
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_rss }
+  },
+  {
+    "rssM", "RSS", "Resident set size (megabytes)",
+    property_memM, compare_uintmax, { .fetch_uintmax = proc_get_rss }
   },
   {
     "ruid", "RUID", "Real user ID (decimal)",
@@ -474,12 +495,20 @@ static const struct propinfo properties[] = {
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_vsize }
   },
   {
+    "vszM", "VSZ", "Virtual memory used (1024 bytes)",
+    property_memM, compare_uintmax, { .fetch_uintmax = proc_get_vsize }
+  },
+  {
     "wchan", "WCHAN", "Wait channel (hex)",
     property_wchan, compare_uintmax, { .fetch_uintmax = proc_get_wchan }
   },
   {
     "write", "WR", "Recent write rate (1024 bytes/s)",
     property_iorate, compare_double, { .fetch_double = proc_get_write_bytes }
+  },
+  {
+    "writeM", "WR", "Recent write rate (megabytes/s)",
+    property_iorateM, compare_double, { .fetch_double = proc_get_write_bytes }
   },
 };
 #define NPROPERTIES (sizeof properties / sizeof *properties)

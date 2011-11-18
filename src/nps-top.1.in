@@ -23,6 +23,8 @@ See \fBSORTING\fR below.
 .IP \fB-d \fISECONDS
 Set the time between updates.
 The default is 1 second.
+.IP \fB-M
+Use megabytes rather than kilobytes.
 .IP \fB--help
 Display a usage message.
 .IP \fB--help-format
@@ -41,8 +43,13 @@ If no formatting options at all are specified then the default is
 equivalent to:
 .PP
 .RS
-\fB-o user,pid,rss,vsz,pcpu,tty=TTY -o time,args=CMD
+\fB-o user,pid,nice,rss,pcpu,read,write,tty=TTY -o args=CMD
 .RE
+.PP
+If the calling user is not \fBroot\fR then \fBread\fR and \fBwrite\fR
+are omitted.
+.PP
+If \fB-M\fR was specified then \fBrss\fR is replaced by \fBrssM\fR.
 .SH SORTING
 The \fB-s\fR option specifies the properties which control the order
 in which processes are displayed, separate by spaces or commas.

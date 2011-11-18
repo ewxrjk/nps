@@ -28,14 +28,101 @@
 #include <errno.h>
 #include <math.h>
 
-static void parse_uptime(double *up, double *idle) {
-  FILE *fp;
-  double junk;
-  if(!(fp = fopen("/proc/uptime", "r")))
-    fatal(errno, "opening /proc/uptime");
-  if(fscanf(fp, "%lg %lg", up ? up : &junk, idle ? idle : &junk) < 0)
-    fatal(errno, "reading /proc/uptime");
-  fclose(fp);
+static int got_uptime;
+static double up, idle;
+
+static void get_uptime(void) {
+  if(!got_uptime) {
+    FILE *fp;
+    up = idle = 0;
+    if(!(fp = fopen("/proc/uptime", "r")))
+      fatal(errno, "opening /proc/uptime");
+    if(fscanf(fp, "%lg %lg", &up, &idle) < 0)
+      fatal(errno, "reading /proc/uptime");
+    fclose(fp);
+    got_uptime = 1;
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+static int got_meminfo;
+
+#define MEMINFO(X)                              \
+    X(MemTotal, MemTotal)                       \
+    X(MemFree, MemFree)                         \
+    X(Buffers, Buffers)                         \
+    X(Cached, Cached)                           \
+    X(SwapCached, SwapCached)                   \
+    X(Active, Active)                           \
+    X(Inactive, Inactive)                       \
+    X(Active(anon), Active_anon)                \
+    X(Inactive(anon), Inactive_anon)            \
+    X(Active(file), Active_file)                \
+    X(Inactive(file), Inactive_file)            \
+    X(Unevictable, Unevictable)                 \
+    X(Mlocked, Mlocked)                         \
+    X(SwapTotal, SwapTotal)                     \
+    X(SwapFree, SwapFree)                       \
+    X(Dirty, Dirty)                             \
+    X(Writeback, Writeback)                     \
+    X(AnonPages, AnonPages)                     \
+    X(Mapped, Mapped)                           \
+    X(Shmem, Shmem)                             \
+    X(Slab, Slab)                               \
+    X(SReclaimable, SReclaimable)               \
+    X(SUnreclaim, SUnreclaim)                   \
+    X(KernelStack, KernelStack)                 \
+    X(PageTables, PageTables)                   \
+    X(NFS_Unstable, NFS_Unstable)               \
+    X(Bounce, Bounce)                           \
+    X(WritebackTmp, WritebackTmp)               \
+    X(CommitLimit, CommitLimit)                 \
+    X(Committed_AS, Committed_AS)               \
+    X(VmallocTotal, VmallocTotal)               \
+    X(VmallocUsed, VmallocUsed)                 \
+    X(VmallocChunk, VmallocChunk)               \
+    X(HardwareCorrupted, HardwareCorrupted)     \
+    X(HugePages_Total, HugePages_Total)         \
+    X(HugePages_Free, HugePages_Free)           \
+    X(HugePages_Rsvd, HugePages_Rsvd)           \
+    X(HugePages_Surp, HugePages_Surp)           \
+    X(Hugepagesize, Hugepagesize)               \
+    X(DirectMap4k, DirectMap4k)                 \
+    X(DirectMap2M, DirectMap2M)
+
+#define FIELD(N,F) uintmax_t F;
+#define OFFSET(N,F) offsetof(struct meminfo, F),
+#define NAME(N,F) #N,
+struct meminfo { MEMINFO(FIELD) };
+static struct meminfo meminfo;
+
+static const char *meminfo_names[] = { MEMINFO(NAME) };
+static const size_t meminfo_offsets[] = { MEMINFO(OFFSET) };
+#define NMEMINFOS (sizeof meminfo_names / sizeof *meminfo_names)
+
+static void get_meminfo(void) {
+  if(!got_meminfo) {
+    FILE *fp;
+    char input[128], *colon;
+    size_t i = 0;
+    memset(&meminfo, 0, sizeof meminfo);
+    if(!(fp = fopen("/proc/meminfo", "r")))
+      fatal(errno, "opening /proc/meminfo");
+    while(fgets(input, sizeof input, fp)) {
+      if((colon = strchr(input, ':'))) {
+        *colon++ = 0;
+        if(i < NMEMINFOS && !strcmp(meminfo_names[i], input)) {
+          uintmax_t *ptr = (uintmax_t *)((char *)&meminfo + meminfo_offsets[i]);
+          *ptr = strtoull(colon, &colon, 10);
+        }
+        i++;
+      }
+    }
+    fclose(fp);
+    
+    got_meminfo = 1;
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -59,25 +146,6 @@ static void sysprop_format_time(const char *what, double t,
     snprintf(buffer, bufsize, "%s: %d:%02d:%02d", what, h, m, s);
 }
 
-static void sysprop_format_meminfo(const char *what, const char *tag,
-                                   char *buffer, size_t bufsize) {
-  FILE *fp;
-  char input[128], *colon;
-  if(!(fp = fopen("/proc/meminfo", "r")))
-    fatal(errno, "opening /proc/meminfo");
-  while(fgets(input, sizeof input, fp)) {
-    if((colon = strchr(input, ':'))) {
-      *colon++ = 0;
-      if(!strcmp(input, tag)) {
-        unsigned long long value = strtoull(colon, &colon, 10);
-        snprintf(buffer, bufsize, "%s: %llu", what, value);
-        break;
-      }
-    }
-  }
-  fclose(fp);
-}
-
 // ----------------------------------------------------------------------------
 
 static void sysprop_localtime(struct procinfo attribute((unused)) *pi,
@@ -89,22 +157,21 @@ static void sysprop_localtime(struct procinfo attribute((unused)) *pi,
   strftime(buffer, bufsize, "Time: %Y-%m-%d %H:%M:%S", &now_tm);
 }
 
-static void sysprop_processes(struct procinfo *pi, char *buffer, size_t bufsize) {
+static void sysprop_processes(struct procinfo *pi,
+                              char *buffer, size_t bufsize) {
   snprintf(buffer, bufsize, "Tasks: %d", proc_count(pi));
 }
 
 static void sysprop_uptime(struct procinfo attribute((unused)) *pi,
                            char *buffer, size_t bufsize) {
-  double u;
-  parse_uptime(&u, NULL);
-  sysprop_format_time("Up", u, buffer, bufsize);
+  get_uptime();
+  sysprop_format_time("Up", up, buffer, bufsize);
 }
 
 static void sysprop_idletime(struct procinfo attribute((unused)) *pi,
                              char *buffer, size_t bufsize) {
-  double i;
-  parse_uptime(&i, NULL);
-  sysprop_format_time("Idle", i, buffer, bufsize);
+  get_uptime();
+  sysprop_format_time("Idle", idle, buffer, bufsize);
 }
 
 static void sysprop_load(struct procinfo attribute((unused)) *pi,
@@ -119,14 +186,44 @@ static void sysprop_load(struct procinfo attribute((unused)) *pi,
   snprintf(buffer, bufsize, "Load: %.1f %.1f %.1f", l1, l2, l3);
 }
 
-static void sysprop_memfree(struct procinfo attribute((unused)) *pi,
-                            char *buffer, size_t bufsize) {
-  sysprop_format_meminfo("Free", "MemFree", buffer, bufsize);
+static void sysprop_mem(struct procinfo attribute((unused)) *pi,
+                        char *buffer, size_t bufsize) {
+  get_meminfo();
+  snprintf(buffer, bufsize, "RAM:  %9ju tot %9ju used %9ju free %9ju buf %9ju cache",
+           meminfo.MemTotal,
+           meminfo.MemTotal - meminfo.MemFree,
+           meminfo.MemFree,
+           meminfo.Buffers,
+           meminfo.Cached);
 }
 
-static void sysprop_swapfree(struct procinfo attribute((unused)) *pi,
-                            char *buffer, size_t bufsize) {
-  sysprop_format_meminfo("Swap free", "SwapFree", buffer, bufsize);
+static void sysprop_memM(struct procinfo attribute((unused)) *pi,
+                        char *buffer, size_t bufsize) {
+  get_meminfo();
+  snprintf(buffer, bufsize, "RAM:  %8juM tot %8juM used %8juM free %8juM buf %8juM cache",
+           meminfo.MemTotal / 1024,
+           (meminfo.MemTotal - meminfo.MemFree) / 1024,
+           meminfo.MemFree / 1024,
+           meminfo.Buffers / 1024,
+           meminfo.Cached / 1024);
+}
+
+static void sysprop_swap(struct procinfo attribute((unused)) *pi,
+                         char *buffer, size_t bufsize) {
+  get_meminfo();
+  snprintf(buffer, bufsize, "Swap: %9ju tot %9ju used %9ju free",
+           meminfo.SwapTotal,
+           meminfo.SwapTotal - meminfo.SwapFree,
+           meminfo.SwapFree);
+}
+
+static void sysprop_swapM(struct procinfo attribute((unused)) *pi,
+                         char *buffer, size_t bufsize) {
+  get_meminfo();
+  snprintf(buffer, bufsize, "Swap: %8juM tot %8juM used %8juM free",
+           meminfo.SwapTotal / 1024,
+           (meminfo.SwapTotal - meminfo.SwapFree) / 1024,
+           meminfo.SwapFree / 1024);
 }
 
 // ----------------------------------------------------------------------------
@@ -145,16 +242,24 @@ const struct sysprop {
     sysprop_load
   },
   {
-    "memfree", "Amount of RAM free (1024 bytes)",
-    sysprop_memfree
+    "mem", "Memory information (kilobytes)",
+    sysprop_mem
+  },
+  {
+    "memM", "Memory information (megabytes)",
+    sysprop_memM
   },
   {
     "processes", "Number of processes",
     sysprop_processes
   },
   {
-    "swapfree", "Amount of swap space (1024 bytes)",
-    sysprop_swapfree
+    "swap", "Swap information (kilobytes)",
+    sysprop_swap
+  },
+  {
+    "swapM", "Swap information (megabytes)",
+    sysprop_swapM
   },
   {
     "time", "Current (local) time",
@@ -167,10 +272,14 @@ const struct sysprop {
 };
 #define NSYSPROPERTIES (sizeof sysproperties / sizeof *sysproperties)
 
+struct sysinfo {
+  const struct sysprop *prop;
+};
+
 // ----------------------------------------------------------------------------
 
-static size_t nsysprops;
-static const struct sysprop **sysprops;
+static size_t nsysinfos;
+static struct sysinfo *sysinfos;
 
 static const struct sysprop *sysinfo_find(const char *name) {
   size_t l = 0, r = NSYSPROPERTIES - 1, m;
@@ -191,9 +300,9 @@ static const struct sysprop *sysinfo_find(const char *name) {
 void sysinfo_format(const char *format) {
   char buffer[128];
   size_t i;
-  free(sysprops);
-  sysprops = NULL;
-  nsysprops = 0;
+  free(sysinfos);
+  sysinfos = NULL;
+  nsysinfos = 0;
   while(*format) {
     if(*format == ' ' || *format == ',') {
       ++format;
@@ -206,22 +315,24 @@ void sysinfo_format(const char *format) {
       ++format;
     }
     buffer[i] = 0;
-    if((ssize_t)(nsysprops + 1) < 0)
+    if((ssize_t)(nsysinfos + 1) < 0)
       fatal(0, "too many columns");
-    sysprops = xrecalloc(sysprops, nsysprops + 1, sizeof *sysprops);
-    sysprops[nsysprops] = sysinfo_find(buffer);
-    ++nsysprops;
+    sysinfos = xrecalloc(sysinfos, nsysinfos + 1, sizeof *sysinfos);
+    sysinfos[nsysinfos].prop = sysinfo_find(buffer);
+    ++nsysinfos;
   }
 }
 
 size_t sysinfo_reset(void) {
-  return nsysprops;
+  got_uptime = 0;
+  got_meminfo = 0;
+  return nsysinfos;
 }
 
 int sysinfo_get(struct procinfo *pi, size_t n, char buffer[], size_t bufsize) {
   buffer[0] = 0;
-  if(n < nsysprops) {
-    sysprops[n]->format(pi, buffer, bufsize);
+  if(n < nsysinfos) {
+    sysinfos[n].prop->format(pi, buffer, bufsize);
     return 0;
   } else
     return -1;

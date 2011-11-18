@@ -45,5 +45,11 @@ void *xrecalloc(void *ptr, size_t n, size_t s) {
 }
 
 char *xstrdup(const char *s) {
-  return strcpy(xmalloc(strlen(s) + 1), s);
+  return xstrndup(s, strlen(s));
+}
+
+char *xstrndup(const char *s, size_t n) {
+  if((size_t)(n + 1) == 0)
+    fatal(0, "out of memory");
+  return strcpy(xmalloc(n + 1), s);
 }

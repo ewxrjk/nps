@@ -23,6 +23,8 @@ See \fBSORTING\fR below.
 .IP \fB-d \fISECONDS
 Set the time between updates.
 The default is 1 second.
+.IP \fB-M
+Use megabytes rather than kilobytes.
 .IP \fB--help
 Display a usage message.
 .IP \fB--help-format
@@ -55,6 +57,8 @@ Effective group ID as a string.
 .IP \fBio
 Recent IO rate, in kilobytes per second.
 This is the sum of \fBread\fR and \fBwrite\fR.
+.IP \fBioM
+Recent IO rate, in megabytes per second.
 .IP \fBnice
 Nice value.
 Higher values mean lower priority ("nicer").
@@ -71,6 +75,8 @@ Parent process ID.
 Priority.
 .IP \fBread
 Recent read rate, in kilobytes per second.
+.IP \fBreadM
+Recent read rate, in megabytes per second.
 .IP \fBrgid
 Real group ID (decimal).
 .IP \fBrgroup
@@ -78,6 +84,8 @@ Real group ID as a string.
 .IP \fBrss
 Resident set size in kilobytes.
 This the total amount of RAM used by the process.
+.IP \fBrssM
+Resident set size in megabytes.
 .IP \fBruid
 Real user ID (decimal).
 .IP \fBruser
@@ -115,10 +123,14 @@ Virtual memory size, in kilobytes.
 This is the total address space used by the process.
 Note that it may be misleadingly large as a measure of memory
 consumption due to \fBPROT_NONE\fR mappings.
+.IP \fBvszM
+Virtual memory size, in megabytes.
 .IP \fBwchan
 Wait channel.
 .IP \fBwrite
 Recent write rate, in kilobytes per second.
+.IP \fBwriteM
+Recent write rate, in megabytes per second.
 .PP
 To give a property a different heading, use the syntax
 \fIPROPERTY\fB=\fIHEADING\fR.
@@ -140,8 +152,13 @@ If no formatting options at all are specified then the default is
 equivalent to:
 .PP
 .RS
-\fB-o user,pid,rss,vsz,pcpu,tty=TTY -o time,args=CMD
+\fB-o user,pid,nice,rss,pcpu,read,write,tty=TTY -o args=CMD
 .RE
+.PP
+If the calling user is not \fBroot\fR then \fBread\fR and \fBwrite\fR
+are omitted.
+.PP
+If \fB-M\fR was specified then \fBrss\fR is replaced by \fBrssM\fR.
 .SH SORTING
 The \fB-s\fR option specifies the properties which control the order
 in which processes are displayed, separate by spaces or commas.
@@ -169,12 +186,16 @@ The cumulative time the system has spent idle.
 The system load averages.
 These three figures are the number of tasks either runnable or blocked
 on disk IO averaged over 1, 5 and 15 minutes.
-.IP \fBmemfree
-Amount of free RAM in kilobytes.
+.IP \fBmem
+Memory information (kilobytes).
+.IP \fBmemM
+Memory information (megabytes).
 .IP \fBprocesses
 The current number of processes.
-.IP \fBswapfree
-Amount of free swap space in kilobytes.
+.IP \fBswap
+Swap information (kilobytes)
+.IP \fBswapM
+Swap information (megabytes)
 .IP \fBtime
 The current time (using the local timezone).
 .IP \fBuptime
