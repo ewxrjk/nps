@@ -131,6 +131,25 @@ Cancel the operation.
 .IP "\fBreturn"
 Commit the operation.
 This will only have any effect if the current input is valid.
+.SH CONFIGURATION
+On startup defaults are read from the file \fB$HOME/.npsrc\fR, if it
+exists.
+Each line has a \fIKEY\fB=\fIVALUE\fR format, with \fBtop\fR
+recognizing the following keys:
+.IP \fBtop_delay
+The default update interval in seocnds (overridden with the \fB-d\fR
+option).
+.IP \fBtop_format
+The default format (overridden with the \fB-o\fR option).
+Headings may be quoted (and must be quoted, if they contain a space,
+comma or quotes).
+The syntax is the same as when editing with the \fBo\fR key, and
+different from the command-line syntax.
+.IP \fBtop_order
+The default order (overriden with the \fB-s\fR option).
+.IP \fBtop_sysinfo
+The default system information (overriden with the \fB-I\fR option).
+.PP
 .SH BUGS
 On the first iteration, rate properties such as \fBpcpu\fR are
 computed over the process's entire lifetime.

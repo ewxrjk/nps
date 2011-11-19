@@ -24,6 +24,7 @@
 #include "sysinfo.h"
 #include "utils.h"
 #include "input.h"
+#include "rc.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <curses.h>
@@ -167,8 +168,19 @@ int main(int argc, char **argv) {
   /* Set locale */
   if(!setlocale(LC_ALL, ""))
     fatal(errno, "setlocale");
+  read_rc();
   /* Set the default ordering */
-  format_ordering("+pcpu,+io,+rss,+vsz", 0);
+  if(rc_top_order)
+    format_ordering(rc_top_order, 0);
+  else
+    format_ordering("+pcpu,+io,+rss,+vsz", 0);
+  if(rc_top_delay) {
+    double v;
+    errno = 0;
+    v = strtod(rc_top_delay, &e);
+    if(!errno && e != rc_top_delay && !*e && !isnan(v) && !isinf(v) && v > 0)
+      update_interval = v;
+  }
   /* Parse command line */
   while((n = getopt_long(argc, argv, "+o:s:iI:d:M", 
                          options, NULL)) >= 0) {
@@ -185,6 +197,7 @@ int main(int argc, char **argv) {
       break;
     case 'I':
       sysinfo_format(optarg);
+      have_set_sysinfo = 1;
       break;
     case 'd':
       errno = 0;
@@ -249,7 +262,9 @@ int main(int argc, char **argv) {
   }
   /* Set the system info to display */
   if(!have_set_sysinfo) {
-    if(megabytes)
+    if(rc_top_sysinfo)
+      sysinfo_format(rc_top_sysinfo);
+    else if(megabytes)
       sysinfo_format("time,uptime,processes,load,cpu,memM,swapM");
     else
       sysinfo_format("time,uptime,processes,load,cpu,mem,swap");
@@ -261,15 +276,19 @@ int main(int argc, char **argv) {
     select_default(select_nonidle, NULL, 0);
   /* Set the default format */
   if(!have_set_format) {
-    format_add("user,pid,nice", FORMAT_QUOTED);
-    if(megabytes)
-      format_add("rssM", FORMAT_QUOTED);
-    else
-      format_add("rss", FORMAT_QUOTED);
-    format_add("pcpu=%C", FORMAT_QUOTED);
-    if(!getuid())
-      format_add("read,write", FORMAT_QUOTED);
-    format_add("tty=TTY,args=CMD", FORMAT_QUOTED);
+    if(rc_top_format)
+      format_add(rc_top_format, FORMAT_QUOTED);
+    else {
+      format_add("user,pid,nice", FORMAT_QUOTED);
+      if(megabytes)
+        format_add("rssM", FORMAT_QUOTED);
+      else
+        format_add("rss", FORMAT_QUOTED);
+      format_add("pcpu=%C", FORMAT_QUOTED);
+      if(!getuid())
+        format_add("read,write", FORMAT_QUOTED);
+      format_add("tty=TTY,args=CMD", FORMAT_QUOTED);
+    }
   }
   /* Initialize curses */
   if(!initscr())

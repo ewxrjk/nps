@@ -206,6 +206,20 @@ The \fB-l\fR option is equivalent to:
 .RS
 \fB-oflags,state,uid,pid,ppid,pcpu=C -opri,nice,addr,vsz=SZ -owchan,tty=TTY -otime,arg=CMD
 .RE
+.SH CONFIGURATION
+On startup defaults are read from the file \fB$HOME/.npsrc\fR, if it
+exists.
+Each line has a \fIKEY\fB=\fIVALUE\fR format, with \fBps\fR
+recognizing the following keys:
+.IP \fBps_format
+The default format.
+.IP \fBps_f_format
+The format to use if \fB-f\fR is specified.
+.IP \fBps_l_format
+The format to use if \fB-l\fR is specified.
+.PP
+In this file, unlike in command line arguments, headings may be quoted
+(and must be quoted, if they contain a space, comma or quotes).
 .SH ENVIRONMENT
 .TP
 .B COLUMNS

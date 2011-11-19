@@ -22,6 +22,7 @@
 #include "format.h"
 #include "process.h"
 #include "utils.h"
+#include "rc.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <errno.h>
@@ -56,6 +57,8 @@ int main(int argc, char **argv) {
   const char *s;
   struct procinfo *pi;
 
+  /* Read configuration */
+  read_rc();
   /* Parse command line */
   while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:p:t:u:U:", 
                          options, NULL)) >= 0) {
@@ -71,12 +74,18 @@ int main(int argc, char **argv) {
       break;
     case 'f':
       format_clear();
-      format_add("user=UID,pid,ppid,pcpu=C,stime,tty=TTY,time,args=CMD", FORMAT_QUOTED);
+      if(rc_ps_f_format)
+        format_add(rc_ps_f_format, FORMAT_QUOTED);
+      else
+        format_add("user=UID,pid,ppid,pcpu=C,stime,tty=TTY,time,args=CMD", FORMAT_QUOTED);
       set_format = 1;
       break;
     case 'l':
       format_clear();
-      format_add("flags,state,uid,pid,ppid,pcpu=C,pri,nice,addr,vsz=SZ,wchan,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
+      if(rc_ps_l_format)
+        format_add(rc_ps_l_format, FORMAT_QUOTED);
+      else
+        format_add("flags,state,uid,pid,ppid,pcpu=C,pri,nice,addr,vsz=SZ,wchan,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
       set_format = 1;
       break;
     case 'g':
@@ -152,8 +161,12 @@ int main(int argc, char **argv) {
   if(optind < argc)
     fatal(0, "excess arguments");
   /* Set the default format */
-  if(!set_format)
-    format_add("pid,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
+  if(!set_format) {
+    if(rc_ps_format)
+      format_add(rc_ps_format, FORMAT_QUOTED);
+    else
+      format_add("pid,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
+  }
   /* Set the default selection */
   select_default(select_uid_tty, NULL, 0);
   /* Get the list of processes */
