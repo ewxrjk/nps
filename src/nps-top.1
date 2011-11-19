@@ -10,7 +10,7 @@ running on the system.
 .SH OPTIONS
 .IP "\fB-o \fIFORMAT\fR, \fB-O \fIFORMAT"
 Set a specific format.
-If multiple \fB-o\fR options are given then they are cumulative.
+If multiple \fB-o\fR or \fB-O\fR options are given then they are cumulative.
 See \fBFORMATTING\fR below.
 .IP "\fB-d \fISECONDS"
 Set the time between updates.
@@ -321,8 +321,9 @@ Changes the list of whole-system properties.
 Equivalent to the \fB-j\fR option.
 .IP \fBo
 Changes the list of properties to display.
-Similar to the \fB-o\fR option except column headings may be quoted
-(and must be quoted, if they contain a space, comma or quotes).
+Equivalent to the \fB-O\fR option.
+Column headings may be quoted (and must be quoted, if they contain a
+space, comma or quotes).
 .IP \fBs
 Changes the order specification.
 Equivalent to the \fB-s\fR option.
@@ -369,7 +370,7 @@ recognizing the following keys:
 The default update interval in seocnds (overridden with the \fB-d\fR
 option).
 .IP \fBtop_format
-The default format (overridden with the \fB-o\fR option).
+The default format (overridden with the \fB-o\fR or \fB-O\fR option).
 Headings may be quoted (and must be quoted, if they contain a space,
 comma or quotes).
 The syntax is the same as when editing with the \fBo\fR key, and
