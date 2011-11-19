@@ -95,6 +95,9 @@ Redisplay the screen.
 .IP \fBd
 Changes the update interval.
 Equivalent to the \fB-d\fR option.
+.IP \fBh
+Displays on-screen help.
+Press multiple times to cycle through the help pages and dismiss them.
 .IP \fBo
 Changes the list of properties to display.
 Similar to the \fB-o\fR option except column headings may be quoted

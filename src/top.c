@@ -82,15 +82,48 @@ static int valid_format(const char *s);
 static enum next_action set_format(const char *s);
 static int valid_order(const char *s);
 static enum next_action set_order(const char *s);
+static void display_help(void);
 
 static double update_interval = 1.0;
 static double update_last;
 static enum next_action (*process_key)(int) = process_command;
 static size_t display_offset;
+static int help_page;
 
 static struct input_context input;
 static char input_buffer[1024];
 static enum next_action (*input_set)(const char *);
+
+static const const char *const command_help[] = {
+  "Keyboard commands:",
+  "  ^L                 Redisplay",
+  "  d                  Edit update interval",
+  "  h                  Help (press again for more)",
+  "  o                  Edit column list",
+  "  s                  Edit sort order",
+  "  q                  Quit",
+};
+
+static const const char *const panning_help[] = {
+  "Panning:",
+  "  ^F, right arrow    Move viewport right by 1",
+  "  page down          Move viewport right by 8",
+  "  ^B, left arrow     Move viewport left",
+  "  page up            Move viewport left by 8",
+  "  ^A                 Move viewport to left margin",
+  "  h                  Dismiss help"
+};
+
+static const struct help_page {
+  const char *const *lines;
+  size_t nlines;
+} help_pages[] = {
+  { NULL, 0 },
+  { command_help, sizeof command_help / sizeof *command_help },
+  { panning_help, sizeof panning_help / sizeof *panning_help }
+};
+
+#define NHELPPAGES (sizeof help_pages / sizeof *help_pages)
 
 int main(int argc, char **argv) {
   int n;
@@ -148,7 +181,8 @@ int main(int argc, char **argv) {
              "  --help            Display option summary\n"
              "  --help-format     Display formatting & ordering help (-o/-s)\n"
              "  --help-sysinfo    Display system information help (-I)\n"
-             "  --version         Display version string\n");
+             "  --version         Display version string\n"
+             "Press 'h' for on-screen help.\n");
       return 0;
     case OPT_HELP_FORMAT:
       printf("The following properties can be used with the -o and -s options:\n"
@@ -245,7 +279,7 @@ static int compare_pid(const void *av, const void *bv) {
 static void loop(void) {
   struct procinfo *last = NULL;
   char buffer[1024];
-  int x, y, maxx, maxy, ystart;
+  int x, y, maxx, maxy, ystart, ylimit;
   size_t n, npids, ninfos, len, offset;
   pid_t *pids;
   enum next_action next;
@@ -288,11 +322,12 @@ static void loop(void) {
     ystart = y;
     do {
       y = ystart;
+      ylimit = maxy - help_pages[help_page].nlines;
       move(ystart, 0);
       clrtobot();
 
       /* Heading */
-      if(y < maxy) {
+      if(y < ylimit) {
         attron(A_REVERSE);
         format_heading(pi, buffer, sizeof buffer);
         offset = min(display_offset, strlen(buffer));
@@ -305,14 +340,16 @@ static void loop(void) {
       }
 
       /* Processes */
-      for(n = 0; n < npids && y < maxy; ++n) {
+      for(n = 0; n < npids && y < ylimit; ++n) {
         format_process(pi, pids[n], buffer, sizeof buffer);
         offset = min(display_offset, strlen(buffer));
         // curses seems to have trouble with the last position on the screen
-        if(mvaddnstr(y, 0, buffer + offset, y == maxy - 1 ? maxx - 1 : maxx) == ERR)
+        if(mvaddnstr(y, 0, buffer + offset, y == ylimit - 1 ? maxx - 1 : maxx) == ERR)
           fatal(0, "mvaddstr %d failed", y);
         ++y;
       }
+
+      display_help();
 
       /* Input */
       if(input.bufsize) {
@@ -425,6 +462,16 @@ static enum next_action process_command(int ch) {
     strcpy(input_buffer, f);
     free(f);
     break;
+  case 'h':
+  case 'H':
+    help_page = (help_page + 1) % NHELPPAGES;
+    return NEXT_REDRAW;
+  case 27:
+    if(help_page) {
+      help_page = 0;
+      return NEXT_REDRAW;
+    }
+    break;
   case 12:
     if(redrawwin(stdscr) == ERR)
       fatal(0, "redrawwin failed");
@@ -459,6 +506,7 @@ static enum next_action process_command(int ch) {
   if(input.bufsize) {
     input.len = strlen(input.buffer);
     input.cursor = input.len;
+    help_page = 0;
     return NEXT_REDRAW;
   }
   return NEXT_WAIT;
@@ -544,3 +592,23 @@ static enum next_action set_order(const char *s) {
   return NEXT_RESORT;
 }
 
+// ----------------------------------------------------------------------------
+
+static void display_help(void) {
+  int y, maxx, maxy;
+  size_t line;
+  getmaxyx(stdscr, maxy, maxx);
+  move(maxy - help_pages[help_page].nlines, 0);
+  clrtobot();
+  for(line = 0; line < help_pages[help_page].nlines; ++line) {
+    if(line == 0)
+      attron(A_REVERSE);
+    y = maxy - help_pages[help_page].nlines + line;
+    if(mvaddnstr(y, 0,
+                 help_pages[help_page].lines[line],
+                 y == maxy - 1 ? maxx - 1 : maxx) == ERR)
+      fatal(0, "mvaddstr %d failed", y);
+    if(line == 0)
+      attroff(A_REVERSE);
+  }
+}
