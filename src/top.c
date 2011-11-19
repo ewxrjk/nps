@@ -63,6 +63,7 @@ static double update_interval = 1.0;
 static double update_last;
 static int quit;
 static int (*process_key)(int) = process_command;
+static size_t display_offset;
 
 static struct input_context input;
 static char input_buffer[1024];
@@ -223,7 +224,7 @@ static void loop(void) {
   struct procinfo *last = NULL;
   char buffer[1024];
   int x, y, maxx, maxy, ystart;
-  size_t n, npids, ninfos, len;
+  size_t n, npids, ninfos, len, offset;
   pid_t *pids;
 
   while(!quit) {
@@ -264,15 +265,18 @@ static void loop(void) {
     ystart = y;
     do {
       y = ystart;
+      move(ystart, 0);
+      clrtobot();
 
       /* Heading */
       if(y < maxy) {
         attron(A_REVERSE);
         format_heading(pi, buffer, sizeof buffer);
-        if(mvaddnstr(y, 0, buffer, maxx) == ERR)
+        offset = min(display_offset, strlen(buffer));
+        if(mvaddnstr(y, 0, buffer + offset, maxx) == ERR)
           fatal(0, "mvaddstr %d failed", y);
         ++y;
-        for(x = strlen(buffer); x < maxx; ++x)
+        for(x = strlen(buffer + offset); x < maxx; ++x)
           addch(' ');
         attroff(A_REVERSE);
       }
@@ -280,8 +284,9 @@ static void loop(void) {
       /* Processes */
       for(n = 0; n < npids && y < maxy; ++n) {
         format_process(pi, pids[n], buffer, sizeof buffer);
+        offset = min(display_offset, strlen(buffer));
         // curses seems to have trouble with the last position on the screen
-        if(mvaddnstr(y, 0, buffer, y == maxy - 1 ? maxx - 1 : maxx) == ERR)
+        if(mvaddnstr(y, 0, buffer + offset, y == maxy - 1 ? maxx - 1 : maxx) == ERR)
           fatal(0, "mvaddstr %d failed", y);
         ++y;
       }
@@ -298,8 +303,8 @@ static void loop(void) {
         fatal(0, "refresh failed");
     } while(await());
 
-    last = pi;
     proc_free(last);
+    last = pi;
   }
 }
 
@@ -359,6 +364,30 @@ static int process_command(int ch) {
     if(refresh() == ERR)
       fatal(0, "refresh failed");
     break;
+  case 2:                       /* ^B */
+  case KEY_LEFT:
+    if(display_offset > 0) {
+      --display_offset;
+      return 1;
+    }
+    break;
+  case KEY_PPAGE:
+    if(display_offset >= 8)
+      display_offset -= 8;
+    else if(display_offset > 0)
+      display_offset = 0;
+    return 1;
+  case 6:                       /* ^F */
+  case KEY_RIGHT:
+    ++display_offset;
+    return 1;
+  case KEY_NPAGE:
+    display_offset += 8;
+    return 1;
+  case 1:                       /* ^A */
+  case KEY_HOME:
+    display_offset = 0;
+    return 1;
   }
   if(input.bufsize) {
     input.cursor = input.len;

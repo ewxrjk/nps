@@ -255,12 +255,54 @@ The current time (using the local timezone).
 .IP \fBuptime
 The amount of time since the system booted.
 .SH KEYBOARD
-The following keyboard commands can be used:
+.SS Scrolling
+If the terminal is too narrow, the process table can be panned left
+and right with the following keys:
+.IP "\fBright arrow\fR, \fB^F"
+Moves the viewport to the right by one character, i.e. moves the
+columns to the left.
+.IP "\fBpage down"
+Moves the viewport to the right by eight characters.
+.IP "\fBleft arrow\fR, \fB^B"
+Moves the viewport to the left by one character, i.e. moves the
+columns to the right.
+.IP "\fBpage up"
+Moves the viewport to the left by eight characters.
+.IP "\fB^A"
+Moves the viewport all the way to the left.
+.SS Commands
+The following keyboard commands can also be used:
+.IP "\fB^L"
+Redisplay the screen.
 .IP \fBd
 Changes the update interval.
 Equivalent to the \fB-d\fR option.
 .IP \fBq
 Quits immediately.
+.SS Input
+When editing a value (for instance after pressing \fBd\fR) the
+following keys can be used:
+.IP "\fB^A"
+Move the cursor to the start of the line.
+.IP "\fBleft arrow\fR, \fB^B"
+Move the cursor right.
+.IP "\fB^E"
+Move the cursor to the end of the line.
+.IP "\fBright arrow\fR, \fB^F"
+Move the cursor right.
+.IP "\fB^L"
+Redisplay the screen.
+.IP "\fB^U"
+Delete all the input.
+.IP "\fBbackspace"
+Delete the character to the left of the cursor.
+.IP "\fBdelete"
+Delete the character under the cursor.
+.IP "\fBescape"
+Cancel the operation.
+.IP "\fBreturn"
+Commit the operation.
+This will only have any effect if the current input is valid.
 .SH BUGS
 On the first iteration, \fBpcpu\fR is computed over the process's
 entire lifetime.

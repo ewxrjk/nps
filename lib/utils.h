@@ -117,5 +117,25 @@ extern int (*onfatal)(void);
 
 // ----------------------------------------------------------------------------
 
+/** @brief Find the minimum
+ * @param x Value to compare
+ * @param y Value to compare
+ * @return Least of @p x and @p y
+ *
+ * Note that whichever is less of @p x and @p y is evaluated twice.
+ */
+#define min(x,y) ((x) < (y) ? (x) : (y))
+
+/** @brief Find the maximum
+ * @param x Value to compare
+ * @param y Value to compare
+ * @return Greatest of @p x and @p y
+ *
+ * Note that whichever is greatest of @p x and @p y is evaluated twice.
+ */
+#define max(x,y) ((x) > (y) ? (x) : (y))
+
+// ----------------------------------------------------------------------------
+
 #endif /* MEMORY_H */
 
