@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
   /* Read configuration */
   read_rc();
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:p:t:u:U:", 
+  while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:O:p:t:u:U:", 
                          options, NULL)) >= 0) {
     switch(n) {
     case 'a':
@@ -102,6 +102,10 @@ int main(int argc, char **argv) {
       format_set(optarg, FORMAT_ARGUMENT|FORMAT_ADD);
       set_format = 1;
       break;
+    case 'O':
+      format_set(optarg, FORMAT_QUOTED|FORMAT_ADD);
+      set_format = 1;
+      break;
     case 'p':
       args = split_arg(optarg, arg_process, &nargs);
       select_add(select_pid, args, nargs);
@@ -130,6 +134,7 @@ int main(int argc, char **argv) {
              "  -g SID,SID....    Select processes by session ID\n"
              "  -G GID,GID,...    Select processes by real group ID\n"
              "  -o FMT,FMT,...    Set output format\n"
+             "  -O FMT,FMT,...    Set output format (more flexible syntax)\n"
              "  -p PID,PID,...    Select processes by process ID\n"
              "  -t TERM,TERM,...  Select processes by terminal\n"
              "  -u UID,UID,...    Select processes by real user ID\n"
@@ -150,7 +155,8 @@ int main(int argc, char **argv) {
              "one another.\n"
              "\n"
              "Use property=heading to override the heading (but only for the last\n"
-             "property in each argument).\n");
+             "property in each argument).  With -O, headings end at next comma and\n"
+             "can be quoted.\n");
       return 0;
     case OPT_VERSION:
       printf("%s\n", PACKAGE_VERSION);

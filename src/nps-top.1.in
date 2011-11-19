@@ -8,21 +8,21 @@ nps-top \- constantly display process information
 displays a constantly-updating snapshot of information about processes
 running on the system.
 .SH OPTIONS
-.IP \fB-o \fIFORMAT
+.IP "\fB-o \fIFORMAT\fR, \fB-O \fIFORMAT"
 Set a specific format.
 If multiple \fB-o\fR options are given then they are cumulative.
 See \fBFORMATTING\fR below.
-.IP \fB-d \fISECONDS
+.IP "\fB-d \fISECONDS"
 Set the time between updates.
 The default is 1 second.
 .IP \fB-i
 Display only non-idle processes.
-.IP \fB-j \fISYSINFO
+.IP "\fB-j \fISYSINFO"
 Sets the system information format.
 See \fBSYSTEM INFORMATION\fR below.
 .IP \fB-M
 Use megabytes rather than kilobytes.
-.IP \fB-s \fIORDER
+.IP "\fB-s \fIORDER"
 Set the order in which processes are listed.
 See \fBSORTING\fR below.
 .IP \fB--help
@@ -43,7 +43,7 @@ If no formatting options at all are specified then the default is
 equivalent to:
 .PP
 .RS
-\fB-o user,pid,nice,rss,pcpu,read,write,tty=TTY -o argsbrief=CMD
+\fB-Ouser,pid,nice,rss,pcpu,read,write,tty=TTY,argsbrief=CMD
 .RE
 .PP
 If the calling user is not \fBroot\fR then \fBread\fR and \fBwrite\fR

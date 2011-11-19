@@ -218,11 +218,15 @@ int main(int argc, char **argv) {
       update_interval = v;
   }
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+o:s:ij:d:M", 
+  while((n = getopt_long(argc, argv, "+o:s:ij:d:MO:",
                          options, NULL)) >= 0) {
     switch(n) {
     case 'o':
       format_set(optarg, FORMAT_ARGUMENT|FORMAT_ADD);
+      have_set_format = 1;
+      break;
+    case 'O':
+      format_set(optarg, FORMAT_QUOTED|FORMAT_ADD);
       have_set_format = 1;
       break;
     case 's':
@@ -253,6 +257,7 @@ int main(int argc, char **argv) {
              "  top [OPTIONS]\n"
              "Options:\n"
              "  -o FMT,FMT,...    Set output format\n"
+             "  -O FMT,FMT,...    Set output format (more flexible syntax)\n"
              "  -s [+/-]FMT,...   Set ordering\n"
              "  -i                Hide idle processes\n"
              "  -j PROP,PROP,...  Set system information format\n"
@@ -276,7 +281,8 @@ int main(int argc, char **argv) {
              "one another.\n"
              "\n"
              "Use property=heading to override the heading (but only for the last\n"
-             "property in each argument).\n"
+             "property in each argument).  With -O, headings end at next comma and\n"
+             "can be quoted.\n"
              "\n"
              "Multiple properties can also be specified with -s.  Later properties are\n"
              "used to order processes that match in earlier properties.  To reverse the\n"

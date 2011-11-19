@@ -8,21 +8,21 @@ nps-top \- constantly display process information
 displays a constantly-updating snapshot of information about processes
 running on the system.
 .SH OPTIONS
-.IP \fB-o \fIFORMAT
+.IP "\fB-o \fIFORMAT\fR, \fB-O \fIFORMAT"
 Set a specific format.
 If multiple \fB-o\fR options are given then they are cumulative.
 See \fBFORMATTING\fR below.
-.IP \fB-d \fISECONDS
+.IP "\fB-d \fISECONDS"
 Set the time between updates.
 The default is 1 second.
 .IP \fB-i
 Display only non-idle processes.
-.IP \fB-j \fISYSINFO
+.IP "\fB-j \fISYSINFO"
 Sets the system information format.
 See \fBSYSTEM INFORMATION\fR below.
 .IP \fB-M
 Use megabytes rather than kilobytes.
-.IP \fB-s \fIORDER
+.IP "\fB-s \fIORDER"
 Set the order in which processes are listed.
 See \fBSORTING\fR below.
 .IP \fB--help
@@ -52,6 +52,8 @@ Time elapsed since the process started.
 .IP \fBflags
 Flags word from the kernel (octal).
 You will need a copy of the kernel sources to be able to interpret this.
+.IP \fBflagsx
+Flags word from the kernel (hex).
 .IP \fBgid
 Effective group ID (decimal).
 .IP \fBgroup
@@ -154,8 +156,11 @@ Write rate, in megabytes per second.
 .PP
 To give a property a different heading, use the syntax
 \fIPROPERTY\fB=\fIHEADING\fR.
-This only works on the last property in a single argument
-use multiple \fB-o\fR options to work around this.
+With \fB-o\fR this only works on the last property in a single argument.
+Use multiple \fB-o\fR options to work around this.
+With \fB-O\fR this can be used on any or all of the properties within
+an argument.
+If the heading contains spaces or quotes then it must be quoted.
 .PP
 Time intervals (such as \fBetime\fR) are represented as
 [[\fIdd\fB-\fR]\fIhh\fB:\fR]\fImm\fB:\fIss\fR, with \fIdd\fR
@@ -172,7 +177,7 @@ If no formatting options at all are specified then the default is
 equivalent to:
 .PP
 .RS
-\fB-o user,pid,nice,rss,pcpu,read,write,tty=TTY -o argsbrief=CMD
+\fB-Ouser,pid,nice,rss,pcpu,read,write,tty=TTY,argsbrief=CMD
 .RE
 .PP
 If the calling user is not \fBroot\fR then \fBread\fR and \fBwrite\fR

@@ -18,26 +18,26 @@ Select all processes that are not session leaders.
 Set the "full" output format.
 .IP \fB-l
 Set the "long" output format.
-.IP \fB-g \fILIST
+.IP "\fB-g \fILIST"
 Select all processes whose sessions are in \fILIST\fR.
-.IP \fB-G \fILIST
+.IP "\fB-G \fILIST"
 Select all processes whose real group ID is in \fILIST\fR (by name or
 number).
-.IP \fB-n \fIANYTHING
+.IP "\fB-n \fIANYTHING"
 Ignored.
-.IP \fB-o \fIFORMAT
+.IP "\fB-o \fIFORMAT\fR, \fB-O \fIFORMAT"
 Set a specific format.
-If multiple \fB-o\fR options are given then they are cumulative.
+If multiple \fB-o\fR or \fB-O\fR options are given then they are cumulative.
 See \fBFORMATTING\fR below.
-.IP \fB-p \fILIST
+.IP "\fB-p \fILIST"
 Select all the processes in \fILIST\fR.
-.IP \fB-t \fILIST
+.IP "\fB-t \fILIST"
 Select all the processes whose controlling terminals are in \fILIST\fR.
 Terminal names may be abbreviated by ommitting the initial \fB/dev\fR.
-.IP \fB-u \fILIST
+.IP "\fB-u \fILIST"
 Select all the processes whose effective user ID is in \fILIST\fR (by
 name or number).
-.IP \fB-U \fILIST
+.IP "\fB-U \fILIST"
 Select all the processes whose real user ID is in \fILIST\fR (by
 name or number).
 .IP \fB--help
@@ -65,19 +65,20 @@ If no formatting options at all are specified then the default is
 equivalent to:
 .PP
 .RS
-\fB-opid,tty=TTY -otime,comm=CMD
+\fB-Opid,tty=TTY,time,comm=CMD
 .RE
 .PP
 The \fB-f\fR option is equivalent to:
 .PP
 .RS
-\fB-ouser=UID -opid,ppid,pcpu=C -ostime,tty=TTY -otime,comm=CMD
+\fB-Ouser=UID,pid,ppid,pcpu=C,stime,tty=TTY,time,comm=CMD
 .RE
 .PP
 The \fB-l\fR option is equivalent to:
 .PP
 .RS
-\fB-oflags,state,uid,pid,ppid,pcpu=C -opri,nice,addr,vsz=SZ -owchan,tty=TTY -otime,argsbrief=CMD
+\fB-Oflags,state,uid,pid,ppid,pcpu=C,pri,nice,addr,vsz=SZ,
+wchan,tty=TTY,time,argsbrief=CMD
 .RE
 .SH CONFIGURATION
 On startup defaults are read from the file \fB$HOME/.npsrc\fR, if it

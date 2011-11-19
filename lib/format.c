@@ -424,6 +424,10 @@ static const struct propinfo properties[] = {
     property_uoctal, compare_uintmax, { .fetch_uintmax = proc_get_flags }
   },
   {
+    "flagsx", "F", "Flags (hex)",
+    property_uhex, compare_uintmax, { .fetch_uintmax = proc_get_flags }
+  },
+  {
     "gid", "GID","Effective group ID (decimal)",
     property_gid, compare_gid, { .fetch_gid = proc_get_egid }
   },
