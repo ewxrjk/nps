@@ -276,6 +276,10 @@ Swap information (megabytes).
 The current time (using the local timezone).
 .IP \fBuptime
 The amount of time since the system booted.
+.PP
+These properties are sample at the same time as collecting process
+information, so the \fB-d\fR value defines how out of date they may be.
+The exception is \fBtime\fR which always reflects the current time.
 .SH KEYBOARD
 .SS Scrolling
 If the terminal is too narrow, the process table can be panned left

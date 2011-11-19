@@ -72,6 +72,10 @@ The \fB-j\fR option specifies which whole-system properties should be
 displayed, separated by spaces or commas.
 The available system properties are:
 #include sysinfo.1
+.PP
+These properties are sample at the same time as collecting process
+information, so the \fB-d\fR value defines how out of date they may be.
+The exception is \fBtime\fR which always reflects the current time.
 .SH KEYBOARD
 .SS Scrolling
 If the terminal is too narrow, the process table can be panned left

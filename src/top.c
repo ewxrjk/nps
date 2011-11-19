@@ -510,7 +510,7 @@ static void loop(void) {
  * @return What do to next
  */
 static enum next_action await(void) {
-  double update_next, now, delta;
+  double update_next, now, frac, delta;
   struct timeval tv;
   fd_set fdin;
   int n, ch, ret;
@@ -521,10 +521,13 @@ static enum next_action await(void) {
     return NEXT_RESAMPLE;
   /* Figure out how long to wait until the next update is required */
   delta = update_next - now;
-  /* Bound it at 5s, in case select()'s timeout handling goes wonky
-   * (e.g. due to hibernation) */
-  if(delta > 5.0)
-    delta = 5.0;
+  /* Only wait until the next second boundary, so we can keep the
+   * clock in the system info up to date */
+  frac = ceil(now) - now;
+  if(!frac)
+    frac = 1.0;
+  if(delta > frac)
+    delta = frac;
   tv.tv_sec = floor(delta);
   tv.tv_usec = 1000000 * (delta - tv.tv_sec);
   FD_ZERO(&fdin);
@@ -565,7 +568,9 @@ static enum next_action await(void) {
     else if(n == 0)
         fatal(0, "EOF from sigpipe");
   }
-  return NEXT_WAIT;
+  /* If the clock should change redraw the sytsem info (without
+   * resampling it). */
+  return floor(now) == floor(clock_now()) ? NEXT_WAIT : NEXT_RESYSINFO;
 }
 
 // ----------------------------------------------------------------------------
