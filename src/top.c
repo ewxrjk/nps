@@ -49,6 +49,7 @@ const struct option options[] = {
   { 0, 0, 0, 0 },
 };
 
+/** @brief What loop() and await() should do next */
 enum next_action {
   /** @brief Re-enumerate processes */
   NEXT_RESAMPLE,
@@ -59,10 +60,17 @@ enum next_action {
   /** @brief Re-sort processes */
   NEXT_RESORT,
 
-  /** @brief Redraw existing output (perhaps with a new offset) */
+  /** @brief Redraw existing output
+   *
+   * This is used after changing @ref display_offset, and after @ref
+   * NEXT_REFORMAT and @ref NEXT_RESORT have been processed.
+   */
   NEXT_REDRAW,
 
-  /** @brief Continue to wait for input or timeout */
+  /** @brief Continue to wait for input or timeout
+   *
+   * Only await() should see this; it should never return it to
+   * loop(). */
   NEXT_WAIT,
 
   /** @brief Terminate the program */
@@ -84,14 +92,36 @@ static int valid_order(const char *s);
 static enum next_action set_order(const char *s);
 static void display_help(void);
 
+/** @brief Time between updates in seconds */
 static double update_interval = 1.0;
+
+/** @brief Time of last update */
 static double update_last;
+
+/** @brief Keypress handler 
+ *
+ * Usually this is process_command() but it switches to
+ * process_input_key() when something is being edited.
+ */
 static enum next_action (*process_key)(int) = process_command;
+
+/** @brief Horizontal display offset */
 static size_t display_offset;
+
+/** @brief Currently displayed help page
+ *
+ * There is "always" a help page being displayed - but page 0 is 0
+ * lines long.
+ */
 static int help_page;
 
+/** @brief Line editor context */
 static struct input_context input;
+
+/** @brief Line editor input buffer */
 static char input_buffer[1024];
+
+/** @brief Called when editing completes with a valid string */
 static enum next_action (*input_set)(const char *);
 
 static const const char *const command_help[] = {
@@ -114,6 +144,7 @@ static const const char *const panning_help[] = {
   "  h                  Dismiss help"
 };
 
+/** @brief Table of help pages */
 static const struct help_page {
   const char *const *lines;
   size_t nlines;
@@ -139,7 +170,7 @@ int main(int argc, char **argv) {
   /* Set the default ordering */
   format_ordering("+pcpu,+io,+rss,+vsz", 0);
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+o:s:id:M", 
+  while((n = getopt_long(argc, argv, "+o:s:iI:d:M", 
                          options, NULL)) >= 0) {
     switch(n) {
     case 'o':
@@ -265,8 +296,10 @@ int main(int argc, char **argv) {
 
 // ----------------------------------------------------------------------------
 
+/** @brief Most recent process enumeration */
 static struct procinfo *pi;
 
+/** @brief Shim for use with qsort() */
 static int compare_pid(const void *av, const void *bv) {
   pid_t a = *(const pid_t *)av;
   pid_t b = *(const pid_t *)bv;
@@ -321,6 +354,7 @@ static void loop(void) {
 
     ystart = y;
     do {
+      /* (Re-)draw the process list */
       y = ystart;
       ylimit = maxy - help_pages[help_page].nlines;
       move(ystart, 0);
@@ -396,7 +430,10 @@ static enum next_action await(void) {
   int n, ch, ret;
 
   while((now = clock_now()) < (update_next = update_last + update_interval)) {
+    /* Figure out how long to wait until the next update is required */
     delta = update_next - now;
+    /* Bound it at 5s, in case select()'s timeout handling goes wonky
+     * (e.g. due to hibernation) */
     if(delta > 5.0)
       delta = 5.0;
     tv.tv_sec = floor(delta);
@@ -409,6 +446,7 @@ static enum next_action await(void) {
         continue;
       fatal(errno, "select");
     }
+    /* Handle keyboard input */
     if(FD_ISSET(0, &fdin)) {
       ch = getch();
       if(ch != ERR)
@@ -421,6 +459,7 @@ static enum next_action await(void) {
 
 // ----------------------------------------------------------------------------
 
+/** @brief Handle keyboard input */
 static enum next_action process_command(int ch) {
   char *f;
   switch(ch) {
@@ -472,7 +511,7 @@ static enum next_action process_command(int ch) {
       return NEXT_REDRAW;
     }
     break;
-  case 12:
+  case 12:                      /* ^L */
     if(redrawwin(stdscr) == ERR)
       fatal(0, "redrawwin failed");
     if(refresh() == ERR)
@@ -503,6 +542,8 @@ static enum next_action process_command(int ch) {
     display_offset = 0;
     return 1;
   }
+  /* If input.bufsize is nonzero then it must have only just got that
+   * way, as otherwise we'd have called process_input_key() instead */
   if(input.bufsize) {
     input.len = strlen(input.buffer);
     input.cursor = input.len;
@@ -514,6 +555,14 @@ static enum next_action process_command(int ch) {
 
 // ----------------------------------------------------------------------------
 
+/** @brief Edit some property
+ * @param prompt Prompt to display
+ * @param validator Callback to check whether input is valid
+ * @param setter Callback to commit edited value
+ *
+ * The caller should fill in the input buffer after this function
+ * returns.
+ */
 static void collect_input(const char *prompt,
                           int (*validator)(const char *),
                           enum next_action (*setter)(const char *)) {
@@ -526,6 +575,7 @@ static void collect_input(const char *prompt,
   input_set = setter;
 }
 
+/** @brief Handle keyboard input whilte editing */
 static enum next_action process_input_key(int ch) {
   switch(ch) {
   case 27:                      /* ESC */
@@ -594,6 +644,7 @@ static enum next_action set_order(const char *s) {
 
 // ----------------------------------------------------------------------------
 
+/** @brief Display the current help page */
 static void display_help(void) {
   int y, maxx, maxy;
   size_t line;
