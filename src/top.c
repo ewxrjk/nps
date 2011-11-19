@@ -152,18 +152,14 @@ static struct help_page input_help;
  *
  * Note that when editing something, one of the help lines is lost.
  */
-#define HELP_SIZE 9
+#define HELP_SIZE 8
 
 static const const char *const command_help[] = {
   "Keyboard commands:",
-  "  ^L                 Redisplay",
-  "  d                  Edit update interval",
-  "  h                  Help (press again for more)",
-  "  i                  Toggle idle processes",
-  "  j                  Edit system info display",
-  "  o                  Edit column list",
-  "  s                  Edit sort order",
-  "  q                  Quit",
+  "^L  Redisplay                j  Edit system info",
+  " d  Edit update interval     o  Edit column list",
+  " h  Help (repeat for more)   s  Edit sort order",
+  " i  Toggle idle processes    q  lQuit",
 };
 
 static const const char *const panning_help[] = {
