@@ -210,14 +210,18 @@ struct procinfo *proc_enumerate(struct procinfo *last) {
       pi->procs[n].link = pi->lookup[h];
     pi->lookup[h] = n;
   }
-  for(n = 0; n < pi->nprocs; ++n) {
-    pi->procs[n].selected = select_test(pi, pi->procs[n].pid);
-  }
+  proc_reselect(pi);
   return pi;
 }
 
 int proc_count(struct procinfo *pi) {
   return pi->nprocs;
+}
+
+void proc_reselect(struct procinfo *pi) {
+  size_t n;
+  for(n = 0; n < pi->nprocs; ++n)
+    pi->procs[n].selected = select_test(pi, pi->procs[n].pid);
 }
 
 // ----------------------------------------------------------------------------

@@ -12,19 +12,19 @@ running on the system.
 Set a specific format.
 If multiple \fB-o\fR options are given then they are cumulative.
 See \fBFORMATTING\fR below.
+.IP \fB-d \fISECONDS
+Set the time between updates.
+The default is 1 second.
 .IP \fB-i
 Display only non-idle processes.
 .IP \fB-j \fISYSINFO
 Sets the system information format.
 See \fBSYSTEM INFORMATION\fR below.
+.IP \fB-M
+Use megabytes rather than kilobytes.
 .IP \fB-s \fIORDER
 Set the order in which processes are listed.
 See \fBSORTING\fR below.
-.IP \fB-d \fISECONDS
-Set the time between updates.
-The default is 1 second.
-.IP \fB-M
-Use megabytes rather than kilobytes.
 .IP \fB--help
 Display a usage message.
 .IP \fB--help-format
@@ -302,6 +302,9 @@ Equivalent to the \fB-d\fR option.
 .IP \fBh
 Displays on-screen help.
 Press multiple times to cycle through the help pages and dismiss them.
+.IP \fBi
+Toggles display of idle processes.
+Equivalent to the \fB-i\fR option.
 .IP \fBj
 Changes the list of whole-system properties.
 Equivalent to the \fB-j\fR option.

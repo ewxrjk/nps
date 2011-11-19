@@ -20,6 +20,7 @@
 #include <config.h>
 #include "selectors.h"
 #include "utils.h"
+#include <stdlib.h>
 #include <assert.h>
 
 struct selector {
@@ -30,6 +31,12 @@ struct selector {
 
 static size_t nselectors;
 static struct selector *selectors;
+
+void select_clear(void) {
+  free(selectors);
+  selectors = NULL;
+  nselectors = 0;
+}
 
 void select_add(select_function *sfn, union arg *args, size_t nargs) {
   selectors = xrecalloc(selectors, nselectors + 1,  sizeof *selectors);

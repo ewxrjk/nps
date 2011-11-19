@@ -38,6 +38,12 @@ struct procinfo;
  */
 struct procinfo *proc_enumerate(struct procinfo *last);
 
+/** @brief Re-run process selection
+ *
+ * proc_enumerate() does this automatically, but if you change the
+ * selection then you must call this function. */
+void proc_reselect(struct procinfo *pi);
+
 /** @brief Free process information
  * @param pi Pointer to process information
  */

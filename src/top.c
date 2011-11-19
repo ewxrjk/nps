@@ -53,32 +53,35 @@ const struct option options[] = {
 /** @brief What loop() and await() should do next */
 enum next_action {
   /** @brief Re-enumerate processes */
-  NEXT_RESAMPLE,
+  NEXT_RESAMPLE = 1,
   
   /** @brief Re-run column formatting */
-  NEXT_REFORMAT,
+  NEXT_REFORMAT = 2,
+  
+  /** @brief Re-select processes */
+  NEXT_RESELECT = 4,
   
   /** @brief Re-sort processes */
-  NEXT_RESORT,
+  NEXT_RESORT = 8,
 
   /** @brief Redraw system information */
-  NEXT_RESYSINFO,
+  NEXT_RESYSINFO = 16,
 
   /** @brief Redraw existing output
    *
    * This is used after changing @ref display_offset, and after @ref
    * NEXT_REFORMAT and @ref NEXT_RESORT have been processed.
    */
-  NEXT_REDRAW,
+  NEXT_REDRAW = 32,
 
   /** @brief Continue to wait for input or timeout
    *
    * Only await() should see this; it should never return it to
    * loop(). */
-  NEXT_WAIT,
+  NEXT_WAIT = 64,
 
   /** @brief Terminate the program */
-  NEXT_QUIT
+  NEXT_QUIT = 128
 };
 
 struct help_page {
@@ -109,6 +112,9 @@ static double update_interval = 1.0;
 
 /** @brief Time of last update */
 static double update_last;
+
+/** @brief Whether to show idle processes */
+static int show_idle = 1;
 
 /** @brief Keypress handler 
  *
@@ -146,13 +152,14 @@ static struct help_page input_help;
  *
  * Note that when editing something, one of the help lines is lost.
  */
-#define HELP_SIZE 8
+#define HELP_SIZE 9
 
 static const const char *const command_help[] = {
   "Keyboard commands:",
   "  ^L                 Redisplay",
   "  d                  Edit update interval",
   "  h                  Help (press again for more)",
+  "  i                  Toggle idle processes",
   "  j                  Edit system info display",
   "  o                  Edit column list",
   "  s                  Edit sort order",
@@ -181,7 +188,6 @@ static const struct help_page help_pages[] = {
 int main(int argc, char **argv) {
   int n;
   int have_set_format = 0;
-  int show_idle = 1;
   char *e;
   int megabytes = 0;
   int have_set_sysinfo = 0;
@@ -296,10 +302,7 @@ int main(int argc, char **argv) {
       sysinfo_set("time,uptime,processes,load,cpu,mem,swap", 0);
   }
   /* Set the default selection */
-  if(show_idle)
-    select_default(select_all, NULL, 0);
-  else
-    select_default(select_nonidle, NULL, 0);
+  select_default(show_idle ? select_all : select_nonidle, NULL, 0);
   /* Set the default format */
   if(!have_set_format) {
     if(rc_top_format)
@@ -357,114 +360,115 @@ static int compare_pid(const void *av, const void *bv) {
 static void loop(void) {
   struct procinfo *last = NULL;
   char buffer[1024];
-  int x, y, maxx, maxy, ystart, ylimit;
-  size_t n, npids, ninfos, len, offset;
-  pid_t *pids;
-  enum next_action next;
+  int x, y, maxx, maxy, ystart = 0, ylimit;
+  size_t n, npids, len, offset;
+  pid_t *pids = NULL;
+  enum next_action next = NEXT_RESAMPLE;
   const struct help_page *help;
 
-  do {
-    update_last = clock_now();
-    pi = proc_enumerate(last);
-    pids = proc_get_selected(pi, &npids);
-    qsort(pids, npids, sizeof *pids, compare_pid);
-    format_columns(pi, pids, npids);
-
-    do {
+  while(!(next & NEXT_QUIT)) {
+    if(next & NEXT_RESAMPLE) {
+      /* Get fresh data */
+      proc_free(last);
+      last = pi;
+      update_last = clock_now();
+      pi = proc_enumerate(last);
+      sysinfo_reset();
+      free(pids);
+      pids = proc_get_selected(pi, &npids);
+      next |= NEXT_RESYSINFO|NEXT_RESORT|NEXT_REFORMAT;
+    }
+    if(next & NEXT_RESELECT) {
+      /* Reselect processes to display after selection has changed */
+      free(pids);
+      proc_reselect(pi);
+      pids = proc_get_selected(pi, &npids);
+      next |= NEXT_RESORT|NEXT_REFORMAT;
+    }
+    if(next & NEXT_RESORT) {
+      /* Put processes into order */
+      qsort(pids, npids, sizeof *pids, compare_pid);
+      next |= NEXT_REDRAW;
+    }
+    if(next & NEXT_REFORMAT) {
+      /* Work out column widths */
+      format_columns(pi, pids, npids);
+      next |= NEXT_REDRAW;
+    }
+    if(next & NEXT_RESYSINFO) {
       /* Start at the top with a blank screen */
       if(erase() == ERR)
         fatal(0, "erase failed");
       x = y = 0;
       getmaxyx(stdscr, maxy, maxx);
-
       /* System information */
-      ninfos = sysinfo_reset();
-      for(n = 0; n < ninfos; ++n) {
-        if(!sysinfo_format(pi, n, buffer, sizeof buffer)) {
-          len = strlen(buffer);
-          if(x && x + len > (size_t)maxx) {
-            ++y;
-            x = 0;
-          }
-          if(y >= maxy)
-            break;
-          if(mvaddnstr(y, x, buffer, maxx - x) == ERR)
-            fatal(0, "mvaddstr %d,%d failed", y, x);
-          x += strlen(buffer) + 2;
+      for(n = 0; !sysinfo_format(pi, n, buffer, sizeof buffer); ++n) {
+        len = strlen(buffer);
+        if(x && x + len > (size_t)maxx) {
+          ++y;
+          x = 0;
         }
+        if(y >= maxy)
+          break;
+        if(mvaddnstr(y, x, buffer, maxx - x) == ERR)
+          fatal(0, "mvaddstr %d,%d failed", y, x);
+        x += strlen(buffer) + 2;
       }
-
       if(x) {
         ++y;
         x = 0;
       }
-
       ystart = y;
-      do {
-        /* (Re-)draw the process list */
-        y = ystart;
-        help = input_help.nlines ? &input_help : &help_pages[help_page];
-        ylimit = maxy - min(help->nlines, 8);
-        move(ystart, 0);
-        clrtobot();
+      next |= NEXT_REDRAW;
+    }
+    if(next & NEXT_REDRAW) {
+      getmaxyx(stdscr, maxy, maxx);
+      /* (Re-)draw the process list */
+      y = ystart;
+      help = input_help.nlines ? &input_help : &help_pages[help_page];
+      ylimit = maxy - min(help->nlines, 8);
+      move(ystart, 0);
+      clrtobot();
 
-        /* Heading */
-        if(y < ylimit) {
-          attron(A_REVERSE);
-          format_heading(pi, buffer, sizeof buffer);
-          offset = min(display_offset, strlen(buffer));
-          if(mvaddnstr(y, 0, buffer + offset, maxx) == ERR)
-            fatal(0, "mvaddstr %d failed", y);
-          ++y;
-          for(x = strlen(buffer + offset); x < maxx; ++x)
-            addch(' ');
-          attroff(A_REVERSE);
-        }
+      /* Heading */
+      if(y < ylimit) {
+        attron(A_REVERSE);
+        format_heading(pi, buffer, sizeof buffer);
+        offset = min(display_offset, strlen(buffer));
+        if(mvaddnstr(y, 0, buffer + offset, maxx) == ERR)
+          fatal(0, "mvaddstr %d failed", y);
+        ++y;
+        for(x = strlen(buffer + offset); x < maxx; ++x)
+          addch(' ');
+        attroff(A_REVERSE);
+      }
 
-        /* Processes */
-        for(n = 0; n < npids && y < ylimit; ++n) {
-          format_process(pi, pids[n], buffer, sizeof buffer);
-          offset = min(display_offset, strlen(buffer));
-          // curses seems to have trouble with the last position on the screen
-          if(mvaddnstr(y, 0, buffer + offset, y == ylimit - 1 ? maxx - 1 : maxx) == ERR)
-            fatal(0, "mvaddstr %d failed", y);
-          ++y;
-        }
+      /* Processes */
+      for(n = 0; n < npids && y < ylimit; ++n) {
+        format_process(pi, pids[n], buffer, sizeof buffer);
+        offset = min(display_offset, strlen(buffer));
+        // curses seems to have trouble with the last position on the screen
+        if(mvaddnstr(y, 0, buffer + offset, y == ylimit - 1 ? maxx - 1 : maxx) == ERR)
+          fatal(0, "mvaddstr %d failed", y);
+        ++y;
+      }
 
-        display_help(help);
+      display_help(help);
 
-        /* Input */
-        if(input.bufsize) {
-          input_draw(&input);
-          curs_set(1);
-        } else
-          curs_set(0);
+      /* Input */
+      if(input.bufsize) {
+        input_draw(&input);
+        curs_set(1);
+      } else
+        curs_set(0);
+    }
 
-        /* Display what we've got */    
-        if(refresh() == ERR)
-          fatal(0, "refresh failed");
-        /* See what to do next */
-        next = await();
-        /* Handle formatting/sorting changes */
-        if(next == NEXT_REFORMAT) {
-          format_columns(pi, pids, npids);
-          next = NEXT_REDRAW;
-        }
-        if(next == NEXT_RESORT) {
-          qsort(pids, npids, sizeof *pids, compare_pid);
-          next = NEXT_REDRAW;
-        }
-
-        /* If it's not time to collect new samples, draw what we've got
-         * and continue waiting */
-      } while(next == NEXT_REDRAW);
-    } while(next == NEXT_RESYSINFO);
-
-    /* We need to collect new samples.  We stash the ones we've got to
-     * provide a baseline for rate calculation. */
-    proc_free(last);
-    last = pi;
-  } while(next != NEXT_QUIT);
+    /* Display what we've got */    
+    if(refresh() == ERR)
+      fatal(0, "refresh failed");
+    /* See what to do next */
+    next = await();
+  }
 }
 
 /** @brief Handle keyboard input and wait for the next update
@@ -553,6 +557,12 @@ static enum next_action process_command(int ch) {
     strcpy(input_buffer, f);
     free(f);
     break;
+  case 'i':
+  case 'I':
+    show_idle = !show_idle;
+    select_clear();
+    select_default(show_idle ? select_all : select_nonidle, NULL, 0);
+    return NEXT_RESELECT;
   case 'j':
   case 'J':
     f = sysinfo_get();

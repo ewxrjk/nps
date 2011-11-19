@@ -134,6 +134,9 @@ int select_test(struct procinfo *pi, pid_t pid);
  */
 void select_default(select_function *sfn, union arg *args, size_t nargs);
 
+/** @brief Clear all selectors */
+void select_clear(void);
+
 // ---------------------------------------------------------------------------
 
 /** @brief Select processes that have a controlling terminal
