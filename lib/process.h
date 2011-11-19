@@ -149,7 +149,7 @@ intmax_t proc_get_elapsed_time(struct procinfo *pi, pid_t pid);
  * @param pid Process ID
  * @return Start time
  */
-time_t proc_get_start_time(struct procinfo *pi, pid_t pid);
+intmax_t proc_get_start_time(struct procinfo *pi, pid_t pid);
 
 /** @brief Retrieve the kernel flags of a process
  * @param pi Pointer to process information

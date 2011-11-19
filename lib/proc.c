@@ -494,7 +494,7 @@ intmax_t proc_get_elapsed_time(struct procinfo *pi, pid_t pid) {
   return p->elapsed;
 }
 
-time_t proc_get_start_time(struct procinfo *pi, pid_t pid) {
+intmax_t proc_get_start_time(struct procinfo *pi, pid_t pid) {
   struct process *p = proc_find(pi, pid);
   proc_stat(p);
   return clock_to_time(p->prop_starttime);
