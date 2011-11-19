@@ -261,6 +261,13 @@ double proc_get_write_bytes(struct procinfo *pi, pid_t pid);
  */
 double proc_get_rw_bytes(struct procinfo *pi, pid_t pid);
 
+/** @brief Retrieve OOM score
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @return OOM score
+ */
+intmax_t proc_get_oom_score(struct procinfo *pi, pid_t pid);
+
 /** @brief Retrieve the list of selected processes
  * @param pi Pointer to process information
  * @param npids Where to store number of processes

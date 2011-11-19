@@ -103,6 +103,7 @@ struct process {
   unsigned vanished:1;          /* nonzero if process vanished */
   unsigned elapsed_set:1;       /* nonzero if elapsed has been set */
   unsigned eid_set:1;           /* nonzero if e[ug]id have been set */
+  unsigned oom_score_set:1;     /* nonzero if oom_score is set */
   char *prop_comm;
   char *prop_cmdline;
   int prop_state;
@@ -112,6 +113,7 @@ struct process {
   intmax_t base_utime, base_stime;
   struct timeval base_stat_time, stat_time;
   struct timeval base_io_time, io_time;
+  intmax_t oom_score;
   STAT_PROPS(SMEMBER,UMEMBER)
   IO_PROPS(SMEMBER,UMEMBER)
   IO_PROPS(BASE_SMEMBER,BASE_UMEMBER)
@@ -387,6 +389,21 @@ static void proc_io(struct process *p) {
     fatal(errno, "gettimeofday");
 }
 
+static void proc_oom_score(struct process *p) {
+  char buffer[128];
+  FILE *fp;
+  if(p->oom_score_set || p->vanished)
+    return;
+  p->oom_score_set =1;
+  snprintf(buffer, sizeof buffer, "/proc/%ld/oom_score", (long)p->pid);
+  if(!(fp = fopen(buffer, "r"))) {
+    p->vanished = 1;
+    return;
+  }
+  fscanf(fp, "%jd", &p->oom_score);
+  fclose(fp);
+}
+
 // ----------------------------------------------------------------------------
 
 pid_t proc_get_pid(struct procinfo attribute((unused)) *pi, pid_t pid) {
@@ -620,6 +637,12 @@ double proc_get_write_bytes(struct procinfo *pi, pid_t pid) {
 
 double proc_get_rw_bytes(struct procinfo *pi, pid_t pid) {
   return proc_get_read_bytes(pi, pid) + proc_get_write_bytes(pi, pid);
+}
+
+intmax_t proc_get_oom_score(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
+  proc_oom_score(p);
+  return p->oom_score;
 }
 
 // ----------------------------------------------------------------------------

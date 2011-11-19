@@ -415,6 +415,10 @@ static const struct propinfo properties[] = {
     property_decimal, compare_intmax, { .fetch_intmax = proc_get_nice }
   },
   {
+    "oom", "OOM", "OOM score",
+    property_decimal, compare_intmax, { .fetch_intmax = proc_get_oom_score }
+  },
+  {
     "pcpu", "%CPU", "%age CPU used",
     property_pcpu, compare_double, { .fetch_double = proc_get_pcpu }
   },
