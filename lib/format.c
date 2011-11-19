@@ -800,14 +800,28 @@ int format_compare(struct procinfo *pi, pid_t a, pid_t b) {
   return 0;
 }
 
-void format_help(void) {
-  size_t n;
-  printf("  Property  Heading  Description\n");
+char **format_help(void) {
+  size_t n = 0, size = 128;
+  char *ptr, **result, **next;
+
   for(n = 0; n < NPROPERTIES; ++n)
-    printf("  %-8s  %-7s  %s\n",
-           properties[n].name,
-           properties[n].heading,
-           properties[n].description);
+    size += max(strlen(properties[n].name), 8)
+      + max(strlen(properties[n].heading), 7)
+      + strlen(properties[n].description)
+      + 10;
+  next = result = xmalloc(sizeof (char *) * (2 + NPROPERTIES) + size);
+  ptr = (char *)(result + 2 + NPROPERTIES);
+  *next++ = strcpy(ptr, "  Property  Heading  Description");
+  ptr += strlen(ptr) + 1;
+  for(n = 0; n < NPROPERTIES; ++n) {
+    *next++ = ptr;
+    ptr += 1 + sprintf(ptr, "  %-8s  %-7s  %s",
+                       properties[n].name,
+                       properties[n].heading,
+                       properties[n].description);
+  }
+  *next = NULL;
+  return result;
 }
 
 char *format_get(void) {

@@ -47,7 +47,12 @@ size_t sysinfo_reset(void);
  */
 int sysinfo_get(struct procinfo *pi, size_t n, char buffer[], size_t bufsize);
 
-/** @brief Display system information help */
-void sysinfo_help(void);
+/** @brief Return system information help
+ * @return NULL-terminated list of strings
+ *
+ * Caller is responsible for freeing the returned array (one free()
+ * will do to release everything).
+ */
+char **sysinfo_help(void);
 
 #endif

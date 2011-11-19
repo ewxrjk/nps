@@ -78,12 +78,18 @@ enum next_action {
   NEXT_QUIT
 };
 
+struct help_page {
+  const char *const *lines;
+  size_t nlines;
+};
+
 static void loop(void);
 static enum next_action await(void);
 static enum next_action process_command(int ch);
 static void collect_input(const char *prompt,
                           int (*validator)(const char *),
-                          enum next_action (*setter)(const char *));
+                          enum next_action (*setter)(const char *),
+                          char **(helper)(void));
 static enum next_action process_input_key(int ch);
 static int valid_delay(const char *s);
 static enum next_action set_delay(const char *s);
@@ -91,7 +97,7 @@ static int valid_format(const char *s);
 static enum next_action set_format(const char *s);
 static int valid_order(const char *s);
 static enum next_action set_order(const char *s);
-static void display_help(void);
+static void display_help(const struct help_page *page);
 
 /** @brief Time between updates in seconds */
 static double update_interval = 1.0;
@@ -114,7 +120,10 @@ static size_t display_offset;
  * There is "always" a help page being displayed - but page 0 is 0
  * lines long.
  */
-static int help_page;
+static size_t help_page;
+
+/** @brief Scroll offset within help page */
+static size_t help_offset;
 
 /** @brief Line editor context */
 static struct input_context input;
@@ -124,6 +133,9 @@ static char input_buffer[1024];
 
 /** @brief Called when editing completes with a valid string */
 static enum next_action (*input_set)(const char *);
+
+/** @brief Help page for current input */
+static struct help_page input_help;
 
 static const const char *const command_help[] = {
   "Keyboard commands:",
@@ -146,10 +158,7 @@ static const const char *const panning_help[] = {
 };
 
 /** @brief Table of help pages */
-static const struct help_page {
-  const char *const *lines;
-  size_t nlines;
-} help_pages[] = {
+static const struct help_page help_pages[] = {
   { NULL, 0 },
   { command_help, sizeof command_help / sizeof *command_help },
   { panning_help, sizeof panning_help / sizeof *panning_help }
@@ -164,6 +173,7 @@ int main(int argc, char **argv) {
   char *e;
   int megabytes = 0;
   int have_set_sysinfo = 0;
+  char **help;
 
   /* Set locale */
   if(!setlocale(LC_ALL, ""))
@@ -231,7 +241,9 @@ int main(int argc, char **argv) {
     case OPT_HELP_FORMAT:
       printf("The following properties can be used with the -o and -s options:\n"
              "\n");
-      format_help();
+      help = format_help();
+      while(*help)
+        puts(*help++);
       printf("\n"
              "Multiple properties can be specified in one -o option, separated by\n"
              "commas or spaces. Multiple -o options accumulate rather than overriding\n"
@@ -247,7 +259,9 @@ int main(int argc, char **argv) {
     case OPT_HELP_SYSINFO:
       printf("The following properties can be used with the -I option:\n"
              "\n");
-      sysinfo_help();
+      help = sysinfo_help();
+      while(*help)
+        puts(*help++);
       printf("\n"
              "Multiple properties can be specified in one -I option, separated by\n"
              "commas or spaces.\n");
@@ -335,6 +349,7 @@ static void loop(void) {
   size_t n, npids, ninfos, len, offset;
   pid_t *pids;
   enum next_action next;
+  const struct help_page *help;
 
   do {
     update_last = clock_now();
@@ -375,7 +390,8 @@ static void loop(void) {
     do {
       /* (Re-)draw the process list */
       y = ystart;
-      ylimit = maxy - help_pages[help_page].nlines;
+      help = input_help.nlines ? &input_help : &help_pages[help_page];
+      ylimit = maxy - min(help->nlines, 8);
       move(ystart, 0);
       clrtobot();
 
@@ -402,7 +418,7 @@ static void loop(void) {
         ++y;
       }
 
-      display_help();
+      display_help(help);
 
       /* Input */
       if(input.bufsize) {
@@ -489,7 +505,8 @@ static enum next_action process_command(int ch) {
   case 'D':
     collect_input("Delay> ",
                   valid_delay,
-                  set_delay);
+                  set_delay,
+                  NULL);
     snprintf(input.buffer, input.bufsize, "%g", update_interval);
     break;
   case 'o':
@@ -502,7 +519,8 @@ static enum next_action process_command(int ch) {
     }
     collect_input("Format> ",
                   valid_format,
-                  set_format);
+                  set_format,
+                  format_help);
     strcpy(input_buffer, f);
     free(f);
     break;
@@ -516,13 +534,15 @@ static enum next_action process_command(int ch) {
     }
     collect_input("Sort> ",
                   valid_order,
-                  set_order);
+                  set_order,
+                  format_help);
     strcpy(input_buffer, f);
     free(f);
     break;
   case 'h':
   case 'H':
     help_page = (help_page + 1) % NHELPPAGES;
+    help_offset = 0;
     return NEXT_REDRAW;
   case 27:
     if(help_page) {
@@ -584,7 +604,9 @@ static enum next_action process_command(int ch) {
  */
 static void collect_input(const char *prompt,
                           int (*validator)(const char *),
-                          enum next_action (*setter)(const char *)) {
+                          enum next_action (*setter)(const char *),
+                          char **(*helper)(void)) {
+  size_t n;
   process_key = process_input_key;
   memset(&input, 0, sizeof input);
   input.buffer = input_buffer;
@@ -592,6 +614,12 @@ static void collect_input(const char *prompt,
   input.validate = validator;
   input.prompt = prompt;
   input_set = setter;
+  if(helper) {
+    input_help.lines = (const char *const *)helper();
+    for(n = 0; input_help.lines[n]; ++n)
+      ;
+    input_help.nlines = n;
+  }
 }
 
 /** @brief Handle keyboard input whilte editing */
@@ -600,13 +628,56 @@ static enum next_action process_input_key(int ch) {
   case 27:                      /* ESC */
     process_key = process_command;
     input.bufsize = 0;
+    if(input_help.lines) {
+      free((void *)input_help.lines);
+      input_help.lines = 0;
+      input_help.nlines = 0;
+      help_offset = 0;
+    }
     return NEXT_REDRAW;
-    break;
   case 13:                      /* CR */
     if(input.validate(input.buffer)) {
       process_key = process_command;
       input.bufsize = 0;
+      if(input_help.lines) {
+        free((void *)input_help.lines);
+        input_help.lines = 0;
+        input_help.nlines = 0;
+        help_offset = 0;
+      }
       return input_set(input.buffer);
+    }
+    break;
+  case 16:                      /* ^P */
+  case KEY_UP:
+    if(input_help.lines && help_offset) {
+      --help_offset;
+      return NEXT_REDRAW;
+    }
+    break;
+  case KEY_PPAGE:
+    if(input_help.lines && help_offset) {
+      if(help_offset > 5)
+        help_offset -= 5;
+      else
+        help_offset = 0;
+      return NEXT_REDRAW;
+    }
+    break;
+  case 14:                      /* ^N */
+  case KEY_DOWN:
+    if(input_help.lines && help_offset < input_help.nlines - 7) {
+      ++help_offset;
+      return NEXT_REDRAW;
+    }
+    break;
+  case KEY_NPAGE:
+    if(input_help.lines && help_offset < input_help.nlines - 7) {
+      if(help_offset + 5 < input_help.nlines - 6)
+        help_offset += 5;
+      else
+        help_offset = input_help.nlines - 7;
+      return NEXT_REDRAW;
     }
     break;
   default:
@@ -664,20 +735,33 @@ static enum next_action set_order(const char *s) {
 // ----------------------------------------------------------------------------
 
 /** @brief Display the current help page */
-static void display_help(void) {
-  int y, maxx, maxy;
-  size_t line;
+static void display_help(const struct help_page *page) {
+  int y, maxx, maxy, x, ystart;
+  size_t line, actual_line;
+  size_t lines = min(page->nlines, 8);
   getmaxyx(stdscr, maxy, maxx);
-  move(maxy - help_pages[help_page].nlines, 0);
+  ystart = maxy - lines;
+  move(ystart, 0);
   clrtobot();
-  for(line = 0; line < help_pages[help_page].nlines; ++line) {
-    if(line == 0)
+  if(lines && input.bufsize)
+    --lines;
+  for(line = 0; line < lines; ++line) {
+    if(line == 0) {
       attron(A_REVERSE);
-    y = maxy - help_pages[help_page].nlines + line;
-    if(mvaddnstr(y, 0,
-                 help_pages[help_page].lines[line],
-                 y == maxy - 1 ? maxx - 1 : maxx) == ERR)
-      fatal(0, "mvaddstr %d failed", y);
+      actual_line = 0;
+    } else
+      actual_line = line + help_offset;
+    if(actual_line < page->nlines) {
+      y = ystart + line;
+      if(mvaddnstr(y, 0,
+                   page->lines[actual_line],
+                   y == maxy - 1 ? maxx - 1 : maxx) == ERR)
+        fatal(0, "mvaddstr %d failed", y);
+      if(line == 0)
+        for(x = strlen(page->lines[0]); x < maxx; ++x)
+          if(mvaddch(y, x, ' ') == ERR)
+            fatal(0, "mvaddch %d failed", y);
+    }
     if(line == 0)
       attroff(A_REVERSE);
   }

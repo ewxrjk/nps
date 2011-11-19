@@ -131,6 +131,14 @@ Cancel the operation.
 .IP "\fBreturn"
 Commit the operation.
 This will only have any effect if the current input is valid.
+.IP "\fBup arrow\fR, \fB^P"
+Scroll the help up by one line.
+.IP "\fBpage up"
+Scroll the help up by one page.
+.IP "\fBdown arrow\fR, \fB^N"
+Scroll the help down by one line.
+.IP "\fBpage down"
+Scroll the help down by one page.
 .SH CONFIGURATION
 On startup defaults are read from the file \fB$HOME/.npsrc\fR, if it
 exists.

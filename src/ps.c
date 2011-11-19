@@ -56,6 +56,7 @@ int main(int argc, char **argv) {
   struct winsize ws;
   const char *s;
   struct procinfo *pi;
+  char **help;
 
   /* Read configuration */
   read_rc();
@@ -142,7 +143,9 @@ int main(int argc, char **argv) {
     case OPT_HELP_FORMAT:
       printf("The following properties can be used with the -o option:\n"
              "\n");
-      format_help();
+      help = format_help();
+      while(*help)
+        puts(*help++);
       printf("\n"
              "Multiple properties can be specified in one -o option, separated by\n"
              "commas or spaces. Multiple -o options accumulate rather than overriding\n"

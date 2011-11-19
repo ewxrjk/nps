@@ -117,8 +117,13 @@ int format_ordering(const char *ordering, unsigned flags);
  */
 int format_compare(struct procinfo *pi, pid_t a, pid_t b);
 
-/** @brief Display formatting help */
-void format_help(void);
+/** @brief Return formatting help
+ * @return NULL-terminated list of strings
+ *
+ * Caller is responsible for freeing the returned array (one free()
+ * will do to release everything).
+ */
+char **format_help(void);
 
 /** @brief Retrieve the format list as a single string in quoted syntax
  * @return Format list
