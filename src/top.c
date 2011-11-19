@@ -34,6 +34,10 @@
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <sys/ioctl.h>
 
 enum {
   OPT_HELP = 256,
@@ -89,6 +93,7 @@ struct help_page {
   size_t nlines;
 };
 
+static void sighandler(int sig);
 static void loop(void);
 static enum next_action await(void);
 static enum next_action process_command(int ch);
@@ -125,6 +130,12 @@ static enum next_action (*process_key)(int) = process_command;
 
 /** @brief Horizontal display offset */
 static size_t display_offset;
+
+/** @brief Pipe for signal communication */
+static int sigpipe[2];
+
+/** @brief Handled signals */
+static sigset_t sighandled;
 
 /** @brief Currently displayed help page
  *
@@ -188,6 +199,7 @@ int main(int argc, char **argv) {
   int megabytes = 0;
   int have_set_sysinfo = 0;
   char **help;
+  struct sigaction sa;
 
   /* Set locale */
   if(!setlocale(LC_ALL, ""))
@@ -315,6 +327,22 @@ int main(int argc, char **argv) {
       format_add("tty=TTY,args=CMD", FORMAT_QUOTED);
     }
   }
+  /* Set up SIGWINCH detection */
+  if(pipe(sigpipe) < 0)
+    fatal(errno, "pipe");
+  if((n = fcntl(sigpipe[1], F_GETFL)) < 0)
+    fatal(errno, "fcntl");
+  if(fcntl(sigpipe[1], F_SETFL, n | O_NONBLOCK) < 0)
+    fatal(errno, "fcntl");
+  sa.sa_handler = sighandler;
+  sa.sa_flags = 0;
+  sigemptyset(&sa.sa_mask);
+  if(sigaction(SIGWINCH, &sa, NULL) < 0)
+    fatal(errno, "sigaction");
+  sigemptyset(&sighandled);
+  sigaddset(&sighandled, SIGWINCH);
+  if(sigprocmask(SIG_BLOCK, &sighandled, NULL) <0)
+    fatal(errno, "sigprocmask");
   /* Initialize curses */
   if(!initscr())
     fatal(0, "initscr failed");
@@ -348,6 +376,15 @@ static int compare_pid(const void *av, const void *bv) {
   pid_t a = *(const pid_t *)av;
   pid_t b = *(const pid_t *)bv;
   return format_compare(pi, a, b);
+}
+
+// ----------------------------------------------------------------------------
+
+static void sighandler(int sig) {
+  unsigned char sigc = sig;
+  int save_errno = errno;
+  write(sigpipe[1], &sigc, 1);
+  errno = save_errno;
 }
 
 // ----------------------------------------------------------------------------
@@ -463,47 +500,72 @@ static void loop(void) {
     if(refresh() == ERR)
       fatal(0, "refresh failed");
     /* See what to do next */
-    next = await();
+    do {
+      next = await();
+    } while(next == NEXT_WAIT);
   }
 }
 
 /** @brief Handle keyboard input and wait for the next update
  * @return What do to next
- *
- * await() cannot return NEXT_WAIT.
  */
 static enum next_action await(void) {
   double update_next, now, delta;
   struct timeval tv;
   fd_set fdin;
   int n, ch, ret;
+  unsigned char sig;
+  struct winsize ws;
 
-  while((now = clock_now()) < (update_next = update_last + update_interval)) {
-    /* Figure out how long to wait until the next update is required */
-    delta = update_next - now;
-    /* Bound it at 5s, in case select()'s timeout handling goes wonky
-     * (e.g. due to hibernation) */
-    if(delta > 5.0)
-      delta = 5.0;
-    tv.tv_sec = floor(delta);
-    tv.tv_usec = 1000000 * (delta - tv.tv_sec);
-    FD_ZERO(&fdin);
-    FD_SET(0, &fdin);
-    n = select(1, &fdin, NULL, NULL, &tv);
-    if(n < 0) {
-      if(errno == EINTR || errno == EAGAIN)
-        continue;
-      fatal(errno, "select");
-    }
-    /* Handle keyboard input */
-    if(FD_ISSET(0, &fdin)) {
-      ch = getch();
-      if(ch != ERR)
-        if((ret = process_key(ch)) != NEXT_WAIT)
-          return ret;
-    }
+  if((now = clock_now()) >= (update_next = update_last + update_interval))
+    return NEXT_RESAMPLE;
+  /* Figure out how long to wait until the next update is required */
+  delta = update_next - now;
+  /* Bound it at 5s, in case select()'s timeout handling goes wonky
+   * (e.g. due to hibernation) */
+  if(delta > 5.0)
+    delta = 5.0;
+  tv.tv_sec = floor(delta);
+  tv.tv_usec = 1000000 * (delta - tv.tv_sec);
+  FD_ZERO(&fdin);
+  FD_SET(0, &fdin);
+  FD_SET(sigpipe[0], &fdin);
+  if(sigprocmask(SIG_UNBLOCK, &sighandled, NULL) < 0)
+    fatal(errno, "sigprocmask");
+  n = select(max(0, sigpipe[0]) + 1, &fdin, NULL, NULL, &tv);
+  if(sigprocmask(SIG_BLOCK, &sighandled, NULL) < 0)
+    fatal(errno, "sigprocmask");
+  if(n < 0) {
+    if(errno == EINTR || errno == EAGAIN)
+      return NEXT_WAIT;
+    fatal(errno, "select");
   }
-  return NEXT_RESAMPLE;
+  /* Handle keyboard input */
+  if(FD_ISSET(0, &fdin)) {
+    ch = getch();
+    if(ch != ERR)
+      if((ret = process_key(ch)) != NEXT_WAIT)
+        return ret;
+  }
+  /* Handle signals */
+  if(FD_ISSET(sigpipe[0], &fdin)) {
+    n = read(sigpipe[0], &sig, 1);
+    if(n > 0) {
+      switch(sig) {
+      case SIGWINCH:
+        if(ioctl(0, TIOCGWINSZ, &ws) < 0)
+          fatal(errno, "ioctl TIOCGWINSZ");
+        resizeterm(ws.ws_row, ws.ws_col);
+        return NEXT_RESYSINFO;
+      default:
+        fatal(0, "unexpected signal %d", sig);
+      }
+    } else if(n < 0)
+      fatal(errno, "read from sigpipe");
+    else if(n == 0)
+        fatal(0, "EOF from sigpipe");
+  }
+  return NEXT_WAIT;
 }
 
 // ----------------------------------------------------------------------------
