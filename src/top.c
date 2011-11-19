@@ -61,6 +61,9 @@ enum next_action {
   /** @brief Re-sort processes */
   NEXT_RESORT,
 
+  /** @brief Redraw system information */
+  NEXT_RESYSINFO,
+
   /** @brief Redraw existing output
    *
    * This is used after changing @ref display_offset, and after @ref
@@ -97,6 +100,8 @@ static int valid_format(const char *s);
 static enum next_action set_format(const char *s);
 static int valid_order(const char *s);
 static enum next_action set_order(const char *s);
+static int valid_sysinfo(const char *s);
+static enum next_action set_sysinfo(const char *s);
 static void display_help(const struct help_page *page);
 
 /** @brief Time between updates in seconds */
@@ -137,11 +142,18 @@ static enum next_action (*input_set)(const char *);
 /** @brief Help page for current input */
 static struct help_page input_help;
 
+/** @brief Number of lines reserved for help
+ *
+ * Note that when editing something, one of the help lines is lost.
+ */
+#define HELP_SIZE 8
+
 static const const char *const command_help[] = {
   "Keyboard commands:",
   "  ^L                 Redisplay",
   "  d                  Edit update interval",
   "  h                  Help (press again for more)",
+  "  j                  Edit system info display",
   "  o                  Edit column list",
   "  s                  Edit sort order",
   "  q                  Quit",
@@ -192,7 +204,7 @@ int main(int argc, char **argv) {
       update_interval = v;
   }
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+o:s:iI:d:M", 
+  while((n = getopt_long(argc, argv, "+o:s:ij:d:M", 
                          options, NULL)) >= 0) {
     switch(n) {
     case 'o':
@@ -205,8 +217,8 @@ int main(int argc, char **argv) {
     case 'i':
       show_idle = 0;
       break;
-    case 'I':
-      sysinfo_format(optarg);
+    case 'j':
+      sysinfo_set(optarg, 0);
       have_set_sysinfo = 1;
       break;
     case 'd':
@@ -229,12 +241,12 @@ int main(int argc, char **argv) {
              "  -o FMT,FMT,...    Set output format\n"
              "  -s [+/-]FMT,...   Set ordering\n"
              "  -i                Hide idle processes\n"
-             "  -I PROP,PROP,...  Set system information format\n"
+             "  -j PROP,PROP,...  Set system information format\n"
              "  -d SECONDS        Set update interval\n"
              "  -M                Display memory sizes in megabytes\n"
              "  --help            Display option summary\n"
              "  --help-format     Display formatting & ordering help (-o/-s)\n"
-             "  --help-sysinfo    Display system information help (-I)\n"
+             "  --help-sysinfo    Display system information help (-j)\n"
              "  --version         Display version string\n"
              "Press 'h' for on-screen help.\n");
       return 0;
@@ -257,7 +269,7 @@ int main(int argc, char **argv) {
              "sense of an ordering, prefix it with '-'.\n");
       return 0;
     case OPT_HELP_SYSINFO:
-      printf("The following properties can be used with the -I option:\n"
+      printf("The following properties can be used with the -j option:\n"
              "\n");
       help = sysinfo_help();
       while(*help)
@@ -277,11 +289,11 @@ int main(int argc, char **argv) {
   /* Set the system info to display */
   if(!have_set_sysinfo) {
     if(rc_top_sysinfo)
-      sysinfo_format(rc_top_sysinfo);
+      sysinfo_set(rc_top_sysinfo, 0);
     else if(megabytes)
-      sysinfo_format("time,uptime,processes,load,cpu,memM,swapM");
+      sysinfo_set("time,uptime,processes,load,cpu,memM,swapM", 0);
     else
-      sysinfo_format("time,uptime,processes,load,cpu,mem,swap");
+      sysinfo_set("time,uptime,processes,load,cpu,mem,swap", 0);
   }
   /* Set the default selection */
   if(show_idle)
@@ -357,94 +369,96 @@ static void loop(void) {
     pids = proc_get_selected(pi, &npids);
     qsort(pids, npids, sizeof *pids, compare_pid);
     format_columns(pi, pids, npids);
-    
-    /* Start at the top with a blank screen */
-    if(erase() == ERR)
-      fatal(0, "erase failed");
-    x = y = 0;
-    getmaxyx(stdscr, maxy, maxx);
 
-    /* System information */
-    ninfos = sysinfo_reset();
-    for(n = 0; n < ninfos; ++n) {
-      if(!sysinfo_get(pi, n, buffer, sizeof buffer)) {
-        len = strlen(buffer);
-        if(x && x + len > (size_t)maxx) {
-          ++y;
-          x = 0;
-        }
-        if(y >= maxy)
-          break;
-        if(mvaddnstr(y, x, buffer, maxx - x) == ERR)
-          fatal(0, "mvaddstr %d,%d failed", y, x);
-        x += strlen(buffer) + 2;
-      }
-    }
-
-    if(x) {
-      ++y;
-      x = 0;
-    }
-
-    ystart = y;
     do {
-      /* (Re-)draw the process list */
-      y = ystart;
-      help = input_help.nlines ? &input_help : &help_pages[help_page];
-      ylimit = maxy - min(help->nlines, 8);
-      move(ystart, 0);
-      clrtobot();
+      /* Start at the top with a blank screen */
+      if(erase() == ERR)
+        fatal(0, "erase failed");
+      x = y = 0;
+      getmaxyx(stdscr, maxy, maxx);
 
-      /* Heading */
-      if(y < ylimit) {
-        attron(A_REVERSE);
-        format_heading(pi, buffer, sizeof buffer);
-        offset = min(display_offset, strlen(buffer));
-        if(mvaddnstr(y, 0, buffer + offset, maxx) == ERR)
-          fatal(0, "mvaddstr %d failed", y);
+      /* System information */
+      ninfos = sysinfo_reset();
+      for(n = 0; n < ninfos; ++n) {
+        if(!sysinfo_format(pi, n, buffer, sizeof buffer)) {
+          len = strlen(buffer);
+          if(x && x + len > (size_t)maxx) {
+            ++y;
+            x = 0;
+          }
+          if(y >= maxy)
+            break;
+          if(mvaddnstr(y, x, buffer, maxx - x) == ERR)
+            fatal(0, "mvaddstr %d,%d failed", y, x);
+          x += strlen(buffer) + 2;
+        }
+      }
+
+      if(x) {
         ++y;
-        for(x = strlen(buffer + offset); x < maxx; ++x)
-          addch(' ');
-        attroff(A_REVERSE);
+        x = 0;
       }
 
-      /* Processes */
-      for(n = 0; n < npids && y < ylimit; ++n) {
-        format_process(pi, pids[n], buffer, sizeof buffer);
-        offset = min(display_offset, strlen(buffer));
-        // curses seems to have trouble with the last position on the screen
-        if(mvaddnstr(y, 0, buffer + offset, y == ylimit - 1 ? maxx - 1 : maxx) == ERR)
-          fatal(0, "mvaddstr %d failed", y);
-        ++y;
-      }
+      ystart = y;
+      do {
+        /* (Re-)draw the process list */
+        y = ystart;
+        help = input_help.nlines ? &input_help : &help_pages[help_page];
+        ylimit = maxy - min(help->nlines, 8);
+        move(ystart, 0);
+        clrtobot();
 
-      display_help(help);
+        /* Heading */
+        if(y < ylimit) {
+          attron(A_REVERSE);
+          format_heading(pi, buffer, sizeof buffer);
+          offset = min(display_offset, strlen(buffer));
+          if(mvaddnstr(y, 0, buffer + offset, maxx) == ERR)
+            fatal(0, "mvaddstr %d failed", y);
+          ++y;
+          for(x = strlen(buffer + offset); x < maxx; ++x)
+            addch(' ');
+          attroff(A_REVERSE);
+        }
 
-      /* Input */
-      if(input.bufsize) {
-        input_draw(&input);
-        curs_set(1);
-      } else
-        curs_set(0);
+        /* Processes */
+        for(n = 0; n < npids && y < ylimit; ++n) {
+          format_process(pi, pids[n], buffer, sizeof buffer);
+          offset = min(display_offset, strlen(buffer));
+          // curses seems to have trouble with the last position on the screen
+          if(mvaddnstr(y, 0, buffer + offset, y == ylimit - 1 ? maxx - 1 : maxx) == ERR)
+            fatal(0, "mvaddstr %d failed", y);
+          ++y;
+        }
 
-      /* Display what we've got */    
-      if(refresh() == ERR)
-        fatal(0, "refresh failed");
-      /* See what to do next */
-      next = await();
-      /* Handle formatting/sorting changes */
-      if(next == NEXT_REFORMAT) {
-        format_columns(pi, pids, npids);
-        next = NEXT_REDRAW;
-      }
-      if(next == NEXT_RESORT) {
-        qsort(pids, npids, sizeof *pids, compare_pid);
-        next = NEXT_REDRAW;
-      }
+        display_help(help);
 
-      /* If it's not time to collect new samples, draw what we've got
-       * and continue waiting */
-    } while(next == NEXT_REDRAW);
+        /* Input */
+        if(input.bufsize) {
+          input_draw(&input);
+          curs_set(1);
+        } else
+          curs_set(0);
+
+        /* Display what we've got */    
+        if(refresh() == ERR)
+          fatal(0, "refresh failed");
+        /* See what to do next */
+        next = await();
+        /* Handle formatting/sorting changes */
+        if(next == NEXT_REFORMAT) {
+          format_columns(pi, pids, npids);
+          next = NEXT_REDRAW;
+        }
+        if(next == NEXT_RESORT) {
+          qsort(pids, npids, sizeof *pids, compare_pid);
+          next = NEXT_REDRAW;
+        }
+
+        /* If it's not time to collect new samples, draw what we've got
+         * and continue waiting */
+      } while(next == NEXT_REDRAW);
+    } while(next == NEXT_RESYSINFO);
 
     /* We need to collect new samples.  We stash the ones we've got to
      * provide a baseline for rate calculation. */
@@ -536,6 +550,21 @@ static enum next_action process_command(int ch) {
                   valid_order,
                   set_order,
                   format_help);
+    strcpy(input_buffer, f);
+    free(f);
+    break;
+  case 'j':
+  case 'J':
+    f = sysinfo_get();
+    if(strlen(f) >= sizeof input_buffer) {
+      beep();
+      free(f);
+      break;
+    }
+    collect_input("System> ",
+                  valid_sysinfo,
+                  set_sysinfo,
+                  sysinfo_help);
     strcpy(input_buffer, f);
     free(f);
     break;
@@ -657,8 +686,8 @@ static enum next_action process_input_key(int ch) {
     break;
   case KEY_PPAGE:
     if(input_help.lines && help_offset) {
-      if(help_offset > 5)
-        help_offset -= 5;
+      if(help_offset > HELP_SIZE - 3)
+        help_offset -= HELP_SIZE - 3;
       else
         help_offset = 0;
       return NEXT_REDRAW;
@@ -666,17 +695,17 @@ static enum next_action process_input_key(int ch) {
     break;
   case 14:                      /* ^N */
   case KEY_DOWN:
-    if(input_help.lines && help_offset < input_help.nlines - 7) {
+    if(input_help.lines && help_offset < input_help.nlines - (HELP_SIZE-1)) {
       ++help_offset;
       return NEXT_REDRAW;
     }
     break;
   case KEY_NPAGE:
-    if(input_help.lines && help_offset < input_help.nlines - 7) {
-      if(help_offset + 5 < input_help.nlines - 6)
-        help_offset += 5;
+    if(input_help.lines && help_offset < input_help.nlines - (HELP_SIZE-1)) {
+      if(help_offset + HELP_SIZE - 3 < input_help.nlines - (HELP_SIZE-2))
+        help_offset += HELP_SIZE - 3;
       else
-        help_offset = input_help.nlines - 7;
+        help_offset = input_help.nlines - (HELP_SIZE-1);
       return NEXT_REDRAW;
     }
     break;
@@ -734,11 +763,22 @@ static enum next_action set_order(const char *s) {
 
 // ----------------------------------------------------------------------------
 
+static int valid_sysinfo(const char *s) {
+  return sysinfo_set(s, FORMAT_CHECK);
+}
+
+static enum next_action set_sysinfo(const char *s) {
+  sysinfo_set(s, 0);
+  return NEXT_RESYSINFO;
+}
+
+// ----------------------------------------------------------------------------
+
 /** @brief Display the current help page */
 static void display_help(const struct help_page *page) {
   int y, maxx, maxy, x, ystart;
   size_t line, actual_line;
-  size_t lines = min(page->nlines, 8);
+  size_t lines = min(page->nlines, HELP_SIZE);
   getmaxyx(stdscr, maxy, maxx);
   ystart = maxy - lines;
   move(ystart, 0);

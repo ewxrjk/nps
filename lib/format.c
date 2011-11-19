@@ -634,10 +634,10 @@ int format_add(const char *f, unsigned flags) {
       if(!prop)
         return 0;
     } else {
-      if((ssize_t)(ncolumns + 1) < 0)
-        fatal(0, "too many columns");
       if(!prop)
         fatal(0, "unknown process property '%s'", buffer);
+      if((ssize_t)(ncolumns + 1) < 0)
+        fatal(0, "too many columns");
       columns = xrecalloc(columns, ncolumns + 1, sizeof *columns);
       columns[ncolumns].prop = prop;
       columns[ncolumns].heading = xstrdup(heading ? heading 
@@ -761,6 +761,8 @@ int format_ordering(const char *ordering, unsigned flags) {
       if(!prop)
         return 0;
     } else {
+      if(!prop)
+        fatal(0, "unknown process property '%s'", buffer);
       if((ssize_t)(norders + 1) < 0)
         fatal(0, "too many columns");
       orders = xrecalloc(orders, norders + 1, sizeof *orders);

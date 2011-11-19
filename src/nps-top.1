@@ -14,7 +14,7 @@ If multiple \fB-o\fR options are given then they are cumulative.
 See \fBFORMATTING\fR below.
 .IP \fB-i
 Display only non-idle processes.
-.IP \fB-I \fISYSINFO
+.IP \fB-j \fISYSINFO
 Sets the system information format.
 See \fBSYSTEM INFORMATION\fR below.
 .IP \fB-s \fIORDER
@@ -30,7 +30,7 @@ Display a usage message.
 .IP \fB--help-format
 Displays help for the \fB-o\fR and \fB-s\fR options.
 .IP \fB--help-sysinfo
-Displays help for the \fB-I\fR option.
+Displays help for the \fB-j\fR option.
 .IP \fB--version
 Display a version string.
 .SH FORMATTING
@@ -195,7 +195,7 @@ If no ordering option is specified then the default is equivalent to:
 \fB-s +pcpu,+io,+rss,+vsz
 .RE
 .SH "SYSTEM INFORMATION"
-The \fB-I\fR option specifies which whole-system properties should be
+The \fB-j\fR option specifies which whole-system properties should be
 displayed, separated by spaces or commas.
 The available system properties are:
 .IP \fBcpu
@@ -302,6 +302,9 @@ Equivalent to the \fB-d\fR option.
 .IP \fBh
 Displays on-screen help.
 Press multiple times to cycle through the help pages and dismiss them.
+.IP \fBj
+Changes the list of whole-system properties.
+Equivalent to the \fB-j\fR option.
 .IP \fBo
 Changes the list of properties to display.
 Similar to the \fB-o\fR option except column headings may be quoted
@@ -360,7 +363,7 @@ different from the command-line syntax.
 .IP \fBtop_order
 The default order (overriden with the \fB-s\fR option).
 .IP \fBtop_sysinfo
-The default system information (overriden with the \fB-I\fR option).
+The default system information (overriden with the \fB-j\fR option).
 .PP
 .SH BUGS
 On the first iteration, rate properties such as \fBpcpu\fR are

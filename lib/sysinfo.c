@@ -19,6 +19,7 @@
  */
 #include <config.h>
 #include "sysinfo.h"
+#include "format.h"
 #include "process.h"
 #include "utils.h"
 #include <stdlib.h>
@@ -402,15 +403,19 @@ static const struct sysprop *sysinfo_find(const char *name) {
     else
       return &sysproperties[m];
   }
-  fatal(0, "unknown system property '%s'", name);
+  return NULL;
 }
 
-void sysinfo_format(const char *format) {
+int sysinfo_set(const char *format, unsigned flags) {
   char buffer[128];
   size_t i;
-  free(sysinfos);
-  sysinfos = NULL;
-  nsysinfos = 0;
+  const struct sysprop *prop;
+
+  if(!(flags & FORMAT_CHECK)) {
+    free(sysinfos);
+    sysinfos = NULL;
+    nsysinfos = 0;
+  }
   while(*format) {
     if(*format == ' ' || *format == ',') {
       ++format;
@@ -423,12 +428,21 @@ void sysinfo_format(const char *format) {
       ++format;
     }
     buffer[i] = 0;
-    if((ssize_t)(nsysinfos + 1) < 0)
-      fatal(0, "too many columns");
-    sysinfos = xrecalloc(sysinfos, nsysinfos + 1, sizeof *sysinfos);
-    sysinfos[nsysinfos].prop = sysinfo_find(buffer);
-    ++nsysinfos;
+    prop = sysinfo_find(buffer);
+    if(flags & FORMAT_CHECK) {
+      if(!prop)
+        return 0;
+    } else {
+      if(!prop)
+        fatal(0, "unknown system property '%s'", buffer);
+      if((ssize_t)(nsysinfos + 1) < 0)
+        fatal(0, "too many columns");
+      sysinfos = xrecalloc(sysinfos, nsysinfos + 1, sizeof *sysinfos);
+      sysinfos[nsysinfos].prop = prop;
+      ++nsysinfos;
+    }
   }
+  return 1;
 }
 
 size_t sysinfo_reset(void) {
@@ -439,7 +453,7 @@ size_t sysinfo_reset(void) {
   return nsysinfos;
 }
 
-int sysinfo_get(struct procinfo *pi, size_t n, char buffer[], size_t bufsize) {
+int sysinfo_format(struct procinfo *pi, size_t n, char buffer[], size_t bufsize) {
   buffer[0] = 0;
   if(n < nsysinfos) {
     sysinfos[n].prop->format(pi, buffer, bufsize);
@@ -468,4 +482,20 @@ char **sysinfo_help(void) {
   }
   *next = NULL;
   return result;
+}
+
+char *sysinfo_get(void) {
+  size_t size = 10, n;
+  char *buffer, *ptr;
+  for(n = 0; n < nsysinfos; ++n)
+    size += strlen(sysinfos[n].prop->name) + 1;
+  ptr = buffer = xmalloc(size);
+  for(n = 0; n < nsysinfos; ++n) {
+    if(n)
+      *ptr++ = ' ';
+    strcpy(ptr, sysinfos[n].prop->name);
+    ptr += strlen(ptr);
+  }
+  *ptr = 0;
+  return buffer;
 }

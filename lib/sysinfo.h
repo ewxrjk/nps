@@ -30,8 +30,18 @@ struct procinfo;
 
 /** @brief Set system information format
  * @param format Format string
+ * @param flags Flags
+ * @return Nonzero on success, 0 if @p ordering is not valid
+ *
+ * @p flags should be a combination of the following values:
+ * - @ref FORMAT_CHECK to check @p ordering rather than act on it
+ *
+ * If @ref FORMAT_CHECK is specified then any errors cause a 0 return.
+ * If it is not specified then errors are either ignored or cause a
+ * call to fatal().
  */
-void sysinfo_format(const char *format);
+int sysinfo_set(const char *format,
+                   unsigned flags);
 
 /** @brief Reset cached system information 
  * @return The number of sysinfo elements
@@ -45,7 +55,7 @@ size_t sysinfo_reset(void);
  * @param bufsize Size of buffer
  * @return 0 on success, -1 if there are no more elements
  */
-int sysinfo_get(struct procinfo *pi, size_t n, char buffer[], size_t bufsize);
+int sysinfo_format(struct procinfo *pi, size_t n, char buffer[], size_t bufsize);
 
 /** @brief Return system information help
  * @return NULL-terminated list of strings
@@ -54,5 +64,12 @@ int sysinfo_get(struct procinfo *pi, size_t n, char buffer[], size_t bufsize);
  * will do to release everything).
  */
 char **sysinfo_help(void);
+
+/** @brief Retrieve system information format as a single string
+ * @return Format string
+ *
+ * Caller is responsible for freeing the returned string.
+ */
+char *sysinfo_get(void);
 
 #endif
