@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
       if(rc_ps_f_format)
         format_set(rc_ps_f_format, FORMAT_QUOTED);
       else
-        format_set("user=UID,pid,ppid,pcpu=C,stime,tty=TTY,time,args=CMD", FORMAT_QUOTED);
+        format_set("user=UID,pid,ppid,pcpu=C,stime,tty=TTY,time,argsbrief=CMD", FORMAT_QUOTED);
       set_format = 1;
       break;
     case 'l':

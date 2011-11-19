@@ -77,7 +77,7 @@ The \fB-f\fR option is equivalent to:
 The \fB-l\fR option is equivalent to:
 .PP
 .RS
-\fB-oflags,state,uid,pid,ppid,pcpu=C -opri,nice,addr,vsz=SZ -owchan,tty=TTY -otime,arg=CMD
+\fB-oflags,state,uid,pid,ppid,pcpu=C -opri,nice,addr,vsz=SZ -owchan,tty=TTY -otime,argsbrief=CMD
 .RE
 .SH CONFIGURATION
 On startup defaults are read from the file \fB$HOME/.npsrc\fR, if it

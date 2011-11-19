@@ -324,7 +324,7 @@ int main(int argc, char **argv) {
       format_set("pcpu=%C", FORMAT_QUOTED|FORMAT_ADD);
       if(!getuid())
         format_set("read,write", FORMAT_QUOTED|FORMAT_ADD);
-      format_set("tty=TTY,args=CMD", FORMAT_QUOTED|FORMAT_ADD);
+      format_set("tty=TTY,argsbrief=CMD", FORMAT_QUOTED|FORMAT_ADD);
     }
   }
   /* Set up SIGWINCH detection */

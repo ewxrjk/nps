@@ -65,6 +65,8 @@ The current instruction pointer (hex).
 Name and arguments.
 If these cannot be determined then the value of \fBcomm\fR is used, in
 square brackets.
+.IP \fBargsbrief
+Same as \fBargs\fR but with the directory part of the command stripped.
 .IP \fBcomm
 Name.
 .IP \fBetime
@@ -204,7 +206,7 @@ The \fB-f\fR option is equivalent to:
 The \fB-l\fR option is equivalent to:
 .PP
 .RS
-\fB-oflags,state,uid,pid,ppid,pcpu=C -opri,nice,addr,vsz=SZ -owchan,tty=TTY -otime,arg=CMD
+\fB-oflags,state,uid,pid,ppid,pcpu=C -opri,nice,addr,vsz=SZ -owchan,tty=TTY -otime,argsbrief=CMD
 .RE
 .SH CONFIGURATION
 On startup defaults are read from the file \fB$HOME/.npsrc\fR, if it

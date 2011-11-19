@@ -242,9 +242,16 @@ static void property_tty(const struct propinfo *prop,
   buffer_append(b, path);
 }
 
-static void property_command(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_command_general(const struct propinfo *prop, 
+                                     struct buffer *b, struct procinfo *pi,
+                                     pid_t pid, int brief) {
   char *t;
-  const char *comm = prop->fetch.fetch_string(pi, pid);
+  const char *comm = prop->fetch.fetch_string(pi, pid), *ptr;
+  if(brief && comm[0] != '[') {
+    for(ptr = comm; *ptr && *ptr != ' '; ++ptr)
+      if(*ptr == '/')
+        comm = ptr + 1;
+  }
   /* "A process that has exited and has a parent, but has not yet been
    * waited for by the parent, shall be marked defunct." */
   if(proc_get_state(pi, pid) != 'Z')
@@ -255,6 +262,17 @@ static void property_command(const struct propinfo *prop, struct buffer *b, stru
     buffer_append(b, t);
     free(t);
   }
+}
+
+static void property_command(const struct propinfo *prop, struct buffer *b,
+                               struct procinfo *pi, pid_t pid) {
+  return property_command_general(prop, b, pi, pid, 0);
+}
+
+static void property_command_brief(const struct propinfo *prop,
+                                   struct buffer *b, struct procinfo *pi,
+                                   pid_t pid) {
+  return property_command_general(prop, b, pi, pid, 1);
 }
 
 static void property_pcpu(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
@@ -387,6 +405,10 @@ static const struct propinfo properties[] = {
   {
     "args", "COMMAND", "Command with arguments",
     property_command, compare_string, { .fetch_string = proc_get_cmdline }
+  },
+  {
+    "argsbrief", "COMMAND", "Command with arguments (but path removed)",
+    property_command_brief, compare_string, { .fetch_string = proc_get_cmdline }
   },
   {
     "comm", "COMMAND", "Command",
