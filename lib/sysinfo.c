@@ -282,19 +282,21 @@ static void sysprop_memM(struct procinfo attribute((unused)) *pi,
 static void sysprop_swap(struct procinfo attribute((unused)) *pi,
                          char *buffer, size_t bufsize) {
   get_meminfo();
-  snprintf(buffer, bufsize, "Swap: %9ju tot %9ju used %9ju free",
+  snprintf(buffer, bufsize, "Swap: %9ju tot %9ju used %9ju free %9ju cache",
            meminfo.SwapTotal,
            meminfo.SwapTotal - meminfo.SwapFree,
-           meminfo.SwapFree);
+           meminfo.SwapFree,
+           meminfo.SwapCached);
 }
 
 static void sysprop_swapM(struct procinfo attribute((unused)) *pi,
                           char *buffer, size_t bufsize) {
   get_meminfo();
-  snprintf(buffer, bufsize, "Swap: %8juM tot %8juM used %8juM free",
+  snprintf(buffer, bufsize, "Swap: %8juM tot %8juM used %8juM free %8juM cache",
            meminfo.SwapTotal / 1024,
            (meminfo.SwapTotal - meminfo.SwapFree) / 1024,
-           meminfo.SwapFree / 1024);
+           meminfo.SwapFree / 1024,
+           meminfo.SwapCached / 1024);
 }
 
 static void sysprop_cpu(struct procinfo attribute((unused)) *pi,
