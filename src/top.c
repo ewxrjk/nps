@@ -50,19 +50,19 @@ const struct option options[] = {
 };
 
 static void loop(void);
-static void await(void);
-static void process_command(int ch);
+static int await(void);
+static int process_command(int ch);
 static void collect_input(const char *prompt,
                           int (*validator)(const char *),
                           void (*setter)(const char *));
-static void process_input_key(int ch);
+static int process_input_key(int ch);
 static int valid_delay(const char *s);
 static void set_delay(const char *s);
 
 static double update_interval = 1.0;
 static double update_last;
 static int quit;
-static void (*process_key)(int) = process_command;
+static int (*process_key)(int) = process_command;
 
 static struct input_context input;
 static char input_buffer[1024];
@@ -218,10 +218,11 @@ static int compare_pid(const void *av, const void *bv) {
 
 // ----------------------------------------------------------------------------
 
+/** @brief The main display loop */
 static void loop(void) {
   struct procinfo *last = NULL;
   char buffer[1024];
-  int x, y, maxx, maxy;
+  int x, y, maxx, maxy, ystart;
   size_t n, npids, ninfos, len;
   pid_t *pids;
 
@@ -260,45 +261,52 @@ static void loop(void) {
       x = 0;
     }
 
-    /* Heading */
-    if(y < maxy) {
-      attron(A_REVERSE);
-      format_heading(pi, buffer, sizeof buffer);
-      if(mvaddnstr(y, 0, buffer, maxx) == ERR)
-        fatal(0, "mvaddstr %d failed", y);
-      ++y;
-      for(x = strlen(buffer); x < maxx; ++x)
-        addch(' ');
-      attroff(A_REVERSE);
-    }
+    ystart = y;
+    do {
+      y = ystart;
 
-    /* Processes */
-    for(n = 0; n < npids && y < maxy; ++n) {
-      format_process(pi, pids[n], buffer, sizeof buffer);
-      // curses seems to have trouble with the last position on the screen
-      if(mvaddnstr(y, 0, buffer, y == maxy - 1 ? maxx - 1 : maxx) == ERR)
-        fatal(0, "mvaddstr %d failed", y);
-      ++y;
-    }
+      /* Heading */
+      if(y < maxy) {
+        attron(A_REVERSE);
+        format_heading(pi, buffer, sizeof buffer);
+        if(mvaddnstr(y, 0, buffer, maxx) == ERR)
+          fatal(0, "mvaddstr %d failed", y);
+        ++y;
+        for(x = strlen(buffer); x < maxx; ++x)
+          addch(' ');
+        attroff(A_REVERSE);
+      }
 
-    /* Input */
-    if(input.bufsize) {
-      input_draw(&input);
-      curs_set(1);
-    } else
-      curs_set(0);
+      /* Processes */
+      for(n = 0; n < npids && y < maxy; ++n) {
+        format_process(pi, pids[n], buffer, sizeof buffer);
+        // curses seems to have trouble with the last position on the screen
+        if(mvaddnstr(y, 0, buffer, y == maxy - 1 ? maxx - 1 : maxx) == ERR)
+          fatal(0, "mvaddstr %d failed", y);
+        ++y;
+      }
 
-    /* Display what we've got */    
-    if(refresh() == ERR)
-      fatal(0, "refresh failed");
+      /* Input */
+      if(input.bufsize) {
+        input_draw(&input);
+        curs_set(1);
+      } else
+        curs_set(0);
 
-    proc_free(last);
+      /* Display what we've got */    
+      if(refresh() == ERR)
+        fatal(0, "refresh failed");
+    } while(await());
+
     last = pi;
-    await();
+    proc_free(last);
   }
 }
 
-static void await(void) {
+/** @brief Handle keyboard input and wait for the next update
+ * @return 1 to redraw what we've got, non-0 to resample
+ */
+static int await(void) {
   double update_next, now, delta;
   struct timeval tv;
   fd_set fdin;
@@ -322,18 +330,21 @@ static void await(void) {
     if(FD_ISSET(0, &fdin)) {
       ch = getch();
       if(ch != ERR)
-        process_key(ch);
+        if(process_key(ch))
+          return 1;
     }
   }
+  return 0;
 }
 
 // ----------------------------------------------------------------------------
 
-static void process_command(int ch) {
+static int process_command(int ch) {
   switch(ch) {
   case 'q':
   case 'Q':
     quit = 1;
+    return 1;
     break;
   case 'd':
   case 'D':
@@ -351,11 +362,9 @@ static void process_command(int ch) {
   }
   if(input.bufsize) {
     input.cursor = input.len;
-    input_draw(&input);
-    curs_set(1);
-    if(refresh() == ERR)
-      fatal(0, "refresh failed");
+    return 1;
   }
+  return 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -372,25 +381,26 @@ static void collect_input(const char *prompt,
   input_set = setter;
 }
 
-static void process_input_key(int ch) {
+static int process_input_key(int ch) {
   switch(ch) {
   case 27:                      /* ESC */
     process_key = process_command;
     input.bufsize = 0;
+    return 1;
     break;
   case 13:                      /* CR */
     if(input.validate(input.buffer)) {
       process_key = process_command;
       input_set(input.buffer);
       input.bufsize = 0;
+      return 1;
     }
     break;
   default:
     input_key(ch, &input);
     break;
   }
-  if(!input.bufsize)
-    curs_set(0);
+  return 0;
 }
 
 // ----------------------------------------------------------------------------
