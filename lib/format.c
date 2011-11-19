@@ -289,7 +289,8 @@ static void property_memM(const struct propinfo *prop, struct buffer *b, struct 
 
 static void property_wchan(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
   unsigned long long wchan = prop->fetch.fetch_uintmax(pi, pid);
-  if(wchan && wchan + 1)
+  /* 0 and all-bits-1 are not very interesting wchans */
+  if(wchan && wchan + 1 && wchan != 0xFFFFFFFF)
     format_hex(wchan, b);
   else
     /* suppress pointless values */
