@@ -73,8 +73,12 @@ static void device_map(const char *dir) {
   DIR *dp;
   struct stat sb;
 
-  if(!(dp = opendir(dir)))
-    fatal(errno, "opendir %s", dir);
+  if(!(dp = opendir(dir))) {
+    /* Just skip bits of /dev we can't see into, for any reason; we'll
+     * probably still be able to see the bits we care about and if
+     * something's *really* wrong someone will find out soon enoug. */
+    return;
+  }
   errno = 0;
   while((de = readdir(dp))) {
     if(de->d_name[0] != '.') {
