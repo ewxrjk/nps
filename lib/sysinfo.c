@@ -49,79 +49,98 @@ static void get_uptime(void) {
 
 static int got_meminfo;
 
+/* /proc/meminfo contents and ordering are not very consistent between
+ * versions */
 #define MEMINFO(X)                              \
-    X(MemTotal, MemTotal)                       \
-    X(MemFree, MemFree)                         \
+    X(Active, Active)                           \
+    X(Active(anon), Active_anon)                \
+    X(Active(file), Active_file)                \
+    X(AnonPages, AnonPages)                     \
+    X(Bounce, Bounce)                           \
     X(Buffers, Buffers)                         \
     X(Cached, Cached)                           \
-    X(SwapCached, SwapCached)                   \
-    X(Active, Active)                           \
-    X(Inactive, Inactive)                       \
-    X(Active(anon), Active_anon)                \
-    X(Inactive(anon), Inactive_anon)            \
-    X(Active(file), Active_file)                \
-    X(Inactive(file), Inactive_file)            \
-    X(Unevictable, Unevictable)                 \
-    X(Mlocked, Mlocked)                         \
-    X(SwapTotal, SwapTotal)                     \
-    X(SwapFree, SwapFree)                       \
+    X(CommitLimit, CommitLimit)                 \
+    X(Committed_AS, Committed_AS)               \
+    X(DirectMap2M, DirectMap2M)                 \
+    X(DirectMap4k, DirectMap4k)                 \
     X(Dirty, Dirty)                             \
-    X(Writeback, Writeback)                     \
-    X(AnonPages, AnonPages)                     \
+    X(HardwareCorrupted, HardwareCorrupted)     \
+    X(HighFree, HighFree)			\
+    X(HighTotal, HighTotal)			\
+    X(HugePages_Free, HugePages_Free)           \
+    X(Hugepagesize, Hugepagesize)               \
+    X(HugePages_Rsvd, HugePages_Rsvd)           \
+    X(HugePages_Surp, HugePages_Surp)           \
+    X(HugePages_Total, HugePages_Total)         \
+    X(Inactive(anon), Inactive_anon)            \
+    X(Inactive(file), Inactive_file)            \
+    X(Inactive, Inactive)                       \
+    X(LowFree, LowFree)				\
+    X(LowTotal, LowTotal)			\
+    X(KernelStack, KernelStack)                 \
     X(Mapped, Mapped)                           \
+    X(MemFree, MemFree)                         \
+    X(MemTotal, MemTotal)                       \
+    X(Mlocked, Mlocked)                         \
+    X(NFS_Unstable, NFS_Unstable)               \
+    X(PageTables, PageTables)                   \
     X(Shmem, Shmem)                             \
     X(Slab, Slab)                               \
     X(SReclaimable, SReclaimable)               \
     X(SUnreclaim, SUnreclaim)                   \
-    X(KernelStack, KernelStack)                 \
-    X(PageTables, PageTables)                   \
-    X(NFS_Unstable, NFS_Unstable)               \
-    X(Bounce, Bounce)                           \
-    X(WritebackTmp, WritebackTmp)               \
-    X(CommitLimit, CommitLimit)                 \
-    X(Committed_AS, Committed_AS)               \
+    X(SwapCached, SwapCached)                   \
+    X(SwapFree, SwapFree)                       \
+    X(SwapTotal, SwapTotal)                     \
+    X(Unevictable, Unevictable)                 \
+    X(VmallocChunk, VmallocChunk)               \
     X(VmallocTotal, VmallocTotal)               \
     X(VmallocUsed, VmallocUsed)                 \
-    X(VmallocChunk, VmallocChunk)               \
-    X(HardwareCorrupted, HardwareCorrupted)     \
-    X(HugePages_Total, HugePages_Total)         \
-    X(HugePages_Free, HugePages_Free)           \
-    X(HugePages_Rsvd, HugePages_Rsvd)           \
-    X(HugePages_Surp, HugePages_Surp)           \
-    X(Hugepagesize, Hugepagesize)               \
-    X(DirectMap4k, DirectMap4k)                 \
-    X(DirectMap2M, DirectMap2M)
+    X(WritebackTmp, WritebackTmp)               \
+    X(Writeback, Writeback)
 
 #define MEMINFO_FIELD(N,F) uintmax_t F;
-#define MEMINFO_OFFSET(N,F) offsetof(struct meminfo, F),
-#define MEMINFO_NAME(N,F) #N,
+#define MEMINFO_MAPPING(N,F) { #N, offsetof(struct meminfo, F) },
+
 struct meminfo { MEMINFO(MEMINFO_FIELD) };
 static struct meminfo meminfo;
 
-static const char *meminfo_names[] = { MEMINFO(MEMINFO_NAME) };
-static const size_t meminfo_offsets[] = { MEMINFO(MEMINFO_OFFSET) };
+static const struct meminfo_name {
+  const char *name;
+  size_t offset;
+} meminfo_names[] = { MEMINFO(MEMINFO_MAPPING) };
 #define NMEMINFOS (sizeof meminfo_names / sizeof *meminfo_names)
 
 static void get_meminfo(void) {
   if(!got_meminfo) {
     FILE *fp;
     char input[128], *colon;
-    size_t i = 0;
+    ssize_t l, r, m;
+    int c;
+    uintmax_t *ptr;
     memset(&meminfo, 0, sizeof meminfo);
     if(!(fp = fopen("/proc/meminfo", "r")))
       fatal(errno, "opening /proc/meminfo");
     while(fgets(input, sizeof input, fp)) {
       if((colon = strchr(input, ':'))) {
         *colon++ = 0;
-        if(i < NMEMINFOS && !strcmp(meminfo_names[i], input)) {
-          uintmax_t *ptr = (uintmax_t *)((char *)&meminfo + meminfo_offsets[i]);
-          *ptr = strtoull(colon, &colon, 10);
-        }
-        i++;
+	l = 0;
+	r = NMEMINFOS - 1;
+	while(l <= r) {
+	  m = l + (r - l) / 2;
+	  c = strcmp(input, meminfo_names[m].name);
+	  if(c < 0)
+	    r = m - 1;
+	  else if(c > 0)
+	    l = m + 1;
+	  else {
+	    ptr = (uintmax_t *)((char *)&meminfo + meminfo_names[m].offset);
+	    *ptr = strtoull(colon, &colon, 10);
+	    break;
+	  }
+	}
       }
     }
     fclose(fp);
-    
     got_meminfo = 1;
   }
 }
