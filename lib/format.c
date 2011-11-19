@@ -720,12 +720,16 @@ void format_process(struct procinfo *pi, pid_t pid,
   buffer_terminate(b);
 }
 
-void format_ordering(const char *ordering) {
+int format_ordering(const char *ordering, unsigned flags) {
   char buffer[128], *b;
   size_t i;
-  free(orders);
-  orders = NULL;
-  norders = 0;
+  const struct propinfo *prop;
+  int sign;
+  if(!(flags & FORMAT_CHECK)) {
+    free(orders);
+    orders = NULL;
+    norders = 0;
+  }
   while(*ordering) {
     if(*ordering == ' ' || *ordering == ',') {
       ++ordering;
@@ -738,24 +742,53 @@ void format_ordering(const char *ordering) {
       ++ordering;
     }
     buffer[i] = 0;
-    if((ssize_t)(norders + 1) < 0)
-      fatal(0, "too many columns");
-    orders = xrecalloc(orders, norders + 1, sizeof *orders);
-    orders[norders].sign = -1;
     b = buffer;
     switch(*b) {
     case '+':
       ++b;
-      orders[norders].sign = -1;
+      sign = -1;
       break;
     case '-':
       ++b;
-      orders[norders].sign = 1;
+      sign = 1;
+      break;
+    default:
+      sign = -1;
       break;
     }
-    orders[norders].prop = find_property(b);
-    ++norders;
+    prop = find_property(b);
+    if(flags & FORMAT_CHECK) {
+      if(!prop)
+        return 0;
+    } else {
+      if((ssize_t)(norders + 1) < 0)
+        fatal(0, "too many columns");
+      orders = xrecalloc(orders, norders + 1, sizeof *orders);
+      orders[norders].prop = prop;
+      orders[norders].sign = sign;
+      ++norders;
+    }
   }
+  return 1;
+}
+
+char *format_get_ordering(void) {
+  size_t n;
+  size_t size = 10;
+  char *buffer, *ptr;
+
+  for(n = 0; n < norders; ++n)
+    size += strlen(orders[n].prop->name) + 5;
+  ptr = buffer = xmalloc(size);
+  for(n = 0; n < norders; ++n) {
+    if(n)
+      *ptr++ = ' ';
+    *ptr++ = orders[n].sign < 0 ? '+' : '-';
+    strcpy(ptr, orders[n].prop->name);
+    ptr += strlen(ptr);
+  }
+  *ptr = 0;
+  return buffer;
 }
 
 int format_compare(struct procinfo *pi, pid_t a, pid_t b) {

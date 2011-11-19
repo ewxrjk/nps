@@ -97,8 +97,17 @@ void format_process(struct procinfo *pi, pid_t pid,
 
 /** @brief Set the process ordering
  * @param ordering Ordering specification
+ * @param flags Flags
+ * @return Nonzero on success, 0 if @p ordering is not valid
+
+ * @p flags should be a combination of the following values:
+ * - @ref FORMAT_CHECK to check @p ordering rather than act on it
+ *
+ * If @ref FORMAT_CHECK is specified then any errors cause a 0 return.
+ * If it is not specified then errors are either ignored or cause a
+ * call to fatal().
  */
-void format_ordering(const char *ordering);
+int format_ordering(const char *ordering, unsigned flags);
 
 /** @brief Compare process properties
  * @param pi Pointer to process information
@@ -117,5 +126,12 @@ void format_help(void);
  * Caller is responsible for freeing the returned string.
  */
 char *format_get(void);
+
+/** @brief Retrieve the process ordering as a single string
+ * @return Orderinf specification
+ *
+ * Caller is responsible for freeing the returned string.
+ */
+char *format_get_ordering(void);
 
 #endif

@@ -80,6 +80,8 @@ static int valid_delay(const char *s);
 static enum next_action set_delay(const char *s);
 static int valid_format(const char *s);
 static enum next_action set_format(const char *s);
+static int valid_order(const char *s);
+static enum next_action set_order(const char *s);
 
 static double update_interval = 1.0;
 static double update_last;
@@ -102,7 +104,7 @@ int main(int argc, char **argv) {
   if(!setlocale(LC_ALL, ""))
     fatal(errno, "setlocale");
   /* Set the default ordering */
-  format_ordering("+pcpu,+io,+rss,+vsz");
+  format_ordering("+pcpu,+io,+rss,+vsz", 0);
   /* Parse command line */
   while((n = getopt_long(argc, argv, "+o:s:id:M", 
                          options, NULL)) >= 0) {
@@ -112,7 +114,7 @@ int main(int argc, char **argv) {
       have_set_format = 1;
       break;
     case 's':
-      format_ordering(optarg);
+      format_ordering(optarg, 0);
       break;
     case 'i':
       show_idle = 0;
@@ -409,6 +411,20 @@ static enum next_action process_command(int ch) {
     strcpy(input_buffer, f);
     free(f);
     break;
+  case 's':
+  case 'S':
+    f = format_get_ordering();
+    if(strlen(f) >= sizeof input_buffer) {
+      beep();
+      free(f);
+      break;
+    }
+    collect_input("Sort> ",
+                  valid_order,
+                  set_order);
+    strcpy(input_buffer, f);
+    free(f);
+    break;
   case 12:
     if(redrawwin(stdscr) == ERR)
       fatal(0, "redrawwin failed");
@@ -516,3 +532,15 @@ static enum next_action set_format(const char *s) {
   format_add(s, FORMAT_QUOTED);
   return NEXT_REFORMAT;
 }
+
+// ----------------------------------------------------------------------------
+
+static int valid_order(const char *s) {
+  return format_ordering(s, FORMAT_CHECK);
+}
+
+static enum next_action set_order(const char *s) {
+  format_ordering(s, 0);
+  return NEXT_RESORT;
+}
+
