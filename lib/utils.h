@@ -30,7 +30,7 @@
  * @param ticks Ticks since boot
  * @return Equivalent timestamp
  */
-time_t clock_to_time(unsigned long long ticks);
+double clock_to_time(unsigned long long ticks);
 
 /** @brief Convert a count of ticks into a number of seconds
  * @param ticks Ticks since boot

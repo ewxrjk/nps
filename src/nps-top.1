@@ -308,9 +308,9 @@ Cancel the operation.
 Commit the operation.
 This will only have any effect if the current input is valid.
 .SH BUGS
-On the first iteration, \fBpcpu\fR is computed over the process's
-entire lifetime.
-(On subsequent iterations it reflects the usage since the previous
+On the first iteration, rate properties such as \fBpcpu\fR are
+computed over the process's entire lifetime.
+(On subsequent iterations they reflect the usage since the previous
 iteration.)
 .PP
 The meaning of \fBflags\fR is not very clear.

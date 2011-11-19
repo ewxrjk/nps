@@ -541,30 +541,32 @@ int proc_get_state(struct procinfo *pi, pid_t pid) {
   return p->prop_state;
 }
 
-double proc_get_pcpu(struct procinfo *pi, pid_t pid) {
-  intmax_t ticks;
+/* Many properties are supposed to describe the "recent" rate of
+ * change of some variable, but the kernel only reports the value of
+ * the variable since the start of the relevant process.  When we have
+ * two samples at known times this is not a problem but for ps and for
+ * the first sample of top we have no such luxury.  Therefore we
+ * report the rate over the process's entire lifetime. */
+static double proc_rate(struct process *p,
+                        struct timeval base_time,
+                        struct timeval end_time,
+                        double quantity) {
   double seconds;
+  if(base_time.tv_sec)
+    seconds = (end_time.tv_sec - base_time.tv_sec)
+      + (end_time.tv_usec - base_time.tv_usec) / 1000000.0;
+  else
+    seconds = end_time.tv_sec + end_time.tv_usec / 1000000.0
+      - clock_to_time(p->prop_starttime);
+  return quantity / seconds;
+}
 
+double proc_get_pcpu(struct procinfo *pi, pid_t pid) {
   struct process *p = proc_find(pi, pid);
   proc_stat(p);
-  if(p->base_stat_time.tv_sec) {
-    /* PCPU is supposed to describe "recent" CPU usage.  If we have a
-     * prior samples that's not a problem. */
-    ticks = (p->prop_utime + p->prop_stime)
-          - (p->base_utime + p->base_stime);
-    seconds = (p->stat_time.tv_sec - p->base_stat_time.tv_sec)
-                + (p->stat_time.tv_usec - p->base_stat_time.tv_usec) / 1000000.0;
-    if(seconds > 0)
-      return clock_to_seconds(ticks) / seconds;
-    else
-      return 0;
-  } else {
-    /* In the absence of a prior sample we use lifetime CPU usage
-     * instead. */
-    long scheduled = proc_get_scheduled_time(pi, pid);
-    long elapsed = proc_get_elapsed_time(pi, pid);
-    return elapsed ? (double)scheduled / elapsed : 0;
-  }
+  return proc_rate(p, p->base_stat_time, p->stat_time,
+                   clock_to_seconds((p->prop_utime + p->prop_stime)
+                                    - (p->base_utime + p->base_stime)));
 }
 
 uintmax_t proc_get_vsize(struct procinfo *pi, pid_t pid) {
@@ -591,52 +593,40 @@ uintmax_t proc_get_wchan(struct procinfo *pi, pid_t pid) {
   return p->prop_wchan;
 }
 
-static double proc_get_io_rate(struct procinfo *pi, pid_t pid,
-                               size_t base, size_t latest) {
-  struct process *p = proc_find(pi, pid);
-  uintmax_t bytes;
-  double seconds;
-  proc_io(p);
-  if(p->base_io_time.tv_sec) {
-    uintmax_t latest_value = *(uintmax_t *)((char *)p + latest);
-    uintmax_t base_value = *(uintmax_t *)((char *)p + base);
-    bytes = latest_value - base_value;
-    seconds = (p->io_time.tv_sec - p->base_io_time.tv_sec)
-      + (p->io_time.tv_usec - p->base_io_time.tv_usec) / 1000000.0;
-    if(seconds > 0)
-      return bytes / seconds;
-    else
-      return 0;
-  } else
-    return 0;
-}
-
 double proc_get_rchar(struct procinfo *pi, pid_t pid) {
-  return proc_get_io_rate(pi, pid,
-                          offsetof(struct process, base_rchar),
-                          offsetof(struct process, prop_rchar));
+  struct process *p = proc_find(pi, pid);
+  proc_io(p);
+  return proc_rate(p, p->base_io_time, p->io_time,
+                   p->prop_rchar - p->base_rchar);
 }
 
 double proc_get_wchar(struct procinfo *pi, pid_t pid) {
-  return proc_get_io_rate(pi, pid,
-                          offsetof(struct process, base_wchar),
-                          offsetof(struct process, prop_wchar));
+  struct process *p = proc_find(pi, pid);
+  proc_io(p);
+  return proc_rate(p, p->base_io_time, p->io_time,
+                   p->prop_wchar - p->base_wchar);
 }
 
 double proc_get_read_bytes(struct procinfo *pi, pid_t pid) {
-  return proc_get_io_rate(pi, pid,
-                          offsetof(struct process, base_read_bytes),
-                          offsetof(struct process, prop_read_bytes));
+  struct process *p = proc_find(pi, pid);
+  proc_io(p);
+  return proc_rate(p, p->base_io_time, p->io_time,
+                   p->prop_read_bytes - p->base_read_bytes);
 }
 
 double proc_get_write_bytes(struct procinfo *pi, pid_t pid) {
-  return proc_get_io_rate(pi, pid,
-                          offsetof(struct process, base_write_bytes),
-                          offsetof(struct process, prop_write_bytes));
+  struct process *p = proc_find(pi, pid);
+  proc_io(p);
+  return proc_rate(p, p->base_io_time, p->io_time,
+                   p->prop_write_bytes - p->base_write_bytes);
 }
 
 double proc_get_rw_bytes(struct procinfo *pi, pid_t pid) {
-  return proc_get_read_bytes(pi, pid) + proc_get_write_bytes(pi, pid);
+  struct process *p = proc_find(pi, pid);
+  proc_io(p);
+  return proc_rate(p, p->base_io_time, p->io_time,
+                   p->prop_read_bytes + p->prop_write_bytes
+                   - p->base_read_bytes - p->base_write_bytes);
 }
 
 intmax_t proc_get_oom_score(struct procinfo *pi, pid_t pid) {

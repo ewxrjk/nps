@@ -25,18 +25,18 @@
 #include <time.h>
 #include <sys/time.h>
 
-time_t clock_to_time(unsigned long long ticks) {
-  static time_t boot_time;
+double clock_to_time(unsigned long long ticks) {
+  static double boot_time;
 
   if(!boot_time) {
     FILE *fp;
-    long ssb;
+    double ssb;
     if(!(fp = fopen("/proc/uptime", "r")))
       fatal(errno, "opening /proc/uptime");
-    if(fscanf(fp, "%ld", &ssb) != 1)
+    if(fscanf(fp, "%lg", &ssb) != 1)
       fatal(errno, "reading /proc/uptime");
     fclose(fp);
-    boot_time = time(NULL) - ssb;
+    boot_time = clock_now() - ssb;
   }
   return boot_time + clock_to_seconds(ticks);
 }
