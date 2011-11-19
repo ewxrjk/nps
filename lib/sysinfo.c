@@ -311,10 +311,10 @@ static void sysprop_cpu(struct procinfo attribute((unused)) *pi,
    * - idle does not include iowait (account_idle_time)
    * - irq, softirq and system are exclusive (account_system_time)
    */
-  total = (cpuinfo.user_total + cpuinfo.system
+  total = (cpuinfo.user_total + cpuinfo.system + cpuinfo.iowait
            + cpuinfo.idle + cpuinfo.irq + cpuinfo.softirq
            + cpuinfo.steal)
-    - (cpuinfo_last.user_total + cpuinfo_last.system
+    - (cpuinfo_last.user_total + cpuinfo_last.system + cpuinfo_last.iowait
        + cpuinfo_last.idle + cpuinfo_last.irq + cpuinfo_last.softirq
        + cpuinfo_last.steal);
   /* How to figure out the percentage differences */
