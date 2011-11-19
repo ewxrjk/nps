@@ -350,6 +350,7 @@ static void process_command(int ch) {
     break;
   }
   if(input.bufsize) {
+    input.cursor = input.len;
     input_draw(&input);
     curs_set(1);
     if(refresh() == ERR)
