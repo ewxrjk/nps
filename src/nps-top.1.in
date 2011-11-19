@@ -72,6 +72,13 @@ The \fB-I\fR option specifies which whole-system properties should be
 displayed, separated by spaces or commas.
 The available system properties are:
 #include sysinfo.1
+.SH KEYBOARD
+The following keyboard commands can be used:
+.IP \fBd
+Changes the update interval.
+Equivalent to the \fB-d\fR option.
+.IP \fBq
+Quits immediately.
 .SH BUGS
 On the first iteration, \fBpcpu\fR is computed over the process's
 entire lifetime.
