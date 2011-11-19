@@ -95,6 +95,10 @@ Redisplay the screen.
 .IP \fBd
 Changes the update interval.
 Equivalent to the \fB-d\fR option.
+.IP \fBo
+Changes the list of properties to display.
+Similar to the \fB-o\fR option except column headings may be quoted
+(and must be quoted, if they contain a space, comma or quotes).
 .IP \fBq
 Quits immediately.
 .SS Input

@@ -71,18 +71,12 @@ int main(int argc, char **argv) {
       break;
     case 'f':
       format_clear();
-      format_add("user=UID");
-      format_add("pid,ppid,pcpu=C");
-      format_add("stime,tty=TTY");
-      format_add("time,args=CMD");
+      format_add("user=UID,pid,ppid,pcpu=C,stime,tty=TTY,time,args=CMD", FORMAT_QUOTED);
       set_format = 1;
       break;
     case 'l':
       format_clear();
-      format_add("flags,state,uid,pid,ppid,pcpu=C");
-      format_add("pri,nice,addr,vsz=SZ");
-      format_add("wchan,tty=TTY");
-      format_add("time,comm=CMD");
+      format_add("flags,state,uid,pid,ppid,pcpu=C,pri,nice,addr,vsz=SZ,wchan,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
       set_format = 1;
       break;
     case 'g':
@@ -97,7 +91,7 @@ int main(int argc, char **argv) {
       /* ignored */
       break;
     case 'o':
-      format_add(optarg);
+      format_add(optarg, FORMAT_ARGUMENT);
       set_format = 1;
       break;
     case 'p':
@@ -158,10 +152,8 @@ int main(int argc, char **argv) {
   if(optind < argc)
     fatal(0, "excess arguments");
   /* Set the default format */
-  if(!set_format) {
-    format_add("pid,tty=TTY");
-    format_add("time,comm=CMD");
-  }
+  if(!set_format)
+    format_add("pid,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
   /* Set the default selection */
   select_default(select_uid_tty, NULL, 0);
   /* Get the list of processes */

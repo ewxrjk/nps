@@ -560,43 +560,92 @@ static const struct propinfo *find_property(const char *name) {
     else
       return &properties[m];
   }
-  fatal(0, "unknown process property '%s'", name);
+  return NULL;
 }
 
-void format_add(const char *f) {
-  char buffer[128], *heading;
+int format_add(const char *f, unsigned flags) {
+  char buffer[128], heading_buffer[128];
+  const char *heading;
   size_t i;
-  int seen_equals;
+  int q;
+  const struct propinfo *prop;
   while(*f) {
     if(*f == ' ' || *f == ',') {
       ++f;
       continue;
     }
     i = 0;
-    seen_equals = 0;
-    /* property=... extends to the end of the argument, not until the
-     * next comma; "The default header can be overridden by appending
-     * an <equals-sign> and the new text of the header. The rest of
-     * the characters in the argument shall be used as the header
-     * text." */
-    while(*f && (seen_equals || (*f != ' ' && *f != ','))) {
-      if(*f == '=')
-        seen_equals = 1;
+    while(*f && (*f != ' ' && *f != ',' && *f != '=')) {
       if(i < sizeof buffer - 1)
         buffer[i++] = *f;
       ++f;
     }
     buffer[i] = 0;
-    if((heading = strchr(buffer, '=')))
-      *heading++ = 0;
-    if((ssize_t)(ncolumns + 1) < 0)
-      fatal(0, "too many columns");
-    columns = xrecalloc(columns, ncolumns + 1, sizeof *columns);
-    columns[ncolumns].prop = find_property(buffer);
-    columns[ncolumns].heading = xstrdup(heading ? heading 
+    if(*f == '=') {
+      if(flags & FORMAT_QUOTED) {
+        /* property=heading extends until we hit a separator
+         * property="heading" extends to the close quote; ' is allowed too
+         */
+        i = 0;
+        ++f;
+        if(*f == '"' || *f == '\'') {
+          q = *f++;
+          while(*f && *f != q) {
+            /* \ escapes the next character (there must be one) */
+            if(*f == '\\') {
+              if(f[1] != 0)
+                ++f;
+              else if(flags & FORMAT_CHECK)
+                return 0;
+            }
+            if(i < sizeof heading_buffer - 1)
+              heading_buffer[i++] = *f;
+            ++f;
+          }
+          /* The close quotes must exist */
+          if(*f == q)
+            ++f;
+          else
+            if(flags & FORMAT_CHECK)
+              return 0;
+        } else {
+          /* unquoted heading */
+          while(*f && (*f != ' ' && *f != ',')) {
+            if(i < sizeof heading_buffer - 1)
+              heading_buffer[i++] = *f;
+            ++f;
+          }
+        }
+        heading_buffer[i] = 0;
+        heading = heading_buffer;
+      } else {
+        /* property=heading extends to the end of the argument, not until
+         * the next comma; "The default header can be overridden by
+         * appending an <equals-sign> and the new text of the
+         * header. The rest of the characters in the argument shall be
+         * used as the header text." */
+        heading = f + 1;
+        f += strlen(f);
+      }
+    } else
+      heading = NULL;
+    prop = find_property(buffer);
+    if(flags & FORMAT_CHECK) {
+      if(!prop)
+        return 0;
+    } else {
+      if((ssize_t)(ncolumns + 1) < 0)
+        fatal(0, "too many columns");
+      if(!prop)
+        fatal(0, "unknown process property '%s'", buffer);
+      columns = xrecalloc(columns, ncolumns + 1, sizeof *columns);
+      columns[ncolumns].prop = prop;
+      columns[ncolumns].heading = xstrdup(heading ? heading 
                                           : columns[ncolumns].prop->heading);
-    ++ncolumns;
+      ++ncolumns;
+    }
   }
+  return 1;
 }
 
 void format_clear(void) {
@@ -726,4 +775,45 @@ void format_help(void) {
            properties[n].name,
            properties[n].heading,
            properties[n].description);
+}
+
+char *format_get(void) {
+  size_t n;
+  size_t size = 10;
+  char *buffer, *ptr;
+  const char *h;
+
+  for(n = 0; n < ncolumns; ++n) {
+    size += strlen(columns[n].prop->name);
+    size += strlen(columns[n].prop->heading) * 2;
+    size += 10;
+  }
+  ptr = buffer = xmalloc(size);
+  for(n = 0; n < ncolumns; ++n) {
+    if(n)
+      *ptr++ = ' ';
+    strcpy(ptr, columns[n].prop->name);
+    ptr += strlen(ptr);
+    h = columns[n].heading;
+    if(strcmp(h, columns[n].prop->heading)) {
+      *ptr++ = '=';
+      if(strchr(h, ' ')
+         || strchr(h, '"')
+         || strchr(h, '\\')
+         || strchr(h, ',')) {
+        *ptr++ = '"';
+        while(*h) {
+          if(*h == '"' || *h == '\\')
+            *ptr++ = '\\';
+          *ptr++ = *h++;
+        }
+        *ptr++ = '"';
+      } else {
+        strcpy(ptr, h);
+        ptr += strlen(ptr);
+      }
+    }
+  }
+  *ptr = 0;
+  return buffer;
 }

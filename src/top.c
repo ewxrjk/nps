@@ -49,33 +49,54 @@ const struct option options[] = {
   { 0, 0, 0, 0 },
 };
 
+enum next_action {
+  /** @brief Re-enumerate processes */
+  NEXT_RESAMPLE,
+  
+  /** @brief Re-run column formatting */
+  NEXT_REFORMAT,
+  
+  /** @brief Re-sort processes */
+  NEXT_RESORT,
+
+  /** @brief Redraw existing output (perhaps with a new offset) */
+  NEXT_REDRAW,
+
+  /** @brief Continue to wait for input or timeout */
+  NEXT_WAIT,
+
+  /** @brief Terminate the program */
+  NEXT_QUIT
+};
+
 static void loop(void);
-static int await(void);
-static int process_command(int ch);
+static enum next_action await(void);
+static enum next_action process_command(int ch);
 static void collect_input(const char *prompt,
                           int (*validator)(const char *),
-                          void (*setter)(const char *));
-static int process_input_key(int ch);
+                          enum next_action (*setter)(const char *));
+static enum next_action process_input_key(int ch);
 static int valid_delay(const char *s);
-static void set_delay(const char *s);
+static enum next_action set_delay(const char *s);
+static int valid_format(const char *s);
+static enum next_action set_format(const char *s);
 
 static double update_interval = 1.0;
 static double update_last;
-static int quit;
-static int (*process_key)(int) = process_command;
+static enum next_action (*process_key)(int) = process_command;
 static size_t display_offset;
 
 static struct input_context input;
 static char input_buffer[1024];
-static void (*input_set)(const char *);
+static enum next_action (*input_set)(const char *);
 
 int main(int argc, char **argv) {
   int n;
-  int set_format = 0;
+  int have_set_format = 0;
   int show_idle = 1;
   char *e;
   int megabytes = 0;
-  int set_sysinfo = 0;
+  int have_set_sysinfo = 0;
 
   /* Set locale */
   if(!setlocale(LC_ALL, ""))
@@ -87,8 +108,8 @@ int main(int argc, char **argv) {
                          options, NULL)) >= 0) {
     switch(n) {
     case 'o':
-      format_add(optarg);
-      set_format = 1;
+      format_add(optarg, FORMAT_ARGUMENT);
+      have_set_format = 1;
       break;
     case 's':
       format_ordering(optarg);
@@ -160,7 +181,7 @@ int main(int argc, char **argv) {
     }
   }
   /* Set the system info to display */
-  if(!set_sysinfo) {
+  if(!have_set_sysinfo) {
     if(megabytes)
       sysinfo_format("time,uptime,processes,load,cpu,memM,swapM");
     else
@@ -172,17 +193,16 @@ int main(int argc, char **argv) {
   else
     select_default(select_nonidle, NULL, 0);
   /* Set the default format */
-  if(!set_format) {
-    format_add("user,pid,nice");
+  if(!have_set_format) {
+    format_add("user,pid,nice", FORMAT_QUOTED);
     if(megabytes)
-      format_add("rssM");
+      format_add("rssM", FORMAT_QUOTED);
     else
-      format_add("rss");
-    format_add("pcpu=%C");
+      format_add("rss", FORMAT_QUOTED);
+    format_add("pcpu=%C", FORMAT_QUOTED);
     if(!getuid())
-      format_add("read,write");
-    format_add("tty=TTY");
-    format_add("args=CMD");
+      format_add("read,write", FORMAT_QUOTED);
+    format_add("tty=TTY,args=CMD", FORMAT_QUOTED);
   }
   /* Initialize curses */
   if(!initscr())
@@ -226,8 +246,9 @@ static void loop(void) {
   int x, y, maxx, maxy, ystart;
   size_t n, npids, ninfos, len, offset;
   pid_t *pids;
+  enum next_action next;
 
-  while(!quit) {
+  do {
     update_last = clock_now();
     pi = proc_enumerate(last);
     pids = proc_get_selected(pi, &npids);
@@ -301,24 +322,41 @@ static void loop(void) {
       /* Display what we've got */    
       if(refresh() == ERR)
         fatal(0, "refresh failed");
-    } while(await());
+      /* See what to do next */
+      next = await();
+      /* Handle formatting/sorting changes */
+      if(next == NEXT_REFORMAT) {
+        format_columns(pi, pids, npids);
+        next = NEXT_REDRAW;
+      }
+      if(next == NEXT_RESORT) {
+        qsort(pids, npids, sizeof *pids, compare_pid);
+        next = NEXT_REDRAW;
+      }
 
+      /* If it's not time to collect new samples, draw what we've got
+       * and continue waiting */
+    } while(next == NEXT_REDRAW);
+
+    /* We need to collect new samples.  We stash the ones we've got to
+     * provide a baseline for rate calculation. */
     proc_free(last);
     last = pi;
-  }
+  } while(next != NEXT_QUIT);
 }
 
 /** @brief Handle keyboard input and wait for the next update
- * @return 1 to redraw what we've got, non-0 to resample
+ * @return What do to next
+ *
+ * await() cannot return NEXT_WAIT.
  */
-static int await(void) {
+static enum next_action await(void) {
   double update_next, now, delta;
   struct timeval tv;
   fd_set fdin;
-  int n, ch;
+  int n, ch, ret;
 
-  while(!quit
-        && (now = clock_now()) < (update_next = update_last + update_interval)) {
+  while((now = clock_now()) < (update_next = update_last + update_interval)) {
     delta = update_next - now;
     if(delta > 5.0)
       delta = 5.0;
@@ -335,28 +373,41 @@ static int await(void) {
     if(FD_ISSET(0, &fdin)) {
       ch = getch();
       if(ch != ERR)
-        if(process_key(ch))
-          return 1;
+        if((ret = process_key(ch)) != NEXT_WAIT)
+          return ret;
     }
   }
-  return 0;
+  return NEXT_RESAMPLE;
 }
 
 // ----------------------------------------------------------------------------
 
-static int process_command(int ch) {
+static enum next_action process_command(int ch) {
+  char *f;
   switch(ch) {
   case 'q':
   case 'Q':
-    quit = 1;
-    return 1;
-    break;
+    return NEXT_QUIT;
   case 'd':
   case 'D':
     collect_input("Delay> ",
                   valid_delay,
                   set_delay);
-    input.len = snprintf(input.buffer, input.bufsize, "%g", update_interval);
+    snprintf(input.buffer, input.bufsize, "%g", update_interval);
+    break;
+  case 'o':
+  case 'O':
+    f = format_get();
+    if(strlen(f) >= sizeof input_buffer) {
+      beep();
+      free(f);
+      break;
+    }
+    collect_input("Format> ",
+                  valid_format,
+                  set_format);
+    strcpy(input_buffer, f);
+    free(f);
     break;
   case 12:
     if(redrawwin(stdscr) == ERR)
@@ -368,7 +419,7 @@ static int process_command(int ch) {
   case KEY_LEFT:
     if(display_offset > 0) {
       --display_offset;
-      return 1;
+      return NEXT_REDRAW;
     }
     break;
   case KEY_PPAGE:
@@ -376,31 +427,32 @@ static int process_command(int ch) {
       display_offset -= 8;
     else if(display_offset > 0)
       display_offset = 0;
-    return 1;
+    return NEXT_REDRAW;
   case 6:                       /* ^F */
   case KEY_RIGHT:
     ++display_offset;
-    return 1;
+    return NEXT_REDRAW;
   case KEY_NPAGE:
     display_offset += 8;
-    return 1;
+    return NEXT_REDRAW;
   case 1:                       /* ^A */
   case KEY_HOME:
     display_offset = 0;
     return 1;
   }
   if(input.bufsize) {
+    input.len = strlen(input.buffer);
     input.cursor = input.len;
-    return 1;
+    return NEXT_REDRAW;
   }
-  return 0;
+  return NEXT_WAIT;
 }
 
 // ----------------------------------------------------------------------------
 
 static void collect_input(const char *prompt,
                           int (*validator)(const char *),
-                          void (*setter)(const char *)) {
+                          enum next_action (*setter)(const char *)) {
   process_key = process_input_key;
   memset(&input, 0, sizeof input);
   input.buffer = input_buffer;
@@ -410,26 +462,25 @@ static void collect_input(const char *prompt,
   input_set = setter;
 }
 
-static int process_input_key(int ch) {
+static enum next_action process_input_key(int ch) {
   switch(ch) {
   case 27:                      /* ESC */
     process_key = process_command;
     input.bufsize = 0;
-    return 1;
+    return NEXT_REDRAW;
     break;
   case 13:                      /* CR */
     if(input.validate(input.buffer)) {
       process_key = process_command;
-      input_set(input.buffer);
       input.bufsize = 0;
-      return 1;
+      return input_set(input.buffer);
     }
     break;
   default:
     input_key(ch, &input);
     break;
   }
-  return 0;
+  return NEXT_WAIT;
 }
 
 // ----------------------------------------------------------------------------
@@ -448,8 +499,20 @@ static int valid_delay(const char *s) {
   return 1;
 }
 
-static void set_delay(const char *s) {
+static enum next_action set_delay(const char *s) {
   update_interval = strtod(s, NULL);
   /* Force an immediate update */
-  update_last = clock_now() - update_interval;
+  return NEXT_RESAMPLE;
+}
+
+// ----------------------------------------------------------------------------
+
+static int valid_format(const char *s) {
+  return format_add(s, FORMAT_QUOTED|FORMAT_CHECK);
+}
+
+static enum next_action set_format(const char *s) {
+  format_clear();
+  format_add(s, FORMAT_QUOTED);
+  return NEXT_REFORMAT;
 }

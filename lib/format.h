@@ -22,18 +22,47 @@
 
 /** @file format.h
  * @brief Formatting process information
+ *
+ * There are two format string syntaxes.  The first is argument
+ * syntax, which follows the SUSv4 rules.  In this format any column
+ * with an assigned heading ends the list.
+ *
+ * The second is quoted syntax.  Here headings can be quoted, and must
+ * be if they contain separator characters (space, comma, quote,
+ * backslash).  In this syntax assigning a heading is possible even
+ * for non-final columns.
  */
 
 #include <sys/types.h>
 
 struct procinfo;
 
+/** @brief Format string is in argument syntax */
+#define FORMAT_ARGUMENT 0x0000
+
+/** @brief Format string is in quoted syntax */
+#define FORMAT_QUOTED 0x0001
+
+/** @brief Check only, do not assign */
+#define FORMAT_CHECK 0x0002
+
 /** @brief Add to the format list
  * @param f Format string
+ * @param flags Flags
+ * @return Nonzero on success, 0 if @p f is not valid
  *
  * The format list is cumulative.
+ *
+ * @p flags should be a combination of the following values:
+ * - @ref FORMAT_ARGUMENT if @p f is in argument syntax
+ * - @ref FORMAT_QUOTED if @p f is in quoted syntax
+ * - @ref FORMAT_CHECK to check @p f rather than act on it
+ *
+ * If @ref FORMAT_CHECK is specified then any errors cause a 0 return.
+ * If it is not specified then errors are either ignored or cause a
+ * call to fatal().
  */
-void format_add(const char *f);
+int format_add(const char *f, unsigned flags);
 
 /** @brief Clear the format list
  */
@@ -81,5 +110,12 @@ int format_compare(struct procinfo *pi, pid_t a, pid_t b);
 
 /** @brief Display formatting help */
 void format_help(void);
+
+/** @brief Retrieve the format list as a single string in quoted syntax
+ * @return Format list
+ *
+ * Caller is responsible for freeing the returned string.
+ */
+char *format_get(void);
 
 #endif
