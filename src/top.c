@@ -108,7 +108,7 @@ static const const char *const panning_help[] = {
   "Panning:",
   "  ^F, right arrow    Move viewport right by 1",
   "  page down          Move viewport right by 8",
-  "  ^B, left arrow     Move viewport left",
+  "  ^B, left arrow     Move viewport left by 1",
   "  page up            Move viewport left by 8",
   "  ^A                 Move viewport to left margin",
   "  h                  Dismiss help"
