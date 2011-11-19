@@ -35,6 +35,7 @@ void input_key(int ch, struct input_context *ctx) {
     if(ctx->cursor < ctx->len)
       ++ctx->cursor;
     break;
+  case 8:                       /* ^H */
   case 0x7F:
     if(ctx->cursor) {
       --ctx->cursor;
@@ -44,6 +45,7 @@ void input_key(int ch, struct input_context *ctx) {
       --ctx->len;
     }
     break;
+  case 4:                       /* ^D */
   case KEY_DC:
     if(ctx->cursor < ctx->len) {
       memmove(ctx->buffer + ctx->cursor,
