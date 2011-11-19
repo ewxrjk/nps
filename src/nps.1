@@ -81,6 +81,20 @@ Recent IO rate, in kilobytes per second.
 This is the sum of \fBread\fR and \fBwrite\fR.
 .IP \fBioM
 Recent IO rate, in megabytes per second.
+.IP \fBmajflt
+Major fault rate, in kilobytes per second.
+Major faults are page faults that require a page to be read from disk.
+.IP \fBmajfltM
+Major fault rate, in megabytes per second.
+.IP \fBmajfltP
+Major fault rate, in pages per second.
+.IP \fBminflt
+Minor fault rate, in kilobytes per second.
+Minor faults do not require a page to be read from disk.
+.IP \fBminfltM
+Minor fault rate, in megabytes per second.
+.IP \fBminfltP
+Minor fault rate, in pages per second.
 .IP \fBnice
 Nice value.
 Higher values mean lower priority ("nicer").

@@ -111,6 +111,7 @@ struct process {
   uid_t prop_euid, prop_ruid;
   gid_t prop_egid, prop_rgid;
   intmax_t base_utime, base_stime;
+  uintmax_t base_majflt, base_minflt;
   struct timeval base_stat_time, stat_time;
   struct timeval base_io_time, io_time;
   intmax_t oom_score;
@@ -190,6 +191,8 @@ struct procinfo *proc_enumerate(struct procinfo *last) {
         p->base_utime = lastp->prop_utime;
         p->base_stime = lastp->prop_stime;
         p->base_stat_time = lastp->stat_time;
+        p->base_majflt = lastp->prop_majflt;
+        p->base_minflt = lastp->prop_minflt;
         IO_PROPS(UPDATE_BASE, UPDATE_BASE);
         p->base_io_time = lastp->io_time;
       }
@@ -633,6 +636,20 @@ intmax_t proc_get_oom_score(struct procinfo *pi, pid_t pid) {
   struct process *p = proc_find(pi, pid);
   proc_oom_score(p);
   return p->oom_score;
+}
+
+double proc_get_majflt(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
+  proc_stat(p);
+  return proc_rate(p, p->base_stat_time, p->stat_time,
+                   p->prop_majflt - p->base_majflt) * sysconf(_SC_PAGE_SIZE);
+}
+
+double proc_get_minflt(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
+  proc_stat(p);
+  return proc_rate(p, p->base_stat_time, p->stat_time,
+                   p->prop_minflt - p->base_minflt) * sysconf(_SC_PAGE_SIZE);
 }
 
 // ----------------------------------------------------------------------------

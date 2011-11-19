@@ -31,6 +31,7 @@
 #include <time.h>
 #include <errno.h>
 #include <assert.h>
+#include <unistd.h>
 
 // ----------------------------------------------------------------------------
 
@@ -287,6 +288,11 @@ static void property_iorateM(const struct propinfo *prop, struct buffer *b,
   format_decimal(prop->fetch.fetch_double(pi, pid) / 1048476, b);
 }
 
+static void property_iorateP(const struct propinfo *prop, struct buffer *b,
+                             struct procinfo *pi, pid_t pid) {
+  format_decimal(prop->fetch.fetch_double(pi, pid) / sysconf(_SC_PAGESIZE), b);
+}
+
 // ----------------------------------------------------------------------------
 
 static int compare_int(const struct propinfo *prop, struct procinfo *pi,
@@ -409,6 +415,30 @@ static const struct propinfo properties[] = {
   {
     "ioM", "IO", "Recent read+write rate (megabytes/s)",
     property_iorateM, compare_double, { .fetch_double = proc_get_rw_bytes }
+  },
+  {
+    "majflt", "+FLT", "Major fault rate (1024 bytes/s)",
+    property_iorate, compare_double, { .fetch_double = proc_get_majflt }
+  },
+  {
+    "majfltM", "+FLT", "Major fault rate (megabytes/s)",
+    property_iorateM, compare_double, { .fetch_double = proc_get_majflt }
+  },
+  {
+    "majfltP", "+FLT", "Major fault rate (pages/s)",
+    property_iorateP, compare_double, { .fetch_double = proc_get_majflt }
+  },
+  {
+    "minflt", "-FLT", "Minor fault rate (1024 bytes/s)",
+    property_iorate, compare_double, { .fetch_double = proc_get_minflt }
+  },
+  {
+    "minfltM", "-FLT", "Minor fault rate (megabytes/s)",
+    property_iorateM, compare_double, { .fetch_double = proc_get_minflt }
+  },
+  {
+    "minfltP", "-FLT", "Minor fault rate (pages/s)",
+    property_iorateP, compare_double, { .fetch_double = proc_get_minflt }
   },
   {
     "nice", "NI", "Nice value",

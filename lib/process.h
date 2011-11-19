@@ -268,6 +268,24 @@ double proc_get_rw_bytes(struct procinfo *pi, pid_t pid);
  */
 intmax_t proc_get_oom_score(struct procinfo *pi, pid_t pid);
 
+/** @brief Retrieve major fault rate
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @return Bytes per second subject to major faults
+ *
+ * Major faults require a page to be loaded from disk.
+ */
+double proc_get_majflt(struct procinfo *pi, pid_t pid);
+
+/** @brief Retrieve minor fault rate
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @return Bytes per second subject to minor faults
+ *
+ * Minor faults do not require a page to be loaded from disk.
+ */
+double proc_get_minflt(struct procinfo *pi, pid_t pid);
+
 /** @brief Retrieve the list of selected processes
  * @param pi Pointer to process information
  * @param npids Where to store number of processes
