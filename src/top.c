@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
              "  --version         Display version string\n");
       return 0;
     case OPT_HELP_FORMAT:
-      printf("The following properties can be used with the -o and -s option:\n"
+      printf("The following properties can be used with the -o and -s options:\n"
              "\n");
       format_help();
       printf("\n"
