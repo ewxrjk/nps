@@ -46,6 +46,9 @@ struct procinfo;
 /** @brief Check only, do not assign */
 #define FORMAT_CHECK 0x0002
 
+/** @brief Add to the list rather than resetting it */
+#define FORMAT_ADD 0x0004
+
 /** @brief Add to the format list
  * @param f Format string
  * @param flags Flags
@@ -57,12 +60,13 @@ struct procinfo;
  * - @ref FORMAT_ARGUMENT if @p f is in argument syntax
  * - @ref FORMAT_QUOTED if @p f is in quoted syntax
  * - @ref FORMAT_CHECK to check @p f rather than act on it
+ * - @ref FORMAT_ADD to add to the list rather than replacing it
  *
  * If @ref FORMAT_CHECK is specified then any errors cause a 0 return.
  * If it is not specified then errors are either ignored or cause a
  * call to fatal().
  */
-int format_add(const char *f, unsigned flags);
+int format_set(const char *f, unsigned flags);
 
 /** @brief Clear the format list
  */
@@ -99,9 +103,10 @@ void format_process(struct procinfo *pi, pid_t pid,
  * @param ordering Ordering specification
  * @param flags Flags
  * @return Nonzero on success, 0 if @p ordering is not valid
-
+ *
  * @p flags should be a combination of the following values:
  * - @ref FORMAT_CHECK to check @p ordering rather than act on it
+ * - @ref FORMAT_ADD to add to the list rather than replacing it
  *
  * If @ref FORMAT_CHECK is specified then any errors cause a 0 return.
  * If it is not specified then errors are either ignored or cause a

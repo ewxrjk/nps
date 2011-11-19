@@ -35,6 +35,7 @@ struct procinfo;
  *
  * @p flags should be a combination of the following values:
  * - @ref FORMAT_CHECK to check @p ordering rather than act on it
+ * - @ref FORMAT_ADD to add to the list rather than replacing it
  *
  * If @ref FORMAT_CHECK is specified then any errors cause a 0 return.
  * If it is not specified then errors are either ignored or cause a

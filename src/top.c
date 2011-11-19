@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
                          options, NULL)) >= 0) {
     switch(n) {
     case 'o':
-      format_add(optarg, FORMAT_ARGUMENT);
+      format_set(optarg, FORMAT_ARGUMENT|FORMAT_ADD);
       have_set_format = 1;
       break;
     case 's':
@@ -314,17 +314,17 @@ int main(int argc, char **argv) {
   /* Set the default format */
   if(!have_set_format) {
     if(rc_top_format)
-      format_add(rc_top_format, FORMAT_QUOTED);
+      format_set(rc_top_format, FORMAT_QUOTED);
     else {
-      format_add("user,pid,nice", FORMAT_QUOTED);
+      format_set("user,pid,nice", FORMAT_QUOTED);
       if(megabytes)
-        format_add("rssM", FORMAT_QUOTED);
+        format_set("rssM", FORMAT_QUOTED|FORMAT_ADD);
       else
-        format_add("rss", FORMAT_QUOTED);
-      format_add("pcpu=%C", FORMAT_QUOTED);
+        format_set("rss", FORMAT_QUOTED|FORMAT_ADD);
+      format_set("pcpu=%C", FORMAT_QUOTED|FORMAT_ADD);
       if(!getuid())
-        format_add("read,write", FORMAT_QUOTED);
-      format_add("tty=TTY,args=CMD", FORMAT_QUOTED);
+        format_set("read,write", FORMAT_QUOTED|FORMAT_ADD);
+      format_set("tty=TTY,args=CMD", FORMAT_QUOTED|FORMAT_ADD);
     }
   }
   /* Set up SIGWINCH detection */
@@ -815,12 +815,11 @@ static enum next_action set_delay(const char *s) {
 // ----------------------------------------------------------------------------
 
 static int valid_format(const char *s) {
-  return format_add(s, FORMAT_QUOTED|FORMAT_CHECK);
+  return format_set(s, FORMAT_QUOTED|FORMAT_CHECK);
 }
 
 static enum next_action set_format(const char *s) {
-  format_clear();
-  format_add(s, FORMAT_QUOTED);
+  format_set(s, FORMAT_QUOTED);
   return NEXT_REFORMAT;
 }
 

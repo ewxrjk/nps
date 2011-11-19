@@ -563,12 +563,14 @@ static const struct propinfo *find_property(const char *name) {
   return NULL;
 }
 
-int format_add(const char *f, unsigned flags) {
+int format_set(const char *f, unsigned flags) {
   char buffer[128], heading_buffer[128];
   const char *heading;
   size_t i;
   int q;
   const struct propinfo *prop;
+  if(!(flags & (FORMAT_CHECK|FORMAT_ADD)))
+    format_clear();
   while(*f) {
     if(*f == ' ' || *f == ',') {
       ++f;
@@ -725,7 +727,7 @@ int format_ordering(const char *ordering, unsigned flags) {
   size_t i;
   const struct propinfo *prop;
   int sign;
-  if(!(flags & FORMAT_CHECK)) {
+  if(!(flags & (FORMAT_CHECK|FORMAT_ADD))) {
     free(orders);
     orders = NULL;
     norders = 0;

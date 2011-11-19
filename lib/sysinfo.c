@@ -411,7 +411,7 @@ int sysinfo_set(const char *format, unsigned flags) {
   size_t i;
   const struct sysprop *prop;
 
-  if(!(flags & FORMAT_CHECK)) {
+  if(!(flags & (FORMAT_CHECK|FORMAT_ADD))) {
     free(sysinfos);
     sysinfos = NULL;
     nsysinfos = 0;

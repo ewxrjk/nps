@@ -74,19 +74,17 @@ int main(int argc, char **argv) {
       select_add(select_not_session_leader, NULL, 0);
       break;
     case 'f':
-      format_clear();
       if(rc_ps_f_format)
-        format_add(rc_ps_f_format, FORMAT_QUOTED);
+        format_set(rc_ps_f_format, FORMAT_QUOTED);
       else
-        format_add("user=UID,pid,ppid,pcpu=C,stime,tty=TTY,time,args=CMD", FORMAT_QUOTED);
+        format_set("user=UID,pid,ppid,pcpu=C,stime,tty=TTY,time,args=CMD", FORMAT_QUOTED);
       set_format = 1;
       break;
     case 'l':
-      format_clear();
       if(rc_ps_l_format)
-        format_add(rc_ps_l_format, FORMAT_QUOTED);
+        format_set(rc_ps_l_format, FORMAT_QUOTED);
       else
-        format_add("flags,state,uid,pid,ppid,pcpu=C,pri,nice,addr,vsz=SZ,wchan,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
+        format_set("flags,state,uid,pid,ppid,pcpu=C,pri,nice,addr,vsz=SZ,wchan,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
       set_format = 1;
       break;
     case 'g':
@@ -101,7 +99,7 @@ int main(int argc, char **argv) {
       /* ignored */
       break;
     case 'o':
-      format_add(optarg, FORMAT_ARGUMENT);
+      format_set(optarg, FORMAT_ARGUMENT|FORMAT_ADD);
       set_format = 1;
       break;
     case 'p':
@@ -166,9 +164,9 @@ int main(int argc, char **argv) {
   /* Set the default format */
   if(!set_format) {
     if(rc_ps_format)
-      format_add(rc_ps_format, FORMAT_QUOTED);
+      format_set(rc_ps_format, FORMAT_QUOTED);
     else
-      format_add("pid,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
+      format_set("pid,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
   }
   /* Set the default selection */
   select_default(select_uid_tty, NULL, 0);
