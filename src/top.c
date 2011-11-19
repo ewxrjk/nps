@@ -23,6 +23,7 @@
 #include "process.h"
 #include "sysinfo.h"
 #include "utils.h"
+#include "input.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <curses.h>
@@ -51,11 +52,21 @@ const struct option options[] = {
 static void loop(void);
 static void await(void);
 static void process_command(int ch);
+static void collect_input(const char *prompt,
+                          int (*validator)(const char *),
+                          void (*setter)(const char *));
+static void process_input_key(int ch);
+static int valid_delay(const char *s);
+static void set_delay(const char *s);
 
 static double update_interval = 1.0;
 static double update_last;
 static int quit;
 static void (*process_key)(int) = process_command;
+
+static struct input_context input;
+static char input_buffer[1024];
+static void (*input_set)(const char *);
 
 int main(int argc, char **argv) {
   int n;
@@ -186,7 +197,6 @@ int main(int argc, char **argv) {
     fatal(0, "initrflush failed");
   if(keypad(stdscr, TRUE) == ERR) /* Enable keypad support */
     fatal(0, "keypad failed");
-  curs_set(0);                  /* Hide cursor */
   /* Loop until quit */
   loop();
   /* Deinitialize curses */
@@ -196,6 +206,8 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+// ----------------------------------------------------------------------------
+
 static struct procinfo *pi;
 
 static int compare_pid(const void *av, const void *bv) {
@@ -203,6 +215,8 @@ static int compare_pid(const void *av, const void *bv) {
   pid_t b = *(const pid_t *)bv;
   return format_compare(pi, a, b);
 }
+
+// ----------------------------------------------------------------------------
 
 static void loop(void) {
   struct procinfo *last = NULL;
@@ -267,6 +281,13 @@ static void loop(void) {
       ++y;
     }
 
+    /* Input */
+    if(input.bufsize) {
+      input_draw(&input);
+      curs_set(1);
+    } else
+      curs_set(0);
+
     /* Display what we've got */    
     if(refresh() == ERR)
       fatal(0, "refresh failed");
@@ -306,11 +327,20 @@ static void await(void) {
   }
 }
 
+// ----------------------------------------------------------------------------
+
 static void process_command(int ch) {
   switch(ch) {
   case 'q':
   case 'Q':
     quit = 1;
+    break;
+  case 'd':
+  case 'D':
+    collect_input("Delay> ",
+                  valid_delay,
+                  set_delay);
+    input.len = snprintf(input.buffer, input.bufsize, "%g", update_interval);
     break;
   case 12:
     if(redrawwin(stdscr) == ERR)
@@ -319,4 +349,67 @@ static void process_command(int ch) {
       fatal(0, "refresh failed");
     break;
   }
+  if(input.bufsize) {
+    input_draw(&input);
+    curs_set(1);
+    if(refresh() == ERR)
+      fatal(0, "refresh failed");
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+static void collect_input(const char *prompt,
+                          int (*validator)(const char *),
+                          void (*setter)(const char *)) {
+  process_key = process_input_key;
+  memset(&input, 0, sizeof input);
+  input.buffer = input_buffer;
+  input.bufsize = sizeof input_buffer;
+  input.validate = validator;
+  input.prompt = prompt;
+  input_set = setter;
+}
+
+static void process_input_key(int ch) {
+  switch(ch) {
+  case 27:                      /* ESC */
+    process_key = process_command;
+    input.bufsize = 0;
+    break;
+  case 13:                      /* CR */
+    if(input.validate(input.buffer)) {
+      process_key = process_command;
+      input_set(input.buffer);
+      input.bufsize = 0;
+    }
+    break;
+  default:
+    input_key(ch, &input);
+    break;
+  }
+  if(!input.bufsize)
+    curs_set(0);
+}
+
+// ----------------------------------------------------------------------------
+
+static int valid_delay(const char *s) {
+  double value;
+  char *e;
+  errno = 0;
+  value = strtod(s, &e);
+  if(errno)
+    return 0;
+  if(e == s || *e
+     || isnan(value) || isinf(value)
+     || value <= 0)
+    return 0;
+  return 1;
+}
+
+static void set_delay(const char *s) {
+  update_interval = strtod(s, NULL);
+  /* Force an immediate update */
+  update_last = clock_now() - update_interval;
 }
