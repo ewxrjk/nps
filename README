@@ -21,14 +21,18 @@ See 'INSTALL' for generic instructions
     nps-top --help
     man nps-top
 
+Within nps-top, press 'h' to cycle through help.
+
 * Use
 
     nps
     nps -ef
     nps-top
 
+If you like them more than the system versions:
+
     alias ps=nps
-    alias top=nps-top # if you like them more than the system versions
+    alias top=nps-top
 
 * Maintainer
 
