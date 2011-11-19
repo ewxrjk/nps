@@ -657,9 +657,10 @@ static void collect_input(const char *prompt,
   }
 }
 
-/** @brief Handle keyboard input whilte editing */
+/** @brief Handle keyboard input while editing */
 static enum next_action process_input_key(int ch) {
   switch(ch) {
+  case 24:                      /* ^X */
   case 27:                      /* ESC */
     process_key = process_command;
     input.bufsize = 0;
