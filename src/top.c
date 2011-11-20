@@ -502,20 +502,25 @@ static void loop(void) {
  * @return What do to next
  */
 static enum next_action await(void) {
-  double update_next, now, frac, delta;
+  double update_next, started, finished, frac, delta;
   struct timeval tv;
   fd_set fdin;
   int n, ch, ret;
   unsigned char sig;
   struct winsize ws;
 
-  if((now = clock_now()) >= (update_next = update_last + update_interval))
-    return NEXT_RESAMPLE;
+  started = clock_now();
+  /* When is the next update? */
+  update_next = update_last + update_interval;
   /* Figure out how long to wait until the next update is required */
-  delta = update_next - now;
+  delta = update_next - started;
+  /* Even if there is no time to wait we still call select() and check
+   * for keyboard and signal IO */
+  if(delta < 0)
+    delta = 0;
   /* Only wait until the next second boundary, so we can keep the
    * clock in the system info up to date */
-  frac = ceil(now) - now;
+  frac = ceil(started) - started;
   if(!frac)
     frac = 1.0;
   if(delta > frac)
@@ -562,7 +567,12 @@ static enum next_action await(void) {
   }
   /* If the clock should change redraw the sytsem info (without
    * resampling it). */
-  return floor(now) == floor(clock_now()) ? NEXT_WAIT : NEXT_RESYSINFO;
+  finished = clock_now();
+  if(finished >= update_last+update_interval)
+    return NEXT_RESAMPLE;
+  if(floor(started) != floor(finished))
+    return NEXT_RESYSINFO;
+  return NEXT_WAIT;
 }
 
 // ----------------------------------------------------------------------------
