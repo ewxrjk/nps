@@ -133,8 +133,8 @@ int main(int argc, char **argv) {
              "  -l                Long output\n"
              "  -g SID,SID....    Select processes by session ID\n"
              "  -G GID,GID,...    Select processes by real group ID\n"
-             "  -o FMT,FMT,...    Set output format\n"
-             "  -O FMT,FMT,...    Set output format (more flexible syntax)\n"
+             "  -o PROP,PROP,...  Set output format\n"
+             "  -O PROP,PROP,...  Set output format (more flexible syntax)\n"
              "  -p PID,PID,...    Select processes by process ID\n"
              "  -t TERM,TERM,...  Select processes by terminal\n"
              "  -u UID,UID,...    Select processes by real user ID\n"
@@ -143,8 +143,8 @@ int main(int argc, char **argv) {
              "  --help-format     Display formatting help\n"
              "  --version         Display version string\n"
              "Match expressions:\n"
-             "  FMT=VALUE         Exact string match\n"
-             "  FMT~REGEXP        POSIX extended regular expression match\n");
+             "  PROP=VALUE         Exact string match\n"
+             "  PROP~REGEXP        POSIX extended regular expression match\n");
       return 0;
     case OPT_HELP_FORMAT:
       printf("The following properties can be used with the -o option:\n"
