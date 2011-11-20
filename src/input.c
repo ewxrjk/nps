@@ -37,6 +37,7 @@ void input_key(int ch, struct input_context *ctx) {
     break;
   case 8:                       /* ^H */
   case 0x7F:
+  case KEY_BACKSPACE:
     if(ctx->cursor) {
       --ctx->cursor;
       memmove(ctx->buffer + ctx->cursor,
