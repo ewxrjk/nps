@@ -52,7 +52,7 @@ All \fILIST\fR options consists of elements separated by spaces or
 commas.
 .PP
 Process selection is cumulative, i.e. if multiple process selection
-options are given then then any process which is selected by at least
+options are given then any process which is selected by at least
 one of them is selected.
 If no selection options are given then only processes that share an
 effective UID and terminal with the current process are selected.
