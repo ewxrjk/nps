@@ -336,13 +336,13 @@ static void property_memM(const struct propinfo *prop, struct buffer *b,
   format_decimal(prop->fetch.fetch_uintmax(pi, pid) / 1048476, b);
 }
 
-static void property_wchan(const struct propinfo *prop, struct buffer *b,
-                           size_t attribute((unused)) columnsize,
-                           struct procinfo *pi, pid_t pid) {
-  unsigned long long wchan = prop->fetch.fetch_uintmax(pi, pid);
-  /* 0 and all-bits-1 are not very interesting wchans */
-  if(wchan && wchan + 1 && wchan != 0xFFFFFFFF)
-    format_hex(wchan, b);
+static void property_address(const struct propinfo *prop, struct buffer *b,
+                             size_t attribute((unused)) columnsize,
+                             struct procinfo *pi, pid_t pid) {
+  unsigned long long addr = prop->fetch.fetch_uintmax(pi, pid);
+  /* 0 and all-bits-1 are not very interesting addresses */
+  if(addr && addr + 1 && addr != 0xFFFFFFFF)
+    format_hex(addr, b);
   else
     /* suppress pointless values */
     buffer_putc(b, '-');
@@ -455,7 +455,7 @@ static int compare_string(const struct propinfo *prop, struct procinfo *pi,
 static const struct propinfo properties[] = {
   {
     "addr", "ADDR", "Instruction pointer address (hex)",
-    property_uhex, compare_uintmax, { .fetch_uintmax = proc_get_insn_pointer }
+    property_address, compare_uintmax, { .fetch_uintmax = proc_get_insn_pointer }
   },
   {
     "args", "COMMAND", "Command with arguments",
@@ -615,7 +615,7 @@ static const struct propinfo properties[] = {
   },
   {
     "wchan", "WCHAN", "Wait channel (hex)",
-    property_wchan, compare_uintmax, { .fetch_uintmax = proc_get_wchan }
+    property_address, compare_uintmax, { .fetch_uintmax = proc_get_wchan }
   },
   {
     "write", "WR", "Recent write rate (1024 bytes/s)",
