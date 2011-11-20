@@ -633,6 +633,7 @@ static enum next_action process_command(int ch) {
     strcpy(input_buffer, f);
     free(f);
     break;
+  case '?':
   case 'h':
   case 'H':
     help_page = (help_page + 1) % NHELPPAGES;
