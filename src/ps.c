@@ -56,12 +56,12 @@ int main(int argc, char **argv) {
   struct winsize ws;
   const char *s;
   struct procinfo *pi;
-  char **help;
+  char **help, *t;
 
   /* Read configuration */
   read_rc();
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:O:p:t:u:U:R:", 
+  while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:O:p:t:u:U:R:C:", 
                          options, NULL)) >= 0) {
     switch(n) {
     case 'a':
@@ -69,6 +69,10 @@ int main(int argc, char **argv) {
       break;
     case 'A': case 'e':
       select_add(select_all, NULL, 0);
+      break;
+    case 'C':
+      asprintf(&t, "comm=%s", optarg);
+      select_match(t);
       break;
     case 'd':
       select_add(select_not_session_leader, NULL, 0);
@@ -139,6 +143,7 @@ int main(int argc, char **argv) {
              "  -t TERM,TERM,...  Select processes by terminal\n"
              "  -u UID,UID,...    Select processes by real user ID\n"
              "  -U UID,UID,...    Select processes by effective user ID\n"
+             "  -C NAME           Select by process name\n"
              "  --help            Display option summary\n"
              "  --help-format     Display formatting help\n"
              "  --version         Display version string\n"

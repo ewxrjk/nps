@@ -13,6 +13,10 @@ writes a snapshot of information about processes running on the system.
 Select processes which have a controlling terminal.
 .IP "\fB-A\fR, \fB-e"
 Select all processes.
+.IP "\fB-C \fINAME"
+Select processes by name.
+.IP
+Equivalent to \fBcomm=\fINAME\fR (see \fBMATCH EXPRESSIONS\fR below).
 .IP \fB-d
 Select all processes that are not session leaders.
 .IP \fB-f
