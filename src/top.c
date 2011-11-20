@@ -256,21 +256,18 @@ int main(int argc, char **argv) {
       printf("Usage:\n"
              "  top [OPTIONS]\n"
              "Options:\n"
-             "  -o PROP,PROP,...  Set output format\n"
-             "  -O PROP,PROP,...  Set output format (more flexible syntax)\n"
-             "  -s [+/-]PROP,...  Set ordering\n"
-             "  -i                Hide idle processes\n"
-             "  -j PROP,PROP,...  Set system information format\n"
              "  -d SECONDS        Set update interval\n"
+             "  -i                Hide idle processes\n"
+             "  -j SYSPROPS...    Set system information format; see --help-sysinfo\n"
              "  -M                Display memory sizes in megabytes\n"
+             "  -o, -O PROPS...   Set output format; see --help-format\n"
+             "  -s [+/-]PROPS...  Set ordering; see --help-format\n"
              "  --help            Display option summary\n"
-             "  --help-format     Display formatting & ordering help (-o/-s)\n"
-             "  --help-sysinfo    Display system information help (-j)\n"
              "  --version         Display version string\n"
              "Press 'h' for on-screen help.\n");
       return 0;
     case OPT_HELP_FORMAT:
-      printf("The following properties can be used with the -o and -s options:\n"
+      printf("The following properties can be used with the -O, -o and -s options:\n"
              "\n");
       help = format_help();
       while(*help)
@@ -295,7 +292,7 @@ int main(int argc, char **argv) {
       while(*help)
         puts(*help++);
       printf("\n"
-             "Multiple properties can be specified in one -I option, separated by\n"
+             "Multiple properties can be specified in one -j option, separated by\n"
              "commas or spaces.\n");
       return 0;
     case OPT_VERSION:
