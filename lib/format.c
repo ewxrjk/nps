@@ -38,6 +38,7 @@
 struct propinfo;
 
 typedef void formatfn(const struct propinfo *prop, struct buffer *b,
+                      size_t columnsize,
                       struct procinfo *pi, pid_t pid);
 
 typedef int comparefn(const struct propinfo *prop, struct procinfo *pi, 
@@ -63,6 +64,7 @@ struct propinfo {
 
 struct column {
   const struct propinfo *prop;
+  size_t reqwidth;
   size_t width;
   char *heading;
 };
@@ -103,24 +105,26 @@ static void format_hex(uintmax_t im, struct buffer *b) {
   buffer_append(b, t);
 }
 
-static void format_user(uid_t uid, struct buffer *b) {
-  struct passwd *pw = getpwuid(uid);
-  if(pw)
-    buffer_append(b, pw->pw_name);
+static void format_usergroup(intmax_t id, struct buffer *b, size_t columnsize,
+                             const char *name) {
+  if(name && strlen(name) <= columnsize)
+    buffer_append(b, name);
   else
-    format_decimal(uid, b);
+    format_decimal(id, b);
 }
 
-static void format_group(gid_t gid, struct buffer *b) {
+static void format_user(uid_t uid, struct buffer *b, size_t columnsize) {
+  struct passwd *pw = getpwuid(uid);
+  format_usergroup(uid, b, columnsize, pw ? pw->pw_name : NULL);
+}
+
+static void format_group(gid_t gid, struct buffer *b, size_t columnsize) {
   struct group *gr = getgrgid(gid);
-  if(gr)
-    buffer_append(b, gr->gr_name);
-  else
-    return format_decimal(gid, b);
+  format_usergroup(gid, b, columnsize, gr ? gr->gr_name : NULL);
 }
 
 static void format_interval(long seconds, struct buffer *b,
-                            int always_hours) {
+                            int always_hours, size_t columnsize) {
   char t[64];
   if(seconds >= 86400) {
     snprintf(t, sizeof t, "%ld-%02ld:%02ld:%02ld",
@@ -128,7 +132,14 @@ static void format_interval(long seconds, struct buffer *b,
              (seconds % 86400) / 3600,
              (seconds % 3600) / 60,
              (seconds % 60));
-  } else if(seconds >= 3600 || always_hours) {
+    if(strlen(t) > columnsize)
+      snprintf(t, sizeof t, "%ld-%02ld", 
+               seconds / 86400,
+               (seconds % 86400) / 3600);
+    if(strlen(t) > columnsize)
+      snprintf(t, sizeof t, "%ldd", 
+               seconds / 86400);
+  } else if(seconds >= 3600 || (always_hours && columnsize > 5)) {
     snprintf(t, sizeof t, "%02ld:%02ld:%02ld",
              seconds / 3600,
              (seconds % 3600) / 60,
@@ -141,7 +152,7 @@ static void format_interval(long seconds, struct buffer *b,
   buffer_append(b, t);
 }
 
-static void format_time(time_t when, struct buffer *b) {
+static void format_time(time_t when, struct buffer *b, size_t columnsize) {
   char t[64];
   time_t now;
   struct tm when_tm, now_tm;
@@ -149,10 +160,17 @@ static void format_time(time_t when, struct buffer *b) {
   time(&now);
   localtime_r(&when, &when_tm);
   localtime_r(&now, &now_tm);
-  if(now_tm.tm_year == when_tm.tm_year
-     && now_tm.tm_mon == when_tm.tm_mon
-     && now_tm.tm_mday == when_tm.tm_mday)
-    strftime(t, sizeof t, "%H:%M:%S", &when_tm);
+  if(columnsize != SIZE_MAX && columnsize >= 19)
+    strftime(t, sizeof t, "%Y-%m-%dT%H:%M:%S", &when_tm);
+  else if(now_tm.tm_year == when_tm.tm_year
+          && now_tm.tm_mon == when_tm.tm_mon
+          && now_tm.tm_mday == when_tm.tm_mday) {
+    if(columnsize < 8)
+      strftime(t, sizeof t, "%H:%M", &when_tm);
+    else
+      strftime(t, sizeof t, "%H:%M:%S", &when_tm);
+  } else if(columnsize < 10 && now_tm.tm_year == when_tm.tm_year)
+    strftime(t, sizeof t, "%m-%d", &when_tm);
   else
     strftime(t, sizeof t, "%Y-%m-%d", &when_tm);
   buffer_append(b, t);
@@ -162,64 +180,85 @@ static void format_time(time_t when, struct buffer *b) {
 
 /* generic properties */
 
-static void property_decimal(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_decimal(const struct propinfo *prop, struct buffer *b,
+                             size_t attribute((unused)) columnsize,
+                             struct procinfo *pi, pid_t pid) {
   return format_decimal(prop->fetch.fetch_intmax(pi, pid), b);
 }
 
-static void property_uoctal(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_uoctal(const struct propinfo *prop, struct buffer *b,
+                            size_t attribute((unused)) columnsize,
+                            struct procinfo *pi, pid_t pid) {
   return format_octal(prop->fetch.fetch_uintmax(pi, pid), b);
 }
 
-static void property_uhex(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_uhex(const struct propinfo *prop, struct buffer *b,
+                          size_t attribute((unused)) columnsize,
+                          struct procinfo *pi, pid_t pid) {
   format_hex(prop->fetch.fetch_uintmax(pi, pid), b);
 }
 
-static void property_pid(const struct propinfo *prop, struct buffer *b, 
+static void property_pid(const struct propinfo *prop, struct buffer *b,
+                         size_t attribute((unused)) columnsize, 
                          struct procinfo *pi, pid_t pid) {
   return format_decimal(prop->fetch.fetch_pid(pi, pid), b);
 }
 
-static void property_uid(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_uid(const struct propinfo *prop, struct buffer *b,
+                         size_t attribute((unused)) columnsize,
+                         struct procinfo *pi, pid_t pid) {
   return format_decimal(prop->fetch.fetch_uid(pi, pid), b);
 }
 
 static void property_user(const struct propinfo *prop, struct buffer *b,
-                           struct procinfo *pi, pid_t pid) {
-  return format_user(prop->fetch.fetch_uid(pi, pid), b);
+                          size_t columnsize, struct procinfo *pi, pid_t pid) {
+  return format_user(prop->fetch.fetch_uid(pi, pid), b, columnsize);
 }
 
-static void property_gid(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_gid(const struct propinfo *prop, struct buffer *b,
+                         size_t attribute((unused)) columnsize,
+                         struct procinfo *pi, pid_t pid) {
   return format_decimal(prop->fetch.fetch_gid(pi, pid), b);
 }
 
-static void property_group(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return format_group(prop->fetch.fetch_gid(pi, pid), b);
+static void property_group(const struct propinfo *prop, struct buffer *b,
+                           size_t columnsize, struct procinfo *pi, pid_t pid) {
+  return format_group(prop->fetch.fetch_gid(pi, pid), b, columnsize);
 }
 
-static void property_char(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_char(const struct propinfo *prop, struct buffer *b,
+                          size_t attribute((unused)) columnsize,
+                          struct procinfo *pi, pid_t pid) {
   buffer_putc(b, prop->fetch.fetch_int(pi, pid));
 }
 
 /* time properties */
 
-static void property_time(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_time(const struct propinfo *prop, struct buffer *b,
+                          size_t columnsize,
+                          struct procinfo *pi, pid_t pid) {
   /* time wants [dd-]hh:mm:ss */
-  return format_interval(prop->fetch.fetch_intmax(pi, pid), b, 1);
+  return format_interval(prop->fetch.fetch_intmax(pi, pid), b, 1, columnsize);
 }
 
-static void property_etime(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_etime(const struct propinfo *prop, struct buffer *b,
+                           size_t attribute((unused)) columnsize,
+                           struct procinfo *pi, pid_t pid) {
   /* etime wants [[dd-]hh:]mm:ss */
-  return format_interval(prop->fetch.fetch_intmax(pi, pid), b, 0);
+  return format_interval(prop->fetch.fetch_intmax(pi, pid), b, 0, columnsize);
 }
 
-static void property_stime(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
-  return format_time(prop->fetch.fetch_intmax(pi, pid), b);
+static void property_stime(const struct propinfo *prop, struct buffer *b,
+                           size_t columnsize,
+                           struct procinfo *pi, pid_t pid) {
+  return format_time(prop->fetch.fetch_intmax(pi, pid), b, columnsize);
 }
 
 /* specific properties */
 
-static void property_tty(const struct propinfo *prop,
-                         struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_tty(const struct propinfo *prop, struct buffer *b,
+                         size_t attribute((unused)) columnsize,
+                         struct procinfo *pi, pid_t pid) {
   const char *path;
   int tty = prop->fetch.fetch_int(pi, pid);
   if(tty <= 0) {
@@ -243,7 +282,9 @@ static void property_tty(const struct propinfo *prop,
 }
 
 static void property_command_general(const struct propinfo *prop, 
-                                     struct buffer *b, struct procinfo *pi,
+                                     struct buffer *b,
+                                     size_t columnsize,
+                                     struct procinfo *pi,
                                      pid_t pid, int brief) {
   char *t;
   const char *comm = prop->fetch.fetch_string(pi, pid), *ptr;
@@ -255,39 +296,49 @@ static void property_command_general(const struct propinfo *prop,
   /* "A process that has exited and has a parent, but has not yet been
    * waited for by the parent, shall be marked defunct." */
   if(proc_get_state(pi, pid) != 'Z')
-    buffer_append(b, comm);
+    buffer_append_n(b, comm, min(strlen(comm), columnsize));
   else {
     if(asprintf(&t, "%s <defunct>", comm) < 0)
       fatal(errno, "asprintf");
-    buffer_append(b, t);
+    buffer_append_n(b, t, min(strlen(t), columnsize));
     free(t);
   }
 }
 
 static void property_command(const struct propinfo *prop, struct buffer *b,
-                               struct procinfo *pi, pid_t pid) {
-  return property_command_general(prop, b, pi, pid, 0);
+                             size_t columnsize,
+                             struct procinfo *pi, pid_t pid) {
+  return property_command_general(prop, b, columnsize, pi, pid, 0);
 }
 
 static void property_command_brief(const struct propinfo *prop,
-                                   struct buffer *b, struct procinfo *pi,
+                                   struct buffer *b, size_t columnsize, 
+                                   struct procinfo *pi,
                                    pid_t pid) {
-  return property_command_general(prop, b, pi, pid, 1);
+  return property_command_general(prop, b, columnsize, pi, pid, 1);
 }
 
-static void property_pcpu(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_pcpu(const struct propinfo *prop, struct buffer *b,
+                          size_t attribute((unused)) columnsize,
+                          struct procinfo *pi, pid_t pid) {
   format_decimal(100 * prop->fetch.fetch_double(pi, pid), b);
 }
 
-static void property_mem(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_mem(const struct propinfo *prop, struct buffer *b,
+                         size_t attribute((unused)) columnsize,
+                         struct procinfo *pi, pid_t pid) {
   format_decimal(prop->fetch.fetch_uintmax(pi, pid) / 1024, b);
 }
 
-static void property_memM(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_memM(const struct propinfo *prop, struct buffer *b,
+                          size_t attribute((unused)) columnsize,
+                          struct procinfo *pi, pid_t pid) {
   format_decimal(prop->fetch.fetch_uintmax(pi, pid) / 1048476, b);
 }
 
-static void property_wchan(const struct propinfo *prop, struct buffer *b, struct procinfo *pi, pid_t pid) {
+static void property_wchan(const struct propinfo *prop, struct buffer *b,
+                           size_t attribute((unused)) columnsize,
+                           struct procinfo *pi, pid_t pid) {
   unsigned long long wchan = prop->fetch.fetch_uintmax(pi, pid);
   /* 0 and all-bits-1 are not very interesting wchans */
   if(wchan && wchan + 1 && wchan != 0xFFFFFFFF)
@@ -298,16 +349,19 @@ static void property_wchan(const struct propinfo *prop, struct buffer *b, struct
 }
 
 static void property_iorate(const struct propinfo *prop, struct buffer *b,
+                            size_t attribute((unused)) columnsize,
                             struct procinfo *pi, pid_t pid) {
   format_decimal(prop->fetch.fetch_double(pi, pid) / 1024, b);
 }
 
 static void property_iorateM(const struct propinfo *prop, struct buffer *b,
+                             size_t attribute((unused)) columnsize,
                              struct procinfo *pi, pid_t pid) {
   format_decimal(prop->fetch.fetch_double(pi, pid) / 1048476, b);
 }
 
 static void property_iorateP(const struct propinfo *prop, struct buffer *b,
+                             size_t attribute((unused)) columnsize,
                              struct procinfo *pi, pid_t pid) {
   format_decimal(prop->fetch.fetch_double(pi, pid) / sysconf(_SC_PAGESIZE), b);
 }
@@ -575,7 +629,7 @@ static const struct propinfo properties[] = {
 #define NPROPERTIES (sizeof properties / sizeof *properties)
 
 static const struct propinfo *find_property(const char *name) {
-  size_t l = 0, r = NPROPERTIES - 1, m;
+  ssize_t l = 0, r = NPROPERTIES - 1, m;
   int c;
   while(l <= r) {
     m = l + (r - l) / 2;
@@ -591,11 +645,12 @@ static const struct propinfo *find_property(const char *name) {
 }
 
 int format_set(const char *f, unsigned flags) {
-  char buffer[128], heading_buffer[128];
+  char buffer[128], heading_buffer[128], *e;
   const char *heading;
   size_t i;
   int q;
   const struct propinfo *prop;
+  size_t reqwidth;
   if(!(flags & (FORMAT_CHECK|FORMAT_ADD)))
     format_clear();
   while(*f) {
@@ -604,12 +659,25 @@ int format_set(const char *f, unsigned flags) {
       continue;
     }
     i = 0;
-    while(*f && (*f != ' ' && *f != ',' && *f != '=')) {
+    while(*f && (*f != ' ' && *f != ',' && *f != '=' && *f != ':')) {
       if(i < sizeof buffer - 1)
         buffer[i++] = *f;
       ++f;
     }
     buffer[i] = 0;
+    if(*f == ':') {
+      ++f;
+      errno = 0;
+      reqwidth = strtoul(f, &e, 10);
+      if(errno || e == f) {
+        if(flags & FORMAT_CHECK)
+          return 0;
+        else
+          fatal(errno, "invalid column size");
+      }
+      f = e;
+    } else
+      reqwidth = SIZE_MAX;
     if(*f == '=') {
       if(flags & FORMAT_QUOTED) {
         /* property=heading extends until we hit a separator
@@ -671,6 +739,7 @@ int format_set(const char *f, unsigned flags) {
       columns[ncolumns].prop = prop;
       columns[ncolumns].heading = xstrdup(heading ? heading 
                                           : columns[ncolumns].prop->heading);
+      columns[ncolumns].reqwidth = reqwidth;
       ++ncolumns;
     }
   }
@@ -706,7 +775,8 @@ void format_columns(struct procinfo *pi, const pid_t *pids, size_t npids) {
       b->base = 0;
       b->pos = 0;
       b->size = 0;
-      columns[c].prop->format(columns[c].prop, b, pi, pids[n]);
+      columns[c].prop->format(columns[c].prop, b, columns[c].reqwidth,
+                              pi, pids[n]);
       if(b->pos > columns[c].width)
         columns[c].width = b->pos;
     }
@@ -735,7 +805,7 @@ void format_process(struct procinfo *pi, pid_t pid,
     if(pid == -1)
       buffer_append(b, columns[c].heading);
     else
-      columns[c].prop->format(columns[c].prop, b, pi, pid);
+      columns[c].prop->format(columns[c].prop, b, columns[c].width, pi, pid);
     /* Figure out how much we wrote */
     w = b->pos - start;
     /* For non-final columns, pad to the column width and one more for
@@ -759,7 +829,7 @@ void format_value(struct procinfo *pi, pid_t pid,
   b->base = buffer;
   b->pos = 0;
   b->size = bufsize;
-  prop->format(prop, b, pi, pid);
+  prop->format(prop, b, SIZE_MAX, pi, pid);
   buffer_terminate(b);
 }
 
@@ -878,7 +948,7 @@ char *format_get(void) {
   for(n = 0; n < ncolumns; ++n) {
     size += strlen(columns[n].prop->name);
     size += strlen(columns[n].prop->heading) * 2;
-    size += 10;
+    size += 20;
   }
   ptr = buffer = xmalloc(size);
   for(n = 0; n < ncolumns; ++n) {
@@ -886,6 +956,9 @@ char *format_get(void) {
       *ptr++ = ' ';
     strcpy(ptr, columns[n].prop->name);
     ptr += strlen(ptr);
+    if(columns[n].reqwidth != SIZE_MAX) {
+      ptr += sprintf(ptr, ":%zu", columns[n].reqwidth);
+    }
     h = columns[n].heading;
     if(strcmp(h, columns[n].prop->heading)) {
       *ptr++ = '=';

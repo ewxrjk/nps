@@ -38,7 +38,7 @@ The \fB-o\fR option specifies a list of process properties to display,
 separated by spaces or commas.
 The available properties are:
 #include formatting.1
-.PP
+.SS Defaults
 If no formatting options at all are specified then the default is
 equivalent to:
 .PP
@@ -61,7 +61,7 @@ by the first (and so on).
 .PP
 Each property name may be prefix with \fB+\fR to specify descending
 order (the default) and \fB-\fR to specify ascending order.
-.PP
+.SS Defaults
 If no ordering option is specified then the default is equivalent to:
 .PP
 .RS
@@ -73,9 +73,11 @@ displayed, separated by spaces or commas.
 The available system properties are:
 #include sysinfo.1
 .PP
-These properties are sample at the same time as collecting process
+These properties are sampled at the same time as collecting process
 information, so the \fB-d\fR value defines how out of date they may be.
 The exception is \fBtime\fR which always reflects the current time.
+.SS Defaults
+TODO
 .SH KEYBOARD
 .SS Scrolling
 If the terminal is too narrow, the process table can be panned left

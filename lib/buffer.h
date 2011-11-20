@@ -63,6 +63,18 @@ static inline void buffer_append(struct buffer *b, const char *s) {
       buffer_putc(b, *s++);
 }
 
+/** @brief Append a string to a string buffer
+ * @param b Pointer to string buffer
+ * @param s String to append
+ * @param n Length of string
+ */
+static inline void buffer_append_n(struct buffer *b, const char *s, size_t n) {
+  if(s) {
+    while(n--)
+      buffer_putc(b, *s++);
+  }
+}
+
 /** @brief Null-terminate a string buffer
  * @param b Pointer to string buffer
  */

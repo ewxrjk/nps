@@ -40,13 +40,25 @@ The available properties are:
 .IP \fBaddr
 The current instruction pointer (hex).
 .IP \fBargs
-Name and arguments.
+Command line.
 If these cannot be determined then the value of \fBcomm\fR is used, in
 square brackets.
+.IP
+This corresponds to the \fBargv\fR array passed to \fBmain\fR; for a
+script the first element will be the name of the interpreter and the
+second element the name of the script.
+.IP
+Requested widths are mandatory for \fBargs\fR.
 .IP \fBargsbrief
-Same as \fBargs\fR but with the directory part of the command stripped.
+Exactly the same as \fBargs\fR but with the directory part of the
+command stripped.
 .IP \fBcomm
-Name.
+Program filename.
+This corresponds to the first argument to \fBexecve\fR(3); for a
+script it is the basename of the script, not the name of the
+interpreter.
+.IP
+Requested widths are mandatory for \fBcomm\fR.
 .IP \fBetime
 Time elapsed since the process started.
 .IP \fBflags
@@ -58,6 +70,8 @@ Flags word from the kernel (hex).
 Effective group ID (decimal).
 .IP \fBgroup
 Effective group ID as a string.
+If the group name will not fit into the requested width, the numeric ID
+will be used instead.
 .IP \fBio
 IO rate, in kilobytes per second.
 This is the sum of \fBread\fR and \fBwrite\fR.
@@ -103,6 +117,8 @@ Read rate, in megabytes per second.
 Real group ID (decimal).
 .IP \fBrgroup
 Real group ID as a string.
+If the group name will not fit into the requested width, the numeric ID
+will be used instead.
 .IP \fBrss
 Resident set size in kilobytes.
 This the total amount of RAM used by the process.
@@ -112,6 +128,8 @@ Resident set size in megabytes.
 Real user ID (decimal).
 .IP \fBruser
 Real user ID as a string.
+If the user name will not fit into the requested width, the numeric ID
+will be used instead.
 .IP \fBstate
 Process state.
 The possible states are:
@@ -140,11 +158,13 @@ The leading \fI/dev/tty\fR or \fI/dev\fR is stripped for compactness.
 Effective user ID (decimal).
 .IP \fBuser
 Effective user ID as a string.
+If the user name will not fit into the requested width, the numeric ID
+will be used instead.
 .IP \fBvsz
 Virtual memory size, in kilobytes.
 This is the total address space used by the process.
 Note that it may be misleadingly large as a measure of memory
-consumption due to \fBPROT_NONE\fR mappings.
+consumption due to anonymous \fBPROT_NONE\fR mappings.
 .IP \fBvszM
 Virtual memory size, in megabytes.
 .IP \fBwchan
@@ -153,7 +173,19 @@ Wait channel.
 Write rate, in kilobytes per second.
 .IP \fBwriteM
 Write rate, in megabytes per second.
+.SS "Column Width"
+By default, every column is made wide enough for every value that
+appears in it.
 .PP
+To request a particular width for a column, use the syntax
+\fIPROPERTY\fB:\fIWIDTH\fR.
+For most properties, requested widths are only advisory; if necessary
+columns will be made wider to fit.
+However if possible an alternative representation will be used to fit
+within the requested width.
+For certain properties such as \fBargs\fR requested widths are
+mandatory.
+.SS "Headings"
 To give a property a different heading, use the syntax
 \fIPROPERTY\fB=\fIHEADING\fR.
 With \fB-o\fR this only works on the last property in a single argument.
@@ -161,18 +193,25 @@ Use multiple \fB-o\fR options to work around this.
 With \fB-O\fR this can be used on any or all of the properties within
 an argument.
 If the heading contains spaces or quotes then it must be quoted.
-.PP
+.SS "Time Intervals"
 Time intervals (such as \fBetime\fR) are represented as
-[[\fIdd\fB-\fR]\fIhh\fB:\fR]\fImm\fB:\fIss\fR, with \fIdd\fR
-representing the number of days, \fIhh\fR the number of hours,
-\fImm\fR the number of minutes and \fIss\fR the number of seconds.
+[[\fIDD\fB-\fR]\fIHH\fB:\fR]\fIMM\fB:\fISS\fR, with \fIDD\fR
+representing the number of days, \fIHH\fR the number of hours,
+\fIMM\fR the number of minutes and \fISS\fR the number of seconds.
 .PP
+If a column width is requested then more compact forms may be used:
+\fIDD\fB-\fIHH\fR or \fIDD\fBd\fR.
+.SS "Timestamps"
 Timestamps (such as \fBstime\fR) are represented as
 \fIYYYY\fB-\fIMM\fB-\fIDD\fR for times outside than
 the current day and \fIHH\fB:\fIMM\fB:\fISS\fR for times during the
 current day.
 They are always given in the local timezone.
 .PP
+If a column width is requested then more compact forms may be used:
+\fIHH\fB:\fIMM\fR for a time in this day or \fIMM\fB-\fIDD\fR for
+a date in this year.
+.SS Defaults
 If no formatting options at all are specified then the default is
 equivalent to:
 .PP
@@ -195,7 +234,7 @@ by the first (and so on).
 .PP
 Each property name may be prefix with \fB+\fR to specify descending
 order (the default) and \fB-\fR to specify ascending order.
-.PP
+.SS Defaults
 If no ordering option is specified then the default is equivalent to:
 .PP
 .RS
@@ -284,9 +323,11 @@ The current time (using the local timezone).
 .IP \fBuptime
 The amount of time since the system booted.
 .PP
-These properties are sample at the same time as collecting process
+These properties are sampled at the same time as collecting process
 information, so the \fB-d\fR value defines how out of date they may be.
 The exception is \fBtime\fR which always reflects the current time.
+.SS Defaults
+TODO
 .SH KEYBOARD
 .SS Scrolling
 If the terminal is too narrow, the process table can be panned left

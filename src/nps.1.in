@@ -78,7 +78,7 @@ The \fB-o\fR option specifies a list of process properties to display,
 separated by spaces or commas.
 The available properties are:
 #include formatting.1
-.PP
+.SS Defaults
 If no formatting options at all are specified then the default is
 equivalent to:
 .PP
