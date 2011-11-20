@@ -286,23 +286,32 @@ static void property_command_general(const struct propinfo *prop,
                                      size_t columnsize,
                                      struct procinfo *pi,
                                      pid_t pid, int brief) {
+  int n;
   char *t;
+  size_t start = b->pos;
   const char *comm = prop->fetch.fetch_string(pi, pid), *ptr;
   if(brief && comm[0] != '[') {
     for(ptr = comm; *ptr && *ptr != ' '; ++ptr)
       if(*ptr == '/')
         comm = ptr + 1;
   }
+  if(format_hierarchy) {
+    for(n = proc_get_depth(pi, pid); n > 0; --n)
+      buffer_putc(b,' ');
+  }
   /* "A process that has exited and has a parent, but has not yet been
    * waited for by the parent, shall be marked defunct." */
-  if(proc_get_state(pi, pid) != 'Z')
-    buffer_append_n(b, comm, min(strlen(comm), columnsize));
-  else {
+  if(proc_get_state(pi, pid) != 'Z') {
+    buffer_append(b, comm);
+  } else {
     if(asprintf(&t, "%s <defunct>", comm) < 0)
       fatal(errno, "asprintf");
-    buffer_append_n(b, t, min(strlen(t), columnsize));
+    buffer_append(b, t);
     free(t);
   }
+  /* Truncate to column size */
+  if(b->pos - start > columnsize)
+    b->pos = start + columnsize;
 }
 
 static void property_command(const struct propinfo *prop, struct buffer *b,
@@ -450,9 +459,38 @@ static int compare_string(const struct propinfo *prop, struct procinfo *pi,
   return strcmp(av, bv);
 }
 
+static int compare_hier(const struct propinfo *prop, struct procinfo *pi,
+                        pid_t a, pid_t b) {
+  pid_t bp;
+  int adepth, bdepth;
+  /* Deal with equal processes first */
+  if(a == b)
+    return 0;
+  /* Put the depths in order */
+  adepth = proc_get_depth(pi, a);
+  bdepth = proc_get_depth(pi, b);
+  if(adepth > bdepth)
+    return -compare_hier(prop, pi, b, a);
+  assert(adepth <= bdepth);
+  /* Now adepth <= bdepth. */
+  /* If A is B's parent, A < B */
+  bp = proc_get_ppid(pi, b);
+  if(a == bp)
+    return -1;
+  /* If A and B share a parent, order them by PID */
+  if(proc_get_ppid(pi, a) == bp)
+    return a < b ? -1 : 1;
+  /* Otherwise work back up the tree a bit */
+  return compare_hier(prop, pi, a, bp);
+}
+
 // ----------------------------------------------------------------------------
 
 static const struct propinfo properties[] = {
+  {
+    "_hier", NULL, NULL,
+    NULL, compare_hier, { }
+  },
   {
     "addr", "ADDR", "Instruction pointer address (hex)",
     property_address, compare_uintmax, { .fetch_uintmax = proc_get_insn_pointer }
@@ -628,7 +666,7 @@ static const struct propinfo properties[] = {
 };
 #define NPROPERTIES (sizeof properties / sizeof *properties)
 
-static const struct propinfo *find_property(const char *name) {
+static const struct propinfo *find_property(const char *name, unsigned flags) {
   ssize_t l = 0, r = NPROPERTIES - 1, m;
   int c;
   while(l <= r) {
@@ -638,8 +676,12 @@ static const struct propinfo *find_property(const char *name) {
       r = m - 1;
     else if(c > 0)
       l = m + 1;
-    else
-      return &properties[m];
+    else {
+      if(properties[m].description || (flags & FORMAT_INTERNAL))
+        return &properties[m];
+      else
+        return NULL;
+    }
   }
   return NULL;
 }
@@ -726,7 +768,7 @@ int format_set(const char *f, unsigned flags) {
       }
     } else
       heading = NULL;
-    prop = find_property(buffer);
+    prop = find_property(buffer, flags);
     if(flags & FORMAT_CHECK) {
       if(!prop)
         return 0;
@@ -823,7 +865,7 @@ void format_value(struct procinfo *pi, pid_t pid,
                   const char *property,
                   char *buffer, size_t bufsize) {
   struct buffer b[1];
-  const struct propinfo *prop = find_property(property);
+  const struct propinfo *prop = find_property(property, 0);
   if(!prop)
     fatal(0, "unknown process property '%s'", property);
   b->base = buffer;
@@ -869,7 +911,7 @@ int format_ordering(const char *ordering, unsigned flags) {
       sign = -1;
       break;
     }
-    prop = find_property(b);
+    prop = find_property(b, flags);
     if(flags & FORMAT_CHECK) {
       if(!prop)
         return 0;
@@ -920,20 +962,23 @@ char **format_help(void) {
   char *ptr, **result, **next;
 
   for(n = 0; n < NPROPERTIES; ++n)
-    size += max(strlen(properties[n].name), 8)
-      + max(strlen(properties[n].heading), 7)
-      + strlen(properties[n].description)
-      + 10;
+    if(properties[n].description)
+      size += max(strlen(properties[n].name), 9)
+        + max(strlen(properties[n].heading), 7)
+        + strlen(properties[n].description)
+        + 10;
   next = result = xmalloc(sizeof (char *) * (2 + NPROPERTIES) + size);
   ptr = (char *)(result + 2 + NPROPERTIES);
-  *next++ = strcpy(ptr, "  Property  Heading  Description");
+  *next++ = strcpy(ptr, "  Property   Heading  Description");
   ptr += strlen(ptr) + 1;
   for(n = 0; n < NPROPERTIES; ++n) {
-    *next++ = ptr;
-    ptr += 1 + sprintf(ptr, "  %-8s  %-7s  %s",
-                       properties[n].name,
-                       properties[n].heading,
-                       properties[n].description);
+    if(properties[n].description) {
+      *next++ = ptr;
+      ptr += 1 + sprintf(ptr, "  %-9s  %-7s  %s",
+                         properties[n].name,
+                         properties[n].heading,
+                         properties[n].description);
+    }
   }
   *next = NULL;
   return result;
@@ -982,3 +1027,5 @@ char *format_get(void) {
   *ptr = 0;
   return buffer;
 }
+
+int format_hierarchy;

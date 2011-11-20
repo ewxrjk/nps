@@ -49,6 +49,9 @@ struct procinfo;
 /** @brief Add to the list rather than resetting it */
 #define FORMAT_ADD 0x0004
 
+/** @brief Allow internal-only formats */
+#define FORMAT_INTERNAL 0x0008
+
 /** @brief Add to the format list
  * @param f Format string
  * @param flags Flags
@@ -154,5 +157,8 @@ char *format_get(void);
  * Caller is responsible for freeing the returned string.
  */
 char *format_get_ordering(void);
+
+/** @brief Include hierarchy spacing in comm/args */
+extern int format_hierarchy;
 
 #endif

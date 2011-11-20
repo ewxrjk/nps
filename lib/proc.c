@@ -115,8 +115,8 @@ struct process {
   struct timeval base_stat_time, stat_time;
   struct timeval base_io_time, io_time;
   intmax_t oom_score;
-  STAT_PROPS(SMEMBER,UMEMBER)
-  IO_PROPS(SMEMBER,UMEMBER)
+  STAT_PROPS(UMEMBER,SMEMBER)
+  IO_PROPS(UMEMBER,SMEMBER)
   IO_PROPS(BASE_SMEMBER,BASE_UMEMBER)
 };
 
@@ -663,6 +663,26 @@ double proc_get_minflt(struct procinfo *pi, pid_t pid) {
                    p->prop_minflt - p->base_minflt) * sysconf(_SC_PAGE_SIZE);
 }
 
+int proc_get_depth(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
+  if(!p)
+    return -1;
+  proc_stat(p);
+  if(pid == p->prop_ppid)
+    return 0;
+  else
+    return proc_get_depth(pi, p->prop_ppid) + 1;
+}
+
+int proc_is_ancestor(struct procinfo *pi, pid_t a, pid_t b) {
+  struct process *p;
+  if(b == a)
+    return 1;
+  p = proc_find(pi, b);
+  proc_stat(p);
+  return proc_is_ancestor(pi, a, p->prop_ppid);
+}
+
 // ----------------------------------------------------------------------------
 
 pid_t *proc_get_selected(struct procinfo *pi, size_t *npids) {
@@ -679,3 +699,4 @@ pid_t *proc_get_selected(struct procinfo *pi, size_t *npids) {
   *npids = count;
   return pids; 
 }
+

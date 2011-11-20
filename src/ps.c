@@ -23,6 +23,7 @@
 #include "process.h"
 #include "utils.h"
 #include "rc.h"
+#include "compare.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <errno.h>
@@ -55,13 +56,12 @@ int main(int argc, char **argv) {
   char buffer[1024];
   struct winsize ws;
   const char *s;
-  struct procinfo *pi;
   char **help, *t;
 
   /* Read configuration */
   read_rc();
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:O:p:t:u:U:R:C:w", 
+  while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:O:p:t:u:U:R:C:wH", 
                          options, NULL)) >= 0) {
     switch(n) {
     case 'a':
@@ -98,6 +98,10 @@ int main(int argc, char **argv) {
     case 'G':
       args = split_arg(optarg, arg_group, &nargs);
       select_add(select_rgid, args, nargs);
+      break;
+    case 'H':
+      format_hierarchy = 1;
+      format_ordering("-_hier", FORMAT_INTERNAL);
       break;
     case 'n':
       /* ignored */
@@ -140,6 +144,7 @@ int main(int argc, char **argv) {
              "  -f, -l            Full/long output format\n"
              "  -g SIDS           Select processes by session ID\n"
              "  -G GIDS           Select processes by real group ID\n"
+             "  -H                Hierarchical display\n"
              "  -o, -O PROPS      Set output format; see --help-format\n"
              "  -p PIDS           Select processes by process ID\n"
              "  -t TERMS          Select processes by terminal\n"
@@ -187,6 +192,10 @@ int main(int argc, char **argv) {
   /* Get the list of processes */
   pi = proc_enumerate(NULL);
   pids = proc_get_selected(pi, &npids);
+  if(format_hierarchy) {
+    /* Put them into order */
+    qsort(pids, npids, sizeof *pids, compare_pid);
+  }
   /* Set up output formatting */
   format_columns(pi, pids, npids);
   format_heading(pi, buffer, sizeof buffer);

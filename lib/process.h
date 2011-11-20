@@ -292,6 +292,23 @@ double proc_get_majflt(struct procinfo *pi, pid_t pid);
  */
 double proc_get_minflt(struct procinfo *pi, pid_t pid);
 
+/** @brief Retrieve process depth in hierarchy
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @return Depth of process in tree
+ */
+int proc_get_depth(struct procinfo *pi, pid_t pid);
+
+// ----------------------------------------------------------------------------
+
+/** @brief Return true if @p a is an ancestor of, or equal to, @p b
+ * @param pi Pointer to process information
+ * @param a Process ID
+ * @param b Process ID
+ * @return Nonzero iff @p a is an ancestor of, or equal to, @p b
+ */
+int proc_is_ancestor(struct procinfo *pi, pid_t a, pid_t b);
+
 /** @brief Retrieve the list of selected processes
  * @param pi Pointer to process information
  * @param npids Where to store number of processes

@@ -25,6 +25,7 @@
 #include "utils.h"
 #include "input.h"
 #include "rc.h"
+#include "compare.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <curses.h>
@@ -367,18 +368,6 @@ int main(int argc, char **argv) {
   if(endwin() == ERR)
     fatal(0, "endwin failed");
   return 0;
-}
-
-// ----------------------------------------------------------------------------
-
-/** @brief Most recent process enumeration */
-static struct procinfo *pi;
-
-/** @brief Shim for use with qsort() */
-static int compare_pid(const void *av, const void *bv) {
-  pid_t a = *(const pid_t *)av;
-  pid_t b = *(const pid_t *)bv;
-  return format_compare(pi, a, b);
 }
 
 // ----------------------------------------------------------------------------
