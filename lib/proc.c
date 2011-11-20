@@ -293,6 +293,8 @@ static void proc_stat(struct process *p) {
       ++field;
     }
   }
+  if(!p->prop_comm)
+    p->prop_comm = xstrdup("-");
   fclose(fp);
   if(gettimeofday(&p->stat_time, NULL) < 0)
     fatal(errno, "gettimeofday");
