@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
   /* Read configuration */
   read_rc();
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:O:p:t:u:U:", 
+  while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:O:p:t:u:U:R:", 
                          options, NULL)) >= 0) {
     switch(n) {
     case 'a':
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
       break;
     case OPT_HELP:
       printf("Usage:\n"
-             "  ps [OPTIONS]\n"
+             "  ps [OPTIONS] [MATCH...]\n"
              "Options:\n"
              "  -a                Select process with a terminal\n"
              "  -A, -e            Select all processes\n"
@@ -141,7 +141,10 @@ int main(int argc, char **argv) {
              "  -U UID,UID,...    Select processes by effective user ID\n"
              "  --help            Display option summary\n"
              "  --help-format     Display formatting help\n"
-             "  --version         Display version string\n");
+             "  --version         Display version string\n"
+             "Match expressions:\n"
+             "  FMT=VALUE         Exact string match\n"
+             "  FMT~REGEXP        POSIX extended regular expression match\n");
       return 0;
     case OPT_HELP_FORMAT:
       printf("The following properties can be used with the -o option:\n"
@@ -165,8 +168,8 @@ int main(int argc, char **argv) {
       exit(1);
     }
   }
-  if(optind < argc)
-    fatal(0, "excess arguments");
+  while(optind < argc)
+    select_match(argv[optind++]);
   /* Set the default format */
   if(!set_format) {
     if(rc_ps_format)

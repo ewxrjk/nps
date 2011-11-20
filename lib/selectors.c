@@ -21,8 +21,11 @@
 #include "selectors.h"
 #include "process.h"
 #include "utils.h"
+#include "format.h"
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
+#include <assert.h>
 
 int select_has_terminal(struct procinfo *pi,
                         pid_t pid,
@@ -133,4 +136,29 @@ int select_nonidle(struct procinfo *pi, pid_t pid,
                    size_t attribute((unused)) nargs) {
   return proc_get_state(pi, pid) != 'Z'
     && proc_get_pcpu(pi, pid) > 0;
+}
+
+int select_string_match(struct procinfo *pi, pid_t pid, union arg *args,
+                        size_t nargs) {
+  char buffer[1024];
+  assert(nargs == 2);
+  format_value(pi, pid, args[0].string, buffer, sizeof buffer);
+  return !strcmp(buffer, args[1].string);
+}
+
+int select_regex_match(struct procinfo *pi, pid_t pid, union arg *args,
+                       size_t nargs) {
+  char buffer[1024];
+  int rc;
+  assert(nargs == 2);
+  format_value(pi, pid, args[0].string, buffer, sizeof buffer);
+  switch(rc = regexec(&args[1].regex, buffer, 0, 0, 0)) {
+  case 0:
+    return 1;
+  case REG_NOMATCH:
+    return 0;
+  default:
+    regerror(rc, &args[1].regex, buffer, sizeof buffer);
+    fatal(0, "regexec: %s", buffer);
+  }
 }

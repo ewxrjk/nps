@@ -4,6 +4,7 @@ nps \- list processes
 .SH SYNOPSIS
 .B nps
 .RI [ OPTIONS ]
+.RI [ MATCHES ]
 .SH DESCRIPTION
 .B nps
 writes a snapshot of information about processes running on the system.
@@ -55,6 +56,23 @@ options are given then the any process which is selected by at least
 one of them is selected.
 If no selection options are given then only processes that share an
 effective UID and terminal with the current process are selected.
+.SH "MATCH EXPRESSIONS"
+Following the options may appear one or more match expressions.
+These are general-purpose process selection options and come in two
+forms.
+.PP
+The first is \fIPROPERTY\fB=\fIVALUE\fR and matches only if the named
+property exactly matches the given value.
+For instance, \fBcomm=kvm\fR can be used to match \fBkvm\fR processes
+only.
+.PP
+The second is \fIPROPERTY\fB~\fIREGEXP\fR and matches if the named
+property matches the extended POSIX regexp.
+For instance \fBargs~dbus\fR will match \fBdbus-daemon\fR,
+\dBdbus-launch\fR, etc.
+.PP
+As with other process selection options, the effect of match
+expressions is cumulative.
 .SH FORMATTING
 The \fB-o\fR option specifies a list of process properties to display,
 separated by spaces or commas.

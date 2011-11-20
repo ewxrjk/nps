@@ -25,6 +25,7 @@
  */
 
 #include <sys/types.h>
+#include <regex.h>
 
 struct procinfo;
 
@@ -44,6 +45,10 @@ union arg {
 
   int tty;                      /**< @brief Terminal device number
                                  * Set by arg_tty(). */
+
+  char *string;                 /**< @brief String value */
+
+  regex_t regex;                /**< @brief Compiled regexp */
 };
 
 /** @brief Parse a user name or UID
@@ -112,6 +117,13 @@ typedef int select_function(struct procinfo *pi, pid_t pid,
  * @param nargs Argument count
  */
 void select_add(select_function *sfn, union arg *args, size_t nargs);
+
+/** @brief Register a string or regexp match selector function
+ * @param expr Match expression
+ *
+ * Match expressions take the form PROPERTY=VALUE or PROPERTY~REGEXP.
+ */
+void select_match(const char *expr);
 
 /** @brief Test whether a proces should be selected
  * @param pi Pointer to process information
@@ -277,6 +289,32 @@ int select_uid_tty(struct procinfo *pi, pid_t pid, union arg *args,
  */
 int select_nonidle(struct procinfo *pi, pid_t pid, union arg *args,
                    size_t nargs);
+
+/** @brief Select by string match
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @param args Selector argument as passed to @ref select_add()
+ * @param nargs Argument cout as passed to @ref select_add()
+ * @return Nonzero to select @p pid
+ *
+ * @p nargs must be 2.  The first argument should be a property name
+ * and the second a value
+ */
+int select_string_match(struct procinfo *pi, pid_t pid, union arg *args,
+                        size_t nargs);
+
+/** @brief Select by regular expression match
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @param args Selector argument as passed to @ref select_add()
+ * @param nargs Argument cout as passed to @ref select_add()
+ * @return Nonzero to select @p pid
+ *
+ * @p nargs must be 2.  The first argument should be a property name
+ * and the second a compiled regexp.
+ */
+int select_regex_match(struct procinfo *pi, pid_t pid, union arg *args,
+                       size_t nargs);
 
 #endif /* SELECTORS_H */
 

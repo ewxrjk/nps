@@ -99,6 +99,17 @@ void format_heading(struct procinfo *pi, char *buffer, size_t bufsize);
 void format_process(struct procinfo *pi, pid_t pid,
                     char *buffer, size_t bufsize);
 
+/** @brief Format a single property
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @param property Property name
+ * @param buffer Where to put header string
+ * @param bufsize Size of buffer
+ */
+void format_value(struct procinfo *pi, pid_t pid,
+                  const char *property,
+                  char *buffer, size_t bufsize);
+
 /** @brief Set the process ordering
  * @param ordering Ordering specification
  * @param flags Flags

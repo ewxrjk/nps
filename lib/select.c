@@ -46,6 +46,31 @@ void select_add(select_function *sfn, union arg *args, size_t nargs) {
   ++nselectors;
 }
 
+void select_match(const char *expr) {
+  const char *ptr;
+  union arg *args;
+  int rc;
+  char buffer[128];
+
+  for(ptr = expr; *ptr && *ptr != '=' && *ptr != '~'; ++ptr)
+    ;
+  if(!*ptr)
+    fatal(0, "invalid match expression '%s'", expr);
+  args = xmalloc(2 * sizeof *args);
+  args[0].string = xstrndup(expr, ptr - expr);
+  if(*ptr++ == '=') {
+    args[1].string = xstrdup(ptr);
+    select_add(select_string_match, args, 2);
+  } else {
+    rc = regcomp(&args[1].regex, ptr, REG_ICASE|REG_NOSUB);
+    if(rc) {
+      regerror(rc, &args[1].regex, buffer, sizeof buffer);
+      fatal(0, "regexec: %s", buffer);
+    }
+    select_add(select_regex_match, args, 2);
+  }
+}
+
 int select_test(struct procinfo *pi, pid_t pid) {
   size_t n;
   assert(nselectors > 0);

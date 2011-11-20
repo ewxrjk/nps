@@ -49,7 +49,11 @@ char *xstrdup(const char *s) {
 }
 
 char *xstrndup(const char *s, size_t n) {
+  char *ptr;
   if((size_t)(n + 1) == 0)
     fatal(0, "out of memory");
-  return strcpy(xmalloc(n + 1), s);
+  ptr = xmalloc(n + 1);
+  memcpy(ptr, s, n);
+  ptr[n] = 0;
+  return ptr;
 }

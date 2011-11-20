@@ -749,6 +749,20 @@ void format_process(struct procinfo *pi, pid_t pid,
   buffer_terminate(b);
 }
 
+void format_value(struct procinfo *pi, pid_t pid,
+                  const char *property,
+                  char *buffer, size_t bufsize) {
+  struct buffer b[1];
+  const struct propinfo *prop = find_property(property);
+  if(!prop)
+    fatal(0, "unknown process property '%s'", property);
+  b->base = buffer;
+  b->pos = 0;
+  b->size = bufsize;
+  prop->format(prop, b, pi, pid);
+  buffer_terminate(b);
+}
+
 int format_ordering(const char *ordering, unsigned flags) {
   char buffer[128], *b;
   size_t i;

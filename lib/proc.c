@@ -343,7 +343,7 @@ static void proc_cmdline(struct process *p) {
   char buffer[1024];
   size_t i;
   FILE *fp;
-  int c;
+  int c, trailing_space = 0;
 
   if(p->prop_cmdline || p->vanished)
     return;
@@ -354,12 +354,17 @@ static void proc_cmdline(struct process *p) {
   }
   i = 0;
   while((c = getc(fp)) != EOF) {
-    if(!c)
+    if(!c) {
       c = ' ';
+      trailing_space = 1;
+    } else
+      trailing_space = 0;
     if(i < sizeof buffer - 1)
       buffer[i++] = c;
   }
   fclose(fp);
+  if(trailing_space)
+    --i;
   buffer[i] = 0;
   p->prop_cmdline = xstrdup(buffer);
 }
