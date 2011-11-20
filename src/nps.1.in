@@ -45,6 +45,8 @@ name or number).
 .IP "\fB-U \fILIST"
 Select all the processes whose real user ID is in \fILIST\fR (by
 name or number).
+.IP \fB-w
+Don't truncate output.
 .IP \fB--help
 Display a usage message.
 .IP \fB--help-format

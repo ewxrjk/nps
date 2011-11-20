@@ -46,7 +46,7 @@ const struct option options[] = {
 };
 
 int main(int argc, char **argv) {
-  int n, width = 80;
+  int n, width = 0;
   union arg *args;
   size_t nargs, npids;
   pid_t *pids;
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
   /* Read configuration */
   read_rc();
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:O:p:t:u:U:R:C:", 
+  while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:O:p:t:u:U:R:C:w", 
                          options, NULL)) >= 0) {
     switch(n) {
     case 'a':
@@ -126,12 +126,16 @@ int main(int argc, char **argv) {
       args = split_arg(optarg, arg_user, &nargs);
       select_add(select_ruid, args, nargs);
       break;
+    case 'w':
+      width = INT_MAX;
+      break;
     case OPT_HELP:
       printf("Usage:\n"
              "  ps [OPTIONS] [MATCH...]\n"
              "Options:\n"
              "  -a                Select process with a terminal\n"
              "  -A, -e            Select all processes\n"
+             "  -C NAME           Select by process name\n"
              "  -d                Select non-session-leaders\n"
              "  -f                Full output\n"
              "  -l                Long output\n"
@@ -143,7 +147,7 @@ int main(int argc, char **argv) {
              "  -t TERM,TERM,...  Select processes by terminal\n"
              "  -u UID,UID,...    Select processes by real user ID\n"
              "  -U UID,UID,...    Select processes by effective user ID\n"
-             "  -C NAME           Select by process name\n"
+             "  -w                Don't truncate output\n"
              "  --help            Display option summary\n"
              "  --help-format     Display formatting help\n"
              "  --version         Display version string\n"
@@ -191,14 +195,16 @@ int main(int argc, char **argv) {
   format_columns(pi, pids, npids);
   format_heading(pi, buffer, sizeof buffer);
   /* Figure out the display width */
-  if((s = getenv("COLUMNS")) && (n = atoi(s)))
-    width = n;
-  else if(isatty(1)
-          && ioctl(1, TIOCGWINSZ, &ws) >= 0 
-          && ws.ws_col > 0)
-    width = ws.ws_col;
-  else
-    width = INT_MAX;            /* don't truncate */
+  if(!width) {
+    if((s = getenv("COLUMNS")) && (n = atoi(s)))
+      width = n;
+    else if(isatty(1)
+            && ioctl(1, TIOCGWINSZ, &ws) >= 0 
+            && ws.ws_col > 0)
+      width = ws.ws_col;
+    else
+      width = INT_MAX;            /* don't truncate */
+  }
   /* Generate the output */
   if(*buffer && printf("%.*s\n", width, buffer) < 0) 
     fatal(errno, "writing to stdout");
