@@ -43,13 +43,13 @@ If no formatting options at all are specified then the default is
 equivalent to:
 .PP
 .RS
-\fB-Ouser,pid,nice,rss,pcpu,read,write,tty=TTY,argsbrief=CMD
+\fB-Ouser,pid,nice,pss,pcpu,read,write,tty=TTY,argsbrief=CMD
 .RE
 .PP
 If the calling user is not \fBroot\fR then \fBread\fR and \fBwrite\fR
 are omitted.
 .PP
-If \fB-M\fR was specified then \fBrss\fR is replaced by \fBrssM\fR.
+If \fB-M\fR was specified then \fBpss\fR is replaced by \fBpssM\fR.
 .SH SORTING
 The \fB-s\fR option specifies the properties which control the order
 in which processes are displayed, separate by spaces or commas.
@@ -65,7 +65,7 @@ order (the default) and \fB-\fR to specify ascending order.
 If no ordering option is specified then the default is equivalent to:
 .PP
 .RS
-\fB-s +pcpu,+io,+rss,+vsz
+\fB-s +pcpu,+io,+pss,+pmem
 .RE
 .SH "SYSTEM INFORMATION"
 The \fB-j\fR option specifies which whole-system properties should be

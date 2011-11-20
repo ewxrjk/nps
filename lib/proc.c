@@ -99,6 +99,7 @@ struct process {
   unsigned stat:1;              /* nonzero if proc_stat() called */
   unsigned status:1;            /* nonzero if proc_status() called */
   unsigned io:1;                /* nonzero if proc_io() called */
+  unsigned smaps:1;             /* nonzero if proc_smaps() called */
   unsigned sorted:1;            /* nonzero if properties sorted */
   unsigned vanished:1;          /* nonzero if process vanished */
   unsigned elapsed_set:1;       /* nonzero if elapsed has been set */
@@ -115,6 +116,7 @@ struct process {
   struct timeval base_stat_time, stat_time;
   struct timeval base_io_time, io_time;
   intmax_t oom_score;
+  uintmax_t prop_pss, prop_swap;
   STAT_PROPS(UMEMBER,SMEMBER)
   IO_PROPS(UMEMBER,SMEMBER)
   IO_PROPS(BASE_SMEMBER,BASE_UMEMBER)
@@ -418,6 +420,33 @@ static void proc_oom_score(struct process *p) {
   fclose(fp);
 }
 
+static void proc_smaps(struct process *p) {
+  uintmax_t pss = 0, swap = 0;
+  char buffer[1024], *ptr;
+  FILE *fp;
+  if(p->smaps || p->vanished)
+    return;
+  p->smaps =1;
+  snprintf(buffer, sizeof buffer, "/proc/%ld/smaps", (long)p->pid);
+  if(!(fp = fopen(buffer, "r"))) {
+    p->vanished = 1;
+    return;
+  }
+  while(fgets(buffer, sizeof buffer, fp)) {
+    if(buffer[0] >= 'A' && buffer[0] <= 'Z'
+       && (ptr = strchr(buffer, ':'))) {
+      *ptr++ = 0;
+      if(!strcmp(buffer, "Pss"))
+        pss += strtoumax(ptr, NULL, 0);
+      else if(!strcmp(buffer, "Swap"))
+        swap += strtoumax(ptr, NULL, 0);
+    }
+  }
+  fclose(fp);
+  p->prop_pss = pss;
+  p->prop_swap = swap;
+}
+
 // ----------------------------------------------------------------------------
 
 pid_t proc_get_pid(struct procinfo attribute((unused)) *pi, pid_t pid) {
@@ -662,6 +691,28 @@ double proc_get_minflt(struct procinfo *pi, pid_t pid) {
   return proc_rate(p, p->base_stat_time, p->stat_time,
                    p->prop_minflt - p->base_minflt) * sysconf(_SC_PAGE_SIZE);
 }
+
+uintmax_t proc_get_pss(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
+  proc_smaps(p);
+  return p->prop_pss * 1024;
+}
+
+uintmax_t proc_get_swap(struct procinfo *pi, pid_t pid) {
+  struct process *p = proc_find(pi, pid);
+  proc_smaps(p);
+  return p->prop_swap * 1024;
+}
+
+uintmax_t proc_get_mem(struct procinfo *pi, pid_t pid) {
+  return proc_get_rss(pi, pid) + proc_get_swap(pi, pid);
+}
+
+uintmax_t proc_get_pmem(struct procinfo *pi, pid_t pid) {
+  return proc_get_pss(pi, pid) + proc_get_swap(pi, pid);
+}
+
+// ----------------------------------------------------------------------------
 
 int proc_get_depth(struct procinfo *pi, pid_t pid) {
   struct process *p = proc_find(pi, pid);

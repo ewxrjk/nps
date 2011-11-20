@@ -299,6 +299,43 @@ double proc_get_minflt(struct procinfo *pi, pid_t pid);
  */
 int proc_get_depth(struct procinfo *pi, pid_t pid);
 
+/** @brief Retrieve PSS
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @return PSS in bytes
+ *
+ * PSS is the "proportional (resident) set size"; each page's
+ * contribution is divided by the number of processes sharing it.
+ *
+ * See @c fs/proc/task_mmu.c in the Linux kernel.
+ */
+uintmax_t proc_get_pss(struct procinfo *pi, pid_t pid);
+
+/** @brief Retrieve swap usage
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @return Swap usage in bytes
+ */
+uintmax_t proc_get_swap(struct procinfo *pi, pid_t pid);
+
+/** @brief Retrieve total memory usage
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @return Memory usage in bytes
+ *
+ * This is RSS+swap.
+ */
+uintmax_t proc_get_mem(struct procinfo *pi, pid_t pid);
+
+/** @brief Retrieve total proportional memory usage
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @return Memory usage in bytes
+ *
+ * This is PSS+swap.
+ */
+uintmax_t proc_get_pmem(struct procinfo *pi, pid_t pid);
+
 // ----------------------------------------------------------------------------
 
 /** @brief Return true if @p a is an ancestor of, or equal to, @p b

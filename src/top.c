@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
   if(rc_top_order)
     format_ordering(rc_top_order, 0);
   else
-    format_ordering("+pcpu,+io,+rss,+vsz", 0);
+    format_ordering("+pcpu,+io,+pss,+pmem", 0);
   if(rc_top_delay) {
     double v;
     errno = 0;
@@ -322,9 +322,9 @@ int main(int argc, char **argv) {
     else {
       format_set("user,pid,nice", FORMAT_QUOTED);
       if(megabytes)
-        format_set("rssM", FORMAT_QUOTED|FORMAT_ADD);
+        format_set("pssM", FORMAT_QUOTED|FORMAT_ADD);
       else
-        format_set("rss", FORMAT_QUOTED|FORMAT_ADD);
+        format_set("pss", FORMAT_QUOTED|FORMAT_ADD);
       format_set("pcpu=%C", FORMAT_QUOTED|FORMAT_ADD);
       if(!getuid())
         format_set("read,write", FORMAT_QUOTED|FORMAT_ADD);

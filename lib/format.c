@@ -548,6 +548,14 @@ static const struct propinfo properties[] = {
     property_iorateP, compare_double, { .fetch_double = proc_get_majflt }
   },
   {
+    "mem", "MEM", "Memory usage (1024 bytes)",
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_mem }
+  },
+  {
+    "memM", "MEM", "Memory usage (megabytes)",
+    property_memM, compare_uintmax, { .fetch_uintmax = proc_get_mem }
+  },
+  {
     "minflt", "-FLT", "Minor fault rate (1024 bytes/s)",
     property_iorate, compare_double, { .fetch_double = proc_get_minflt }
   },
@@ -580,12 +588,28 @@ static const struct propinfo properties[] = {
     property_pid, compare_pid, { .fetch_pid = proc_get_pid }
   },
   {
+    "pmem", "PMEM", "Proprtional memory usage (1024 bytes)",
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pmem }
+  },
+  {
+    "pmemM", "PMEM", "Proportional memory usage (megabytes)",
+    property_memM, compare_uintmax, { .fetch_uintmax = proc_get_pmem }
+  },
+  {
     "ppid", "PPID", "Parent process ID",
     property_pid, compare_pid, { .fetch_pid = proc_get_ppid }
   },
   {
     "pri", "PRI", "Priority",
     property_decimal, compare_intmax, { .fetch_intmax = proc_get_priority }
+  },
+  {
+    "pss", "PSS", "Proportional resident set size (1024 bytes)",
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pss }
+  },
+  {
+    "pssM", "PSS", "Proportional resident set size (megabytes)",
+    property_memM, compare_uintmax, { .fetch_uintmax = proc_get_pss }
   },
   {
     "read", "RD", "Recent read rate (1024 bytes/s)",
@@ -626,6 +650,14 @@ static const struct propinfo properties[] = {
   {
     "stime", "STIME", "Start time",
     property_stime, compare_intmax, { .fetch_intmax = proc_get_start_time }
+  },
+  {
+    "swap", "SWAP", "Swap usage (1024 bytes)",
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_swap }
+  },
+  {
+    "swapM", "SWAP", "Swap usage (megabytes)",
+    property_memM, compare_uintmax, { .fetch_uintmax = proc_get_swap }
   },
   {
     "time", "TIME", "Scheduled time",

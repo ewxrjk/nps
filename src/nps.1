@@ -132,6 +132,11 @@ Major faults are page faults that require a page to be read from disk.
 Major fault rate, in megabytes per second.
 .IP \fBmajfltP
 Major fault rate, in pages per second.
+.IP \fBmem
+The total memory (resident and swapped) used by the process in kilobytes.
+Equivalent to \fBrss\fR+\fBswap\fR.
+.IP \fBmemM
+The total memory (resident and swapped) used by the process in megabytes.
 .IP \fBminflt
 Minor fault rate, in kilobytes per second.
 Minor faults do not require a page to be read from disk.
@@ -153,10 +158,23 @@ CPU usage, as a percentage.
 Process group ID.
 .IP \fBpid
 Process ID.
+.IP \fBpmem
+The total memory (resident and swapped) used by the process in kilobytes,
+scaled down to account for sharing with other processes.
+Equivalent to \fBpss\fR+\fBswap\fR.
+.IP \fBpmemM
+The total memory (resident and swapped) used by the process in megabytes,
+scaled down to account for sharing with other processes.
 .IP \fBppid
 Parent process ID.
 .IP \fBpri
 Priority.
+.IP \fBpss
+Proportional resident set size in kilobytes.
+This the total amount of RAM used by the process, with each page's
+contribution divided by the number of processes it is shared with.
+.IP \fBpssM
+Proportional resident set size in megabytes.
 .IP \fBread
 Read rate, in kilobytes per second.
 .IP \fBreadM
@@ -197,6 +215,10 @@ Paging.
 .RE
 .IP \fBstime
 The time that the process started.
+.IP \fBswap
+The amount of swap used, in kilobytes.
+.IP \fBswapM
+The amount of swap used, in megabytes.
 .IP \fBtime
 The cumulative CPU time used over the process's lifetime (user and kernel).
 .IP \fBtty
@@ -211,8 +233,6 @@ will be used instead.
 .IP \fBvsz
 Virtual memory size, in kilobytes.
 This is the total address space used by the process.
-Note that it may be misleadingly large as a measure of memory
-consumption due to anonymous \fBPROT_NONE\fR mappings.
 .IP \fBvszM
 Virtual memory size, in megabytes.
 .IP \fBwchan
@@ -259,6 +279,38 @@ They are always given in the local timezone.
 If a column width is requested then more compact forms may be used:
 \fIHH\fB:\fIMM\fR for a time in this day or \fIMM\fB-\fIDD\fR for
 a date in this year.
+.SS "Understanding Memory Usage"
+\fBrss\fR is the resident set size of a process, i.e. the amount
+physical RAM it is currently using.
+However, some of that RAM may be shared with other processes, for
+instance because it is used for the code of a widely used shared
+library.
+Therefore it can be more useful to look at the \fBpss\fR figure, the
+proportional resident set size, in which every page's contribution is
+divided by the number of users.
+.PP
+If you think you are running out of RAM and want a process to blame,
+look for high \fBpss\fR figures.
+.PP
+\fBvsz\fR represents the total virtual memory used by the process.
+This includes RAM, swap, files and anonymous mappings.
+Since the dynamic linker and some other libraries like to make
+inaccessible anonymous mappings, this figure can be quite misleading
+as a measure of resource consumption.
+.PP
+\fBswap\fR represents the amount of swap space used by the process.
+This includes both swapped out pages from anonymous mappings and
+copy-on-write duplicates of pages mapped from files.
+It does not include pages mapped from files that happen not to be in
+RAM at the moment.
+.PP
+\fBmem\fR is the sum of \fBrss\fR and \fBswap\fR.
+The same caveats apply regarding shared pages, so \fBpmem\fR, which is
+the sum of \fBpss\fR and \fBswap\fR, is likely to be more useful.
+.PP
+The kernel support for gathering \fBpss\fR was added in Linux 2.6.25
+and for \fBswap\fR in 2.6.26, so if your kernel is older than that you
+will not get the correct figures.
 .SS Defaults
 If no formatting options at all are specified then the default is
 equivalent to:
