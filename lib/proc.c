@@ -595,6 +595,10 @@ static double proc_rate(struct process *p,
                         struct timeval end_time,
                         double quantity) {
   double seconds;
+  /* If the process has vanished then whatever we've got now is
+   * probably bogus. */
+  if(p->vanished)
+    return 0;
   if(base_time.tv_sec)
     seconds = (end_time.tv_sec - base_time.tv_sec)
       + (end_time.tv_usec - base_time.tv_usec) / 1000000.0;
