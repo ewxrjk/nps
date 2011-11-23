@@ -62,10 +62,14 @@ struct propinfo {
   } fetch;
 };
 
+#define ANTIWOBBLE 16           /* size of anti-wobble ring buffer */
+
 struct column {
   const struct propinfo *prop;
   size_t reqwidth;
   size_t width;
+  size_t oldwidths[ANTIWOBBLE]; /* ring buffer */
+  size_t oldwidthind;           /* next slot to write in oldwidths */
   char *heading;
 };
 
@@ -810,6 +814,7 @@ int format_set(const char *f, unsigned flags) {
       if((ssize_t)(ncolumns + 1) < 0)
         fatal(0, "too many columns");
       columns = xrecalloc(columns, ncolumns + 1, sizeof *columns);
+      memset(&columns[ncolumns], 0, sizeof *columns);
       columns[ncolumns].prop = prop;
       columns[ncolumns].heading = xstrdup(heading ? heading 
                                           : columns[ncolumns].prop->heading);
@@ -836,14 +841,13 @@ void format_columns(struct procinfo *pi, const pid_t *pids, size_t npids) {
    * as wide as the header text (default or overridden value). If the
    * header text is null, such as -o user=, the field width shall be
    * at least as wide as the default header text." */
-  for(c = 0; c < ncolumns; ++c)
-    columns[c].width = strlen(*columns[c].heading
-                              ? columns[c].heading
-                              : columns[c].prop->heading);
-  // We actually make columns wide enough for everything that may be
-  // put in them.
-  for(n = 0; n < npids; ++n) {
-    for(c = 0; c < ncolumns; ++c) {
+  for(c = 0; c < ncolumns; ++c) {
+    size_t wmin, w = strlen(*columns[c].heading
+                            ? columns[c].heading
+                            : columns[c].prop->heading);
+    // We make columns wide enough for everything that may be
+    // put in them.
+    for(n = 0; n < npids; ++n) {
       // Render the value to a false buffer to find out how big it is
       struct buffer b[1];
       b->base = 0;
@@ -851,9 +855,22 @@ void format_columns(struct procinfo *pi, const pid_t *pids, size_t npids) {
       b->size = 0;
       columns[c].prop->format(columns[c].prop, b, columns[c].reqwidth,
                               pi, pids[n]);
-      if(b->pos > columns[c].width)
-        columns[c].width = b->pos;
+      if(b->pos > w)
+        w = b->pos;
     }
+    /* We make the columns as wide as they have needed to be at any
+     * point in the recent past, to avoid columns wobbling too
+     * much. */
+    wmin = w;
+    for(n = 0; n < ANTIWOBBLE; ++n)
+      if(columns[c].oldwidths[n] > w)
+        w = columns[c].oldwidths[n];
+    /* Record the width we needed for next time.  Note that this may
+     * be less than the width eventually chosen due to the
+     * anti-wobble. */
+    columns[c].oldwidths[columns[c].oldwidthind++] = wmin;
+    columns[c].oldwidthind %= ANTIWOBBLE;
+    columns[c].width = w;
   }
 }
 
