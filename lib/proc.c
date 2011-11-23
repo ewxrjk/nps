@@ -33,6 +33,12 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
+#if HAVE_GETC_UNLOCKED
+# define GETC getc_unlocked
+#else
+# define GETC getc
+#endif
+
 /* Know /proc/$PID/stat fields (after the first three); S for signed
  * and U for unsigned. */
 #define STAT_PROPS(U,S) S(ppid)                 \
@@ -239,9 +245,8 @@ static struct process *proc_find(const struct procinfo *pi, pid_t pid) {
 
 static void proc_stat(struct process *p) {
   FILE *fp;
-  char buffer[1024];
-  int c;
-  size_t field, i;
+  char buffer[1024], *start, *bp;
+  size_t field;
   uintmax_t *ptr;
   struct stat sb;
 
@@ -264,35 +269,40 @@ static void proc_stat(struct process *p) {
     p->prop_egid = sb.st_gid;
     p->eid_set = 1;
   }
-  field = i = 0;
-  while((c = getc(fp)) != EOF) {
-    if(c != ' ' && c != '\n') {
-      if(field == 1 && i == 0 && c == '(')
-        continue;               /* special-case comm */
-      if(i < sizeof buffer - 1)
-        buffer[i++] = c;
-    } else {
-      if(field == 1 && i > 0 && buffer[i - 1] == ')')
-        --i;                    /* special-case comm */
-      buffer[i] = 0;
+  field = 0;
+  if(fgets(buffer, sizeof buffer, fp)) {
+    bp = buffer;
+    while(*bp) {
+      if(*bp == ' ' || *bp == '\n') {
+        ++bp;
+        continue;
+      }
       switch(field) {
-      case 0:                   /* pid */
-        break;
-      case 1:                   /* comm */
-        p->prop_comm = xstrdup(buffer);
-        break;
-      case 2:                   /* state */
-        p->prop_state = buffer[0];
-        break;
       default:
         if((field - 3) < NSTATS) {
           ptr = (uintmax_t *)((char *)p + propinfo_stat[field - 3]);
-          *ptr = strtoumax(buffer, NULL, 10);
+          *ptr = strtoumax(bp, &bp, 10);
         }
         break;
+      case 0:                   /* pid */
+        while(*bp && *bp != ' ')
+          ++bp;
+        break;
+      case 1:                   /* comm */
+        if(*bp == '(')
+          ++bp;
+        start = bp;
+        while(*bp && *bp != ')')
+          ++bp;
+        p->prop_comm = xstrndup(start, bp - start);
+        if(*bp)
+          ++bp;
+        break;
+      case 2:                   /* state */
+        p->prop_state = *bp++;
+        break;
       }
-      i = 0;
-      ++field;
+      field++;
     }
   }
   if(!p->prop_comm)
@@ -318,7 +328,7 @@ static void proc_status(struct process *p) {
     return;
   }
   i = 0;
-  while((c = getc(fp)) != EOF) {
+  while((c = GETC(fp)) != EOF) {
     if(c != '\n') {
       if(i < sizeof buffer - 1)
         buffer[i++] = c;
@@ -357,7 +367,7 @@ static void proc_cmdline(struct process *p) {
     return;
   }
   i = 0;
-  while((c = getc(fp)) != EOF) {
+  while((c = GETC(fp)) != EOF) {
     if(!c) {
       c = ' ';
       trailing_space = 1;
