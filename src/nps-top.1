@@ -125,6 +125,8 @@ Priority.
 Proportional resident set size in kilobytes.
 This the total amount of RAM used by the process, with each page's
 contribution divided by the number of processes it is shared with.
+.IP
+Only root can read the \fBpss\fR of processes it doesn't own.
 .IP \fBpssM
 Proportional resident set size in megabytes.
 .IP \fBread
@@ -268,13 +270,13 @@ If no formatting options at all are specified then the default is
 equivalent to:
 .PP
 .RS
-\fB-Ouser,pid,nice,pss,pcpu,read,write,tty=TTY,argsbrief=CMD
+\fB-Ouser,pid,nice,rss,pcpu,read,write,tty=TTY,argsbrief=CMD
 .RE
 .PP
 If the calling user is not \fBroot\fR then \fBread\fR and \fBwrite\fR
 are omitted.
 .PP
-If \fB-M\fR was specified then \fBpss\fR is replaced by \fBpssM\fR.
+If \fB-M\fR was specified then \fBrss\fR is replaced by \fBrssM\fR.
 .SH SORTING
 The \fB-s\fR option specifies the properties which control the order
 in which processes are displayed, separate by spaces or commas.
@@ -290,7 +292,7 @@ order (the default) and \fB-\fR to specify ascending order.
 If no ordering option is specified then the default is equivalent to:
 .PP
 .RS
-\fB-s +pcpu,+io,+pss,+pmem
+\fB-s +pcpu,+io,+rss,+pmem
 .RE
 .SH "SYSTEM INFORMATION"
 The \fB-j\fR option specifies which whole-system properties should be
