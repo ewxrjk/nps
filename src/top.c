@@ -361,6 +361,8 @@ int main(int argc, char **argv) {
     fatal(0, "initrflush failed");
   if(keypad(stdscr, TRUE) == ERR) /* Enable keypad support */
     fatal(0, "keypad failed");
+  if(nodelay(stdscr, TRUE) == ERR)
+    fatal(0, "nodelay failed");
   /* Loop until quit */
   loop();
   /* Deinitialize curses */
@@ -542,8 +544,7 @@ static enum next_action await(void) {
   }
   /* Handle keyboard input */
   if(FD_ISSET(0, &fdin)) {
-    ch = getch();
-    if(ch != ERR)
+    while((ch = getch()) != ERR)
       if((ret = process_key(ch)) != NEXT_WAIT)
         return ret;
   }
