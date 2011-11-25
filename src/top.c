@@ -386,7 +386,7 @@ static void sighandler(int sig) {
 /** @brief The main display loop */
 static void loop(void) {
   struct procinfo *last = NULL;
-  char buffer[1024];
+  char buffer[1024], *ptr, *newline;
   int x, y, maxx, maxy, ystart = 0, ylimit;
   size_t n, npids, len, offset;
   pid_t *pids = NULL;
@@ -430,16 +430,27 @@ static void loop(void) {
       getmaxyx(stdscr, maxy, maxx);
       /* System information */
       for(n = 0; !sysinfo_format(pi, n, buffer, sizeof buffer); ++n) {
-        len = strlen(buffer);
-        if(x && x + len > (size_t)maxx) {
-          ++y;
-          x = 0;
+        ptr = buffer;
+        while(*ptr) {
+          if((newline = strchr(ptr, '\n')))
+            *newline++ = 0;
+          len = strlen(ptr);
+          if(x && x + len > (size_t)maxx) {
+            ++y;
+            x = 0;
+          }
+          if(y >= maxy)
+            break;
+          if(mvaddnstr(y, x, ptr, maxx - x) == ERR)
+            fatal(0, "mvaddstr %d,%d failed", y, x);
+          x += strlen(ptr) + 2;
+          if(newline) {
+            ++y;
+            x = 0;
+            ptr = newline;
+          } else
+            break;
         }
-        if(y >= maxy)
-          break;
-        if(mvaddnstr(y, x, buffer, maxx - x) == ERR)
-          fatal(0, "mvaddstr %d,%d failed", y, x);
-        x += strlen(buffer) + 2;
       }
       if(x) {
         ++y;

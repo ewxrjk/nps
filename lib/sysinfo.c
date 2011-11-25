@@ -163,32 +163,60 @@ static void get_meminfo(void) {
 #define CPUINFO_FIELD_LAST(F) uintmax_t F
 #define CPUINFO_FORMAT(F) "%ju "
 #define CPUINFO_FORMAT_LAST(F) "%ju"
-#define CPUINFO_ARG(F) &cpuinfo.F,
-#define CPUINFO_ARG_LAST(F) &cpuinfo.F
+#define CPUINFO_ARG(F) &cpu->curr.F,
+#define CPUINFO_ARG_LAST(F) &cpu->curr.F
 
 static int got_stat;
-static struct cpuinfo {
+
+struct cpuinfo {
   CPUINFO(CPUINFO_FIELD,CPUINFO_FIELD_LAST);
   uintmax_t user_total;
   uintmax_t guest_total;
-} cpuinfo, cpuinfo_last;
+};
+
+struct cpuhistory {
+  struct cpuinfo curr, last;
+};
+
+/* ncpu=0 for all CPUs, ncpu=1 for cpu0, etc. */
+struct cpuhistory *cpuinfos;
+static size_t ncpuinfos, maxcpuinfos;
+
+static void get_cpuinfo(struct cpuhistory *cpu, const char *ptr) {
+  sscanf(ptr,
+         CPUINFO(CPUINFO_FORMAT, CPUINFO_FORMAT_LAST),
+         CPUINFO(CPUINFO_ARG, CPUINFO_ARG_LAST));
+  cpu->curr.user_total = cpu->curr.user + cpu->curr.nice;
+  cpu->curr.guest_total = cpu->curr.guest + cpu->curr.guest_nice;
+}
 
 static void get_stat(void) {
   if(!got_stat) {
     FILE *fp;
     char input[256], *ptr;
-    memset(&cpuinfo, 0, sizeof cpuinfo);
+    size_t ncpu;
+
+    ncpuinfos = 0;
     if(!(fp = fopen("/proc/stat", "r")))
       fatal(errno, "opening /proc/stat");
     while(fgets(input, sizeof input, fp)) {
       if((ptr = strchr(input, ' '))) {
         *ptr++ = 0;
-        if(!strcmp(input, "cpu")) {
-          sscanf(ptr,
-                 CPUINFO(CPUINFO_FORMAT, CPUINFO_FORMAT_LAST),
-                 CPUINFO(CPUINFO_ARG, CPUINFO_ARG_LAST));
-          cpuinfo.user_total = cpuinfo.user + cpuinfo.nice;
-          cpuinfo.guest_total = cpuinfo.guest + cpuinfo.guest_nice;
+        if(input[0] == 'c' && input[1] == 'p' && input[2] == 'u') {
+          /* Identify the CPU */
+          if(input[3] == 0)
+            ncpu = 0;
+          else
+            ncpu = strtoul(input + 3, NULL, 10) + 1;
+          /* Make sure we have space */
+          if(ncpu >= maxcpuinfos) {
+            cpuinfos = xrecalloc(cpuinfos, 1 + ncpu, sizeof *cpuinfos);
+            memset(&cpuinfos[maxcpuinfos], 0, (1 + ncpu - maxcpuinfos) * sizeof *cpuinfos);
+            maxcpuinfos = 1 + ncpu;
+          }
+          if(ncpu >= ncpuinfos)
+            ncpuinfos = 1 + ncpu;
+          get_cpuinfo(&cpuinfos[ncpu], ptr);
         }
       }
     }
@@ -300,11 +328,8 @@ static void sysprop_swapM(struct procinfo attribute((unused)) *pi,
            meminfo.SwapCached / 1024);
 }
 
-static void sysprop_cpu(struct procinfo attribute((unused)) *pi,
-                        char *buffer, size_t bufsize) {
-  uintmax_t total = 0;
-
-  get_stat();
+static void sysprop_cpu_one(const struct cpuhistory *cpu,
+                            char buffer[], size_t bufsize) {
   /* Figure out the total tick difference
    *
    * Observations based on the kernel:
@@ -314,22 +339,57 @@ static void sysprop_cpu(struct procinfo attribute((unused)) *pi,
    * - idle does not include iowait (account_idle_time)
    * - irq, softirq and system are exclusive (account_system_time)
    */
-  total = (cpuinfo.user_total + cpuinfo.system + cpuinfo.iowait
-           + cpuinfo.idle + cpuinfo.irq + cpuinfo.softirq
-           + cpuinfo.steal)
-    - (cpuinfo_last.user_total + cpuinfo_last.system + cpuinfo_last.iowait
-       + cpuinfo_last.idle + cpuinfo_last.irq + cpuinfo_last.softirq
-       + cpuinfo_last.steal);
+  uintmax_t total = (cpu->curr.user_total + cpu->curr.system + cpu->curr.iowait
+           + cpu->curr.idle + cpu->curr.irq + cpu->curr.softirq
+           + cpu->curr.steal)
+    - (cpu->last.user_total + cpu->last.system + cpu->last.iowait
+       + cpu->last.idle + cpu->last.irq + cpu->last.softirq
+       + cpu->last.steal);
   /* How to figure out the percentage differences */
-#define CPUINFO_PCT(F) (int)(100 * (cpuinfo.F - cpuinfo_last.F) / total)
+#define CPUINFO_PCT(F) (int)(100 * (cpu->curr.F - cpu->last.F) / total)
   /* Display them */
-  snprintf(buffer, bufsize, "CPU: %2d%% user %2d%% nice %2d%% guest %2d%% sys %2d%% io",
-           CPUINFO_PCT(user_total),
-           CPUINFO_PCT(nice),
-           CPUINFO_PCT(guest_total),
-           CPUINFO_PCT(system),
-           CPUINFO_PCT(iowait));
+  if(total)
+    snprintf(buffer, bufsize, "%2d%% user %2d%% nice %2d%% guest %2d%% sys %2d%% io",
+             CPUINFO_PCT(user_total),
+             CPUINFO_PCT(nice),
+             CPUINFO_PCT(guest_total),
+             CPUINFO_PCT(system),
+             CPUINFO_PCT(iowait));
+  else
+    snprintf(buffer, bufsize, " -%% user   -%% nice -%% guest  -%% sys  -%% io");
+    
 }
+
+static void sysprop_cpu(struct procinfo attribute((unused)) *pi,
+                        char *buffer, size_t bufsize) {
+  get_stat();
+  if(ncpuinfos) {
+    snprintf(buffer, bufsize, "CPU:  ");
+    bufsize -= strlen(buffer);
+    buffer += strlen(buffer);
+    sysprop_cpu_one(&cpuinfos[0], buffer, bufsize);
+  }
+}
+
+static void sysprop_cpus(struct procinfo attribute((unused)) *pi,
+                        char *buffer, size_t bufsize) {
+  size_t n;
+  get_stat();
+  for(n = 1; n < ncpuinfos; ++n) {
+    if(n > 1) {
+      snprintf(buffer, bufsize, "\n");
+      bufsize -= strlen(buffer);
+      buffer += strlen(buffer);
+    }
+    snprintf(buffer, bufsize, "CPU %zu:", n - 1);
+    bufsize -= strlen(buffer);
+    buffer += strlen(buffer);
+    sysprop_cpu_one(&cpuinfos[n], buffer, bufsize);
+    bufsize -= strlen(buffer);
+    buffer += strlen(buffer);
+  }
+}
+
 
 // ----------------------------------------------------------------------------
 
@@ -341,6 +401,10 @@ const struct sysprop {
   {
     "cpu", "CPU usage",
     sysprop_cpu
+  },
+  {
+    "cpus", "Per-CPU usage",
+    sysprop_cpus
   },
   {
     "idletime", "Cumulative time spent idle",
@@ -446,10 +510,15 @@ int sysinfo_set(const char *format, unsigned flags) {
 }
 
 size_t sysinfo_reset(void) {
+  size_t ncpu;
+
   got_uptime = 0;
   got_meminfo = 0;
   got_stat = 0;
-  cpuinfo_last = cpuinfo;
+  for(ncpu = 0; ncpu < maxcpuinfos; ++ncpu) {
+    cpuinfos[ncpu].last = cpuinfos[ncpu].curr;
+    memset(&cpuinfos[ncpu].curr, 0, sizeof cpuinfos[ncpu].curr);
+  }
   return nsysinfos;
 }
 
