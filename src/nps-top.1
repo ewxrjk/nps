@@ -73,25 +73,33 @@ Effective group ID as a string.
 If the group name will not fit into the requested width, the numeric ID
 will be used instead.
 .IP \fBio
-IO rate, in kilobytes per second.
+IO rate.
 This is the sum of \fBread\fR and \fBwrite\fR.
+.IP \fBioK
+IO rate, in kilobytes per second.
 .IP \fBioM
 IO rate, in megabytes per second.
 .IP \fBmajflt
-Major fault rate, in kilobytes per second.
+Major fault rate.
 Major faults are page faults that require a page to be read from disk.
+.IP \fBmajfltK
+Major fault rate, in kilobytes per second.
 .IP \fBmajfltM
 Major fault rate, in megabytes per second.
 .IP \fBmajfltP
 Major fault rate, in pages per second.
 .IP \fBmem
-The total memory (resident and swapped) used by the process in kilobytes.
+The total memory (resident and swapped) used by the process.
 Equivalent to \fBrss\fR+\fBswap\fR.
+.IP \fBmemK
+The total memory (resident and swapped) used by the process in kilobytes.
 .IP \fBmemM
 The total memory (resident and swapped) used by the process in megabytes.
 .IP \fBminflt
-Minor fault rate, in kilobytes per second.
+Minor fault rate.
 Minor faults do not require a page to be read from disk.
+.IP \fBminfltK
+Minor fault rate, in kilobytes per second.
 .IP \fBminfltM
 Minor fault rate, in megabytes per second.
 .IP \fBminfltP
@@ -111,9 +119,12 @@ Process group ID.
 .IP \fBpid
 Process ID.
 .IP \fBpmem
-The total memory (resident and swapped) used by the process in kilobytes,
+The total memory (resident and swapped) used by the process,
 scaled down to account for sharing with other processes.
 Equivalent to \fBpss\fR+\fBswap\fR.
+.IP \fBpmemK
+The total memory (resident and swapped) used by the process in kilobytes,
+scaled down to account for sharing with other processes.
 .IP \fBpmemM
 The total memory (resident and swapped) used by the process in megabytes,
 scaled down to account for sharing with other processes.
@@ -122,14 +133,18 @@ Parent process ID.
 .IP \fBpri
 Priority.
 .IP \fBpss
-Proportional resident set size in kilobytes.
+Proportional resident set size.
 This the total amount of RAM used by the process, with each page's
 contribution divided by the number of processes it is shared with.
 .IP
 Only root can read the \fBpss\fR of processes it doesn't own.
+.IP \fBpssK
+Proportional resident set size in kilobytes.
 .IP \fBpssM
 Proportional resident set size in megabytes.
 .IP \fBread
+Read rate.
+.IP \fBreadK
 Read rate, in kilobytes per second.
 .IP \fBreadM
 Read rate, in megabytes per second.
@@ -140,8 +155,10 @@ Real group ID as a string.
 If the group name will not fit into the requested width, the numeric ID
 will be used instead.
 .IP \fBrss
-Resident set size in kilobytes.
+Resident set size.
 This the total amount of RAM used by the process.
+.IP \fBrssK
+Resident set size in kilobytes.
 .IP \fBrssM
 Resident set size in megabytes.
 .IP \fBruid
@@ -170,6 +187,8 @@ Paging.
 .IP \fBstime
 The time that the process started.
 .IP \fBswap
+The amount of swap used.
+.IP \fBswapK
 The amount of swap used, in kilobytes.
 .IP \fBswapM
 The amount of swap used, in megabytes.
@@ -185,13 +204,17 @@ Effective user ID as a string.
 If the user name will not fit into the requested width, the numeric ID
 will be used instead.
 .IP \fBvsz
-Virtual memory size, in kilobytes.
+Virtual memory size.
 This is the total address space used by the process.
+.IP \fBvszK
+Virtual memory size, in kilobytes.
 .IP \fBvszM
 Virtual memory size, in megabytes.
 .IP \fBwchan
 Wait channel.
 .IP \fBwrite
+Write rate.
+.IP \fBwriteK
 Write rate, in kilobytes per second.
 .IP \fBwriteM
 Write rate, in megabytes per second.
@@ -261,6 +284,10 @@ RAM at the moment.
 \fBmem\fR is the sum of \fBrss\fR and \fBswap\fR.
 The same caveats apply regarding shared pages, so \fBpmem\fR, which is
 the sum of \fBpss\fR and \fBswap\fR, is likely to be more useful.
+.PP
+The unadorned memory properties (and IO rates) all append \fBK\fR,
+\fBM\fR or \fBG\fR to the figure to indicate what units are in use.
+Use \fBrssK\fR, \fBrssM\fR, etc to select particular units.
 .PP
 The kernel support for gathering \fBpss\fR was added in Linux 2.6.25
 and for \fBswap\fR in 2.6.26, so if your kernel is older than that you

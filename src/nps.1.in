@@ -103,7 +103,7 @@ The \fB-f\fR option is equivalent to:
 The \fB-l\fR option is equivalent to:
 .PP
 .RS
-\fB-Oflags,state,uid,pid,ppid,pcpu=C,pri,nice,addr,vsz=SZ,
+\fB-Oflags,state,uid,pid,ppid,pcpu=C,pri,nice,addr,vszK=SZ,
 wchan,tty=TTY,time,argsbrief=CMD
 .RE
 .SH CONFIGURATION
