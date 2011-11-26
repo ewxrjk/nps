@@ -11,42 +11,46 @@ writes a snapshot of information about processes running on the system.
 .SH OPTIONS
 .IP \fB-a
 Select processes which have a controlling terminal.
-.IP "\fB-A\fR, \fB-e"
+.IP "\fB-A\fR, \fB-e\fR, \fB--all"
 Select all processes.
-.IP "\fB-C \fINAME"
+.IP "\fB-C \fINAME\fR, \fB--command \fINAME"
 Select processes by name.
 .IP
 Equivalent to \fBcomm=:\fINAME\fR (see \fBMATCH EXPRESSIONS\fR below).
 .IP \fB-d
 Select all processes that are not session leaders.
-.IP \fB-f
+.IP "\fB-f\fR, \fB--full"
 Set the "full" output format.
-.IP \fB-l
+.IP "\fB-l\fR, \fB--long"
 Set the "long" output format.
-.IP "\fB-g \fILIST"
-Select all processes whose sessions are in \fILIST\fR.
-.IP "\fB-G \fILIST"
+.IP "\fB-g \fILIST\fR"
+Select all processes whose sessions are in \fILIST\fR (by name or
+number).
+.IP "\fB--group \fILIST\fR"
+Select all processes whose effective group ID is in \fILIST\fR (by name or
+number).
+.IP "\fB-G \fILIST\fR, \fB--real-group \fILIST\fR, \fB--Group \fILIST"
 Select all processes whose real group ID is in \fILIST\fR (by name or
 number).
-.IP \fB-H
+.IP "\fB-H\fR, \fB--forest"
 Hierarchical display.
 .IP "\fB-n \fIANYTHING"
 Ignored.
-.IP "\fB-o \fIFORMAT\fR, \fB-O \fIFORMAT"
+.IP "\fB-o \fIFORMAT\fR, \fB-O \fIFORMAT\fR, \fB--format \fIFORMAT"
 Set a specific format.
-If multiple \fB-o\fR or \fB-O\fR options are given then they are cumulative.
+If multiple options are given then they are cumulative.
 See \fBFORMATTING\fR below.
-.IP "\fB-p \fILIST"
+.IP "\fB-p \fILIST\fR, \fB--pid \fILIST"
 Select all the processes in \fILIST\fR.
 .IP "\fB--ppid \fILIST"
 Select all the processes in whose parent is in \fILIST\fR.
-.IP "\fB-t \fILIST"
+.IP "\fB-t \fILIST\fR, \fB--tty \fILIST"
 Select all the processes whose controlling terminals are in \fILIST\fR.
 Terminal names may be abbreviated by ommitting the initial \fB/dev\fR.
-.IP "\fB-u \fILIST"
+.IP "\fB-u \fILIST\fR, \fB--user \fILIST"
 Select all the processes whose effective user ID is in \fILIST\fR (by
 name or number).
-.IP "\fB-U \fILIST"
+.IP "\fB-U \fILIST\fR, \fB--real-user \fILIST\fR, \fB--User \fILIST"
 Select all the processes whose real user ID is in \fILIST\fR (by
 name or number).
 .IP "\fB--sort \fIORDER"
@@ -142,8 +146,8 @@ the colon, for example:
 \fBnps -o user,pid,rss,tty,comm "comm=:${COMMAND}"
 .RE
 .SH FORMATTING
-The \fB-o\fR option specifies a list of process properties to display,
-separated by spaces or commas.
+The \fB-o\fR, \fB-O\fR and \fB--format\fR options specify a list of
+process properties to display, separated by spaces or commas.
 The available properties are:
 .IP \fBaddr
 The current instruction pointer (hex).

@@ -41,9 +41,24 @@ enum {
   OPT_VERSION,
   OPT_PPID,
   OPT_SORT,
+  OPT_GROUP,
 };
 
 const struct option options[] = {
+  { "all", no_argument, 0, 'e' },
+  { "command", required_argument, 0, 'C' },
+  { "full", no_argument, 0, 'f' },
+  { "long", no_argument, 0, 'l' },
+  { "group", required_argument, 0, OPT_GROUP },
+  { "real-group", required_argument, 0, 'G' },
+  { "Group", required_argument, 0, 'G' },
+  { "user", required_argument, 0, 'u' },
+  { "real-user", required_argument, 0, 'U' },
+  { "User", required_argument, 0, 'U' },
+  { "forest", no_argument, 0, 'H' },
+  { "format", required_argument, 0, 'O' },
+  { "pid", required_argument, 0, 'p' },
+  { "tty", required_argument, 0, 't' },
   { "ppid", required_argument, 0, OPT_PPID },
   { "sort", required_argument, 0, OPT_SORT },
   { "help", no_argument, 0, OPT_HELP },
@@ -106,6 +121,10 @@ int main(int argc, char **argv) {
       args = split_arg(optarg, arg_group, &nargs);
       select_add(select_rgid, args, nargs);
       break;
+    case OPT_GROUP:
+      args = split_arg(optarg, arg_group, &nargs);
+      select_add(select_egid, args, nargs);
+      break;
     case 'H':
       format_hierarchy = 1;
       format_ordering("-_hier", FORMAT_INTERNAL);
@@ -153,24 +172,24 @@ int main(int argc, char **argv) {
       printf("Usage:\n"
              "  ps [OPTIONS] [MATCH|PIDS...]\n"
              "Options:\n"
-             "  -a                Select process with a terminal\n"
-             "  -A, -e            Select all processes\n"
-             "  -C NAME           Select by process name\n"
-             "  -d                Select non-session-leaders\n"
-             "  -f, -l            Full/long output format\n"
-             "  -g SIDS           Select processes by session ID\n"
-             "  -G GIDS           Select processes by real group ID\n"
-             "  -H                Hierarchical display\n"
-             "  -o, -O PROPS      Set output format; see --help-format\n"
-             "  -p PIDS           Select processes by process ID\n"
-             "  --ppid PIDS       Select processes by parent process ID\n"
-             "  --sort [+/-]PROPS...  Set ordering; see --help-format\n"
-             "  -t TERMS          Select processes by terminal\n"
-             "  -u, -U UIDS       Select processes by real/effective user ID\n"
-             "  -w                Don't truncate output\n"
-             "  --help            Display option summary\n"
-             "  --version         Display version string\n"
-             "See also --help-format, --help-match\n");
+             "  -a                      Select process with a terminal\n"
+             "  -A, -e, --all           Select all processes\n"
+             "  -C, --command NAME      Select by process name\n"
+             "  -d                      Select non-session-leaders\n"
+             "  -f, --full, -l, --long  Full/long output format\n"
+             "  -g SIDS                 Select processes by session ID\n"
+             "  -G GIDS, --group GIDS   Select processes by real/effective group ID\n"
+             "  -H, --forest            Hierarchical display\n"
+             "  -o, -O, --format PROPS  Set output format; see --help-format\n"
+             "  -p, --pids PIDS         Select processes by process ID\n"
+             "  --ppid PIDS             Select processes by parent process ID\n"
+             "  --sort [+/-]PROPS...    Set ordering; see --help-format\n"
+             "  -t, --tty TERMS         Select processes by terminal\n"
+             "  -u, -U UIDS             Select processes by real/effective user ID\n"
+             "  -w                      Don't truncate output\n"
+             "  --help                  Display option summary\n"
+             "  --version               Display version string\n"
+             "See also --help-format, --help-match.\n");
       return 0;
     case OPT_HELP_FORMAT:
       printf("The following properties can be used with the -O, -o and --sort options:\n"

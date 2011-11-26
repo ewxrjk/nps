@@ -8,21 +8,21 @@ nps-top \- constantly display process information
 displays a constantly-updating snapshot of information about processes
 running on the system.
 .SH OPTIONS
-.IP "\fB-o \fIFORMAT\fR, \fB-O \fIFORMAT"
+.IP "\fB-o \fIFORMAT\fR, \fB-O \fIFORMAT\fR, \fB--format \fIFORMAT"
 Set a specific format.
-If multiple \fB-o\fR or \fB-O\fR options are given then they are cumulative.
+If multiple options are given then they are cumulative.
 See \fBFORMATTING\fR below.
-.IP "\fB-d \fISECONDS"
+.IP "\fB-d \fISECONDS\fR, \fB--delay \fISECONDS"
 Set the time between updates.
 The default is 1 second.
-.IP \fB-i
+.IP "\fB-i\fR, \fB--idle"
 Display only non-idle processes.
 .IP "\fB-j \fISYSINFO"
 Sets the system information format.
 See \fBSYSTEM INFORMATION\fR below.
 .IP \fB-M
-Use megabytes rather than kilobytes.
-.IP "\fB-s \fIORDER"
+Use megabytes rather than selecting units automatically.
+.IP "\fB-s \fIORDER\fR, \fB--sort \fIORDER"
 Set the order in which processes are listed.
 See \fBSORTING\fR below.
 .IP \fB--help
@@ -34,8 +34,8 @@ Displays help for the \fB-j\fR option.
 .IP \fB--version
 Display a version string.
 .SH FORMATTING
-The \fB-o\fR option specifies a list of process properties to display,
-separated by spaces or commas.
+The \fB-o\fR, \fB-O\fR and \fB--format\fR options specify a list of
+process properties to display, separated by spaces or commas.
 The available properties are:
 .IP \fBaddr
 The current instruction pointer (hex).

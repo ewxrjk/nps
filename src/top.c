@@ -48,6 +48,11 @@ enum {
 };
 
 const struct option options[] = {
+  { "format", required_argument, 0, 'O' },
+  { "sort", required_argument, 0, 's' },
+  { "idle", no_argument, 0, 'i' },
+  { "sysinfo", required_argument, 0, 'j' },
+  { "delay", required_argument, 0, 'd' },
   { "help", no_argument, 0, OPT_HELP },
   { "help-format", no_argument, 0, OPT_HELP_FORMAT },
   { "help-sysinfo", no_argument, 0, OPT_HELP_SYSINFO },
@@ -257,14 +262,14 @@ int main(int argc, char **argv) {
       printf("Usage:\n"
              "  top [OPTIONS]\n"
              "Options:\n"
-             "  -d SECONDS        Set update interval\n"
-             "  -i                Hide idle processes\n"
-             "  -j SYSPROPS...    Set system information format; see --help-sysinfo\n"
-             "  -M                Display memory sizes in megabytes\n"
-             "  -o, -O PROPS...   Set output format; see --help-format\n"
-             "  -s [+/-]PROPS...  Set ordering; see --help-format\n"
-             "  --help            Display option summary\n"
-             "  --version         Display version string\n"
+             "  -d, --delay SECONDS        Set update interval\n"
+             "  -i, --idle                 Hide idle processes\n"
+             "  -j, --sysinfo SYSPROPS...  Set system information format; see --help-sysinfo\n"
+             "  -M                         Display memory sizes in megabytes\n"
+             "  -o, -O, --format PROPS...  Set output format; see --help-format\n"
+             "  -s, --sort [+/-]PROPS...   Set ordering; see --help-format\n"
+             "  --help                     Display option summary\n"
+             "  --version                  Display version string\n"
              "Press 'h' for on-screen help.\n");
       return 0;
     case OPT_HELP_FORMAT:
