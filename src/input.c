@@ -33,6 +33,7 @@ void input_key(int ch, struct input_context *ctx) {
     if(ctx->cursor)
       --ctx->cursor;
     break;
+  case ESCBIT + KEY_LEFT:       /* alt-<left> */
   case ESCBIT + 'b':            /* alt-B */
   case ESCBIT + 'B':
     while(ctx->cursor > 0 && SPACE(ctx->buffer[ctx->cursor-1]))
@@ -45,6 +46,7 @@ void input_key(int ch, struct input_context *ctx) {
     if(ctx->cursor < ctx->len)
       ++ctx->cursor;
     break;
+  case ESCBIT + KEY_RIGHT:      /* alt-<right> */
   case ESCBIT + 'f':            /* alt-F */
   case ESCBIT + 'F':
     while(ctx->cursor < ctx->len && !SPACE(ctx->buffer[ctx->cursor]))
