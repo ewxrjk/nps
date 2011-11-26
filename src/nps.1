@@ -49,6 +49,9 @@ name or number).
 .IP "\fB-U \fILIST"
 Select all the processes whose real user ID is in \fILIST\fR (by
 name or number).
+.IP "\fB--sort \fIORDER"
+Set the order in which processes are listed.
+See \fBSORTING\fR below.
 .IP \fB-w
 Don't truncate output.
 .IP \fB--help
@@ -392,6 +395,20 @@ The \fB-l\fR option is equivalent to:
 \fB-Oflags,state,uid,pid,ppid,pcpu=C,pri,nice,addr,vszK=SZ,
 wchan,tty=TTY,time,argsbrief=CMD
 .RE
+.SH SORTING
+The \fB--sort\fR option specifies the properties which control the order
+in which processes are displayed, separate by spaces or commas.
+The available properties are listed above in \fBFORMATTING\fR.
+.PP
+If more than one property is specified the second and subsequent are
+only considered when ordering processes which cannot be distinguished
+by the first (and so on).
+.PP
+Each property name may be prefix with \fB+\fR to specify descending
+order (the default) and \fB-\fR to specify ascending order.
+.SS Defaults
+If no ordering option is specified then processes are listed in the
+order chosen by the kernel.
 .SH CONFIGURATION
 On startup defaults are read from the file \fB$HOME/.npsrc\fR, if it
 exists.

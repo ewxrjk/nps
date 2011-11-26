@@ -39,10 +39,12 @@ enum {
   OPT_HELP_FORMAT,
   OPT_VERSION,
   OPT_PPID,
+  OPT_SORT,
 };
 
 const struct option options[] = {
   { "ppid", required_argument, 0, OPT_PPID },
+  { "sort", required_argument, 0, OPT_SORT },
   { "help", no_argument, 0, OPT_HELP },
   { "help-format", no_argument, 0, OPT_HELP_FORMAT },
   { "version", no_argument, 0, OPT_VERSION },
@@ -50,7 +52,7 @@ const struct option options[] = {
 };
 
 int main(int argc, char **argv) {
-  int n, width = 0;
+  int n, width = 0, sorting = 0;
   union arg *args;
   size_t nargs, npids;
   pid_t *pids;
@@ -105,6 +107,7 @@ int main(int argc, char **argv) {
     case 'H':
       format_hierarchy = 1;
       format_ordering("-_hier", FORMAT_INTERNAL);
+      sorting = 1;
       break;
     case 'n':
       /* ignored */
@@ -140,6 +143,10 @@ int main(int argc, char **argv) {
     case 'w':
       width = INT_MAX;
       break;
+    case OPT_SORT:
+      format_ordering(optarg, 0);
+      sorting = 1;
+      break;
     case OPT_HELP:
       printf("Usage:\n"
              "  ps [OPTIONS] [MATCH|PIDS...]\n"
@@ -155,6 +162,7 @@ int main(int argc, char **argv) {
              "  -o, -O PROPS      Set output format; see --help-format\n"
              "  -p PIDS           Select processes by process ID\n"
              "  --ppid PIDS       Select processes by parent process ID\n"
+             "  --sort [+/-]PROPS...  Set ordering; see --help-format\n"
              "  -t TERMS          Select processes by terminal\n"
              "  -u, -U UIDS       Select processes by real/effective user ID\n"
              "  -w                Don't truncate output\n"
@@ -165,7 +173,7 @@ int main(int argc, char **argv) {
              "  PROP~REGEXP       POSIX extended regular expression match\n");
       return 0;
     case OPT_HELP_FORMAT:
-      printf("The following properties can be used with the -o option:\n"
+      printf("The following properties can be used with the -O, -o and --sort options:\n"
              "\n");
       help = format_help();
       while(*help)
@@ -177,7 +185,11 @@ int main(int argc, char **argv) {
              "\n"
              "Use property=heading to override the heading (but only for the last\n"
              "property in each argument).  With -O, headings end at next comma and\n"
-             "can be quoted.\n");
+             "can be quoted.\n"
+             "\n"
+             "Multiple properties can also be specified with --sort.  Later properties are\n"
+             "used to order processes that match in earlier properties.  To reverse the\n"
+             "sense of an ordering, prefix it with '-'.\n");
       return 0;
     case OPT_VERSION:
       printf("%s\n", PACKAGE_VERSION);
@@ -205,10 +217,9 @@ int main(int argc, char **argv) {
   /* Get the list of processes */
   global_procinfo = proc_enumerate(NULL);
   pids = proc_get_selected(global_procinfo, &npids);
-  if(format_hierarchy) {
-    /* Put them into order */
+  /* Put them into order */
+  if(sorting)
     qsort(pids, npids, sizeof *pids, compare_pid);
-  }
   /* Set up output formatting */
   format_columns(global_procinfo, pids, npids);
   format_heading(global_procinfo, buffer, sizeof buffer);
