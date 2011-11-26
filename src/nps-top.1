@@ -458,10 +458,15 @@ Redisplay the screen.
 Delete all the input.
 .IP "\fBescape\fR, \fB^X"
 Cancel the operation.
-.IP "\fBbackspace\fR, \fB^D"
+Note that \fB^X\fR will usually be more responsive than \fBescape\fR.
+.IP "\fBbackspace\fR"
 Delete the character to the left of the cursor.
-.IP "\fBdelete"
+.IP "\fBALT-backspace"
+Delete the word to the left of the cursor.
+.IP "\fBdelete\fR, \fB^D"
 Delete the character under the cursor.
+.IP "\fBALT-delete\fR, \fBALT-D"
+Delete the word to the right of the cursor.
 .IP "\fBreturn"
 Commit the operation.
 This will only have any effect if the current input is valid.

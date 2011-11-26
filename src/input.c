@@ -26,6 +26,21 @@
 
 #define SPACE(c) isspace((unsigned char)(c))
 
+static void del_left(struct input_context *ctx) {
+  --ctx->cursor;
+  memmove(ctx->buffer + ctx->cursor,
+          ctx->buffer + ctx->cursor + 1,
+          ctx->len - ctx->cursor - 1);
+  --ctx->len;
+}
+
+static void del_right(struct input_context *ctx) {
+  memmove(ctx->buffer + ctx->cursor,
+          ctx->buffer + ctx->cursor + 1,
+          ctx->len - ctx->cursor - 1);
+  --ctx->len;
+}
+
 void input_key(int ch, struct input_context *ctx) {
   switch(ch) {
   case 2:                       /* ^B */
@@ -57,22 +72,30 @@ void input_key(int ch, struct input_context *ctx) {
   case 8:                       /* ^H */
   case 0x7F:
   case KEY_BACKSPACE:
-    if(ctx->cursor) {
-      --ctx->cursor;
-      memmove(ctx->buffer + ctx->cursor,
-              ctx->buffer + ctx->cursor + 1,
-              ctx->len - ctx->cursor - 1);
-      --ctx->len;
-    }
+    if(ctx->cursor)
+      del_left(ctx);
+    break;
+  case ESCBIT + 8:
+  case ESCBIT + 0x7F:
+  case ESCBIT + KEY_BACKSPACE:
+    while(ctx->cursor && SPACE(ctx->buffer[ctx->cursor - 1]))
+      del_left(ctx);
+    while(ctx->cursor && !SPACE(ctx->buffer[ctx->cursor - 1]))
+      del_left(ctx);
     break;
   case 4:                       /* ^D */
   case KEY_DC:
-    if(ctx->cursor < ctx->len) {
-      memmove(ctx->buffer + ctx->cursor,
-              ctx->buffer + ctx->cursor + 1,
-              ctx->len - ctx->cursor - 1);
-      --ctx->len;
-    }
+    if(ctx->cursor < ctx->len)
+      del_right(ctx);
+    break;
+  case ESCBIT + 'd':
+  case ESCBIT + 'D':
+  case ESCBIT + KEY_DC:
+  case ESCBIT + '(':
+    while(ctx->cursor < ctx->len && SPACE(ctx->buffer[ctx->cursor]))
+      del_right(ctx);
+    while(ctx->cursor < ctx->len && !SPACE(ctx->buffer[ctx->cursor]))
+      del_right(ctx);
     break;
   case 1:                       /* ^A */
     ctx->cursor = 0;
