@@ -4,6 +4,17 @@ nps
 This is an implementation of SUSv4 'ps', and a compatible 'top', for
 Linux.
 
+* Features
+
+- Process properties: memory, IO, timing information, etc
+- System properties: CPU usage, memory usage, load, etc
+- Sort by combinations of properties
+- Read defaults from a configuration file
+- Flexible process selection (e.g. rss>1M, regexp match on command,
+  etc)
+- Modify settings on the the fly, without interrupting display
+- On-screen help
+
 * Installation
 
     ./configure
