@@ -452,10 +452,8 @@ static void loop(void) {
             break;
         }
       }
-      if(x) {
+      if(x)
         ++y;
-        x = 0;
-      }
       ystart = y;
       next |= NEXT_REDRAW;
     }
