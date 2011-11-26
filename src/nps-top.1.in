@@ -174,9 +174,9 @@ comma or quotes).
 The syntax is the same as when editing with the \fBo\fR key, and
 different from the command-line syntax.
 .IP \fBtop_order
-The default order (overriden with the \fB-s\fR option).
+The default order (overridden with the \fB-s\fR option).
 .IP \fBtop_sysinfo
-The default system information (overriden with the \fB-j\fR option).
+The default system information (overridden with the \fB-j\fR option).
 .PP
 .SH BUGS
 On the first iteration, rate properties such as \fBpcpu\fR are
