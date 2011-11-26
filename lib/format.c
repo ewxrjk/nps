@@ -340,18 +340,10 @@ static void property_pcpu(const struct propinfo *prop, struct buffer *b,
 static void property_mem(const struct propinfo *prop, struct buffer *b,
                          size_t attribute((unused)) columnsize,
                          struct procinfo *pi, pid_t pid) {
-  uintmax_t n = prop->fetch.fetch_uintmax(pi, pid);
-  if(n >= 1024 * 1024 * 1024) {
-    format_decimal(n / (1024 * 1024 * 1024), b);
-    buffer_putc(b, 'G');
-  } else if(n >= 1024 * 1024) {
-    format_decimal(n / (1024 * 1024), b);
-    buffer_putc(b, 'M');
-  } else if(n) {
-    format_decimal(n / 1024, b);
-    buffer_putc(b, 'K');
-  } else
-    buffer_putc(b, '0');
+  char buffer[64];
+  buffer_append(b,
+                bytes(prop->fetch.fetch_uintmax(pi, pid), 0,
+                      buffer, sizeof buffer));
 }
 
 static void property_memK(const struct propinfo *prop, struct buffer *b,
@@ -381,18 +373,10 @@ static void property_address(const struct propinfo *prop, struct buffer *b,
 static void property_iorate(const struct propinfo *prop, struct buffer *b,
                             size_t attribute((unused)) columnsize,
                             struct procinfo *pi, pid_t pid) {
-  double n = prop->fetch.fetch_double(pi, pid);
-  if(n >= 1024 * 1024 * 1024) {
-    format_decimal(n / (1024 * 1024 * 1024), b);
-    buffer_putc(b, 'G');
-  } else if(n >= 1024 * 1024) {
-    format_decimal(n / (1024 * 1024), b);
-    buffer_putc(b, 'M');
-  } else if(n) {
-    format_decimal(n / 1024, b);
-    buffer_putc(b, 'K');
-  } else
-    buffer_putc(b, '0');
+  char buffer[64];
+  buffer_append(b,
+                bytes(prop->fetch.fetch_double(pi, pid), 0,
+                      buffer, sizeof buffer));
 }
 
 static void property_iorateK(const struct propinfo *prop, struct buffer *b,

@@ -33,6 +33,7 @@
  * for non-final columns.
  */
 
+#include <stdint.h>
 #include <sys/types.h>
 
 struct procinfo;
@@ -157,6 +158,19 @@ char *format_get(void);
  * Caller is responsible for freeing the returned string.
  */
 char *format_get_ordering(void);
+
+/** @brief Format a value in human-friendly units
+ * @param n Integer to format
+ * @param fieldwidth Field width (as per printf)
+ * @param buffer Output buffer
+ * @param bufsize Output buffer size
+ * @return @p buffer
+ *
+ */
+char *bytes(uintmax_t n,
+            int fieldwidth,
+            char buffer[],
+            size_t bufsize);
 
 /** @brief Include hierarchy spacing in comm/args */
 extern int format_hierarchy;

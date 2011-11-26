@@ -18,5 +18,5 @@
 noinst_LIBRARIES=libps.a
 
 libps_a_SOURCES=buffer.h compare.h format.h process.h rc.h selectors.h	\
-sysinfo.h utils.h compare.c device.c error.c format.c memory.c proc.c	\
-rc.c select.c selectors.c split.c sysinfo.c time.c
+sysinfo.h utils.h bytes.c compare.c device.c error.c format.c memory.c	\
+proc.c rc.c select.c selectors.c split.c sysinfo.c time.c
