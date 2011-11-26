@@ -37,6 +37,7 @@
 enum {
   OPT_HELP = 256,
   OPT_HELP_FORMAT,
+  OPT_HELP_MATCH,
   OPT_VERSION,
   OPT_PPID,
   OPT_SORT,
@@ -47,6 +48,7 @@ const struct option options[] = {
   { "sort", required_argument, 0, OPT_SORT },
   { "help", no_argument, 0, OPT_HELP },
   { "help-format", no_argument, 0, OPT_HELP_FORMAT },
+  { "help-match", no_argument, 0, OPT_HELP_MATCH },
   { "version", no_argument, 0, OPT_VERSION },
   { 0, 0, 0, 0 },
 };
@@ -168,9 +170,7 @@ int main(int argc, char **argv) {
              "  -w                Don't truncate output\n"
              "  --help            Display option summary\n"
              "  --version         Display version string\n"
-             "Match expressions:\n"
-             "  PROP=VALUE        Exact string match\n"
-             "  PROP~REGEXP       POSIX extended regular expression match\n");
+             "See also --help-format, --help-match\n");
       return 0;
     case OPT_HELP_FORMAT:
       printf("The following properties can be used with the -O, -o and --sort options:\n"
@@ -191,6 +191,20 @@ int main(int argc, char **argv) {
              "used to order processes that match in earlier properties.  To reverse the\n"
              "sense of an ordering, prefix it with '-'.\n");
       return 0;
+    case OPT_HELP_MATCH:
+      printf("The following match expressions can be used:\n"
+             "\n"
+             "  PROP=VALUE     Exact match against displayed string\n"
+             "  PROP~REGEXP    POSIX extended regular expression match\n"
+             "  PROP<VALUE     Less-than match against value\n"
+             "  PROP<=VALUE    Less-than-or-equal match against value\n"
+             "  PROP>VALUE     Greater-than match against value\n"
+             "  PROP>=VALUE    Greater-than-or-equal match against value\n"
+             "  PROP==VALUE    Equal value\n"
+             "  PROP<>VALUE    Different value\n"
+             "\n"
+             "Put a ':' after the operator to avoid confusion with first character of VALUE.\n");
+      return 0;             
     case OPT_VERSION:
       printf("%s\n", PACKAGE_VERSION);
       return 0;
