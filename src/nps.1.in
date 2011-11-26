@@ -38,6 +38,8 @@ If multiple \fB-o\fR or \fB-O\fR options are given then they are cumulative.
 See \fBFORMATTING\fR below.
 .IP "\fB-p \fILIST"
 Select all the processes in \fILIST\fR.
+.IP "\fB--ppid \fILIST"
+Select all the processes in whose parent is in \fILIST\fR.
 .IP "\fB-t \fILIST"
 Select all the processes whose controlling terminals are in \fILIST\fR.
 Terminal names may be abbreviated by ommitting the initial \fB/dev\fR.

@@ -38,9 +38,11 @@ enum {
   OPT_HELP = 256,
   OPT_HELP_FORMAT,
   OPT_VERSION,
+  OPT_PPID,
 };
 
 const struct option options[] = {
+  { "ppid", required_argument, 0, OPT_PPID },
   { "help", no_argument, 0, OPT_HELP },
   { "help-format", no_argument, 0, OPT_HELP_FORMAT },
   { "version", no_argument, 0, OPT_VERSION },
@@ -119,6 +121,10 @@ int main(int argc, char **argv) {
       args = split_arg(optarg, arg_process, &nargs);
       select_add(select_pid, args, nargs);
       break;
+    case OPT_PPID:
+      args = split_arg(optarg, arg_process, &nargs);
+      select_add(select_ppid, args, nargs);
+      break;
     case 't':
       args = split_arg(optarg, arg_tty, &nargs);
       select_add(select_terminal, args, nargs);
@@ -148,6 +154,7 @@ int main(int argc, char **argv) {
              "  -H                Hierarchical display\n"
              "  -o, -O PROPS      Set output format; see --help-format\n"
              "  -p PIDS           Select processes by process ID\n"
+             "  --ppid PIDS       Select processes by parent process ID\n"
              "  -t TERMS          Select processes by terminal\n"
              "  -u, -U UIDS       Select processes by real/effective user ID\n"
              "  -w                Don't truncate output\n"

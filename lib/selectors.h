@@ -199,6 +199,17 @@ int select_not_session_leader(struct procinfo *pi,
  */
 int select_pid(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs);
 
+/** @brief Select processes by parent process ID
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @param args Selector argument as passed to @ref select_add()
+ * @param nargs Argument cout as passed to @ref select_add()
+ * @return Nonzero to select @p pid
+ *
+ * Parse the argument string with @ref arg_process().
+ */
+int select_ppid(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs);
+
 /** @brief Select processes by controlling terminal
  * @param pi Pointer to process information
  * @param pid Process ID

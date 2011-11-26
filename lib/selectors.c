@@ -60,6 +60,18 @@ int select_pid(struct procinfo attribute((unused)) *pi, pid_t pid,
   return 0;
 }
 
+int select_ppid(struct procinfo *pi, pid_t pid,
+               union arg *args, size_t nargs) {
+  size_t n;
+  pid_t ppid = proc_get_ppid(pi, pid);
+
+  for(n = 0; n < nargs; ++n) {
+    if(ppid == args[n].pid)
+      return 1;
+  }
+  return 0;
+}
+
 int select_terminal(struct procinfo *pi, pid_t pid,
                     union arg *args, size_t nargs) {
   size_t n;
