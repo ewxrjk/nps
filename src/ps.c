@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <limits.h>
+#include <ctype.h>
 
 enum {
   OPT_HELP = 256,
@@ -135,7 +136,7 @@ int main(int argc, char **argv) {
       break;
     case OPT_HELP:
       printf("Usage:\n"
-             "  ps [OPTIONS] [MATCH...]\n"
+             "  ps [OPTIONS] [MATCH|PIDS...]\n"
              "Options:\n"
              "  -a                Select process with a terminal\n"
              "  -A, -e            Select all processes\n"
@@ -178,8 +179,13 @@ int main(int argc, char **argv) {
       exit(1);
     }
   }
-  while(optind < argc)
-    select_match(argv[optind++]);
+  while(optind < argc) {
+    if(isdigit((unsigned char)argv[optind][0])) {
+      args = split_arg(argv[optind++], arg_process, &nargs);
+      select_add(select_pid, args, nargs);
+    } else
+      select_match(argv[optind++]);
+  }
   /* Set the default format */
   if(!set_format) {
     if(rc_ps_format)

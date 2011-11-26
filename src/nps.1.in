@@ -4,7 +4,7 @@ nps \- list processes
 .SH SYNOPSIS
 .B nps
 .RI [ OPTIONS ]
-.RI [ MATCHES ]
+.RI [ MATCHES | PIDS ]
 .SH DESCRIPTION
 .B nps
 writes a snapshot of information about processes running on the system.
