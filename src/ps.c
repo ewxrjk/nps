@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
       select_add(select_all, NULL, 0);
       break;
     case 'C':
-      asprintf(&t, "comm=%s", optarg);
+      asprintf(&t, "comm=:%s", optarg);
       select_match(t);
       break;
     case 'd':
@@ -190,15 +190,15 @@ int main(int argc, char **argv) {
   /* Set the default selection */
   select_default(select_uid_tty, NULL, 0);
   /* Get the list of processes */
-  pi = proc_enumerate(NULL);
-  pids = proc_get_selected(pi, &npids);
+  global_procinfo = proc_enumerate(NULL);
+  pids = proc_get_selected(global_procinfo, &npids);
   if(format_hierarchy) {
     /* Put them into order */
     qsort(pids, npids, sizeof *pids, compare_pid);
   }
   /* Set up output formatting */
-  format_columns(pi, pids, npids);
-  format_heading(pi, buffer, sizeof buffer);
+  format_columns(global_procinfo, pids, npids);
+  format_heading(global_procinfo, buffer, sizeof buffer);
   /* Figure out the display width */
   if(!width) {
     if((s = getenv("COLUMNS")) && (n = atoi(s)))
@@ -214,12 +214,12 @@ int main(int argc, char **argv) {
   if(*buffer && printf("%.*s\n", width, buffer) < 0) 
     fatal(errno, "writing to stdout");
   for(i = 0; i < npids; ++i) {
-    format_process(pi, pids[i], buffer, sizeof buffer);
+    format_process(global_procinfo, pids[i], buffer, sizeof buffer);
     if(printf("%.*s\n", width, buffer) < 0) 
       fatal(errno, "writing to stdout");
   }
   if(fclose(stdout) < 0)
     fatal(errno, "writing to stdout");
-  proc_free(pi);
+  proc_free(global_procinfo);
   exit(0);
 }

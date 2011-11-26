@@ -53,6 +53,9 @@ struct procinfo;
 /** @brief Allow internal-only formats */
 #define FORMAT_INTERNAL 0x0008
 
+/** @brief Suppress K, M, etc */
+#define FORMAT_RAW 0x0010
+
 /** @brief Add to the format list
  * @param f Format string
  * @param flags Flags
@@ -107,12 +110,17 @@ void format_process(struct procinfo *pi, pid_t pid,
  * @param pi Pointer to process information
  * @param pid Process ID
  * @param property Property name
+ * @param flags Flags
  * @param buffer Where to put header string
  * @param bufsize Size of buffer
+ *
+ * @p flags should be a combination of:
+ * - @ref FORMAT_RAW to suppress use of K, M, etc
  */
 void format_value(struct procinfo *pi, pid_t pid,
                   const char *property,
-                  char *buffer, size_t bufsize);
+                  char *buffer, size_t bufsize,
+                  unsigned flags);
 
 /** @brief Set the process ordering
  * @param ordering Ordering specification

@@ -22,6 +22,7 @@
 #include "process.h"
 #include "utils.h"
 #include "format.h"
+#include "compare.h"
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
@@ -142,8 +143,27 @@ int select_string_match(struct procinfo *pi, pid_t pid, union arg *args,
                         size_t nargs) {
   char buffer[1024];
   assert(nargs == 2);
-  format_value(pi, pid, args[0].string, buffer, sizeof buffer);
+  format_value(pi, pid, args[0].string, buffer, sizeof buffer, 0);
   return !strcmp(buffer, args[1].string);
+}
+
+int select_compare(struct procinfo *pi, pid_t pid, union arg *args,
+                   size_t nargs) {
+  char buffer[1024];
+  int c;
+  assert(nargs == 3);
+  format_value(pi, pid, args[0].string, buffer, sizeof buffer, FORMAT_RAW);
+  c = qlcompare(buffer, args[2].string);
+  switch(args[1].operator) {
+  case '<': return c < 0;
+  case '=': return c == 0;
+  case '>': return c > 0;
+  case LE: return c <= 0;
+  case GE: return c >= 0;
+  case NE: return c != 0;
+  default:
+    fatal(0, "unrecognized comparison operator %#x", args[1].operator);
+  }
 }
 
 int select_regex_match(struct procinfo *pi, pid_t pid, union arg *args,
@@ -151,7 +171,7 @@ int select_regex_match(struct procinfo *pi, pid_t pid, union arg *args,
   char buffer[1024];
   int rc;
   assert(nargs == 2);
-  format_value(pi, pid, args[0].string, buffer, sizeof buffer);
+  format_value(pi, pid, args[0].string, buffer, sizeof buffer, 0);
   switch(rc = regexec(&args[1].regex, buffer, 0, 0, 0)) {
   case 0:
     return 1;

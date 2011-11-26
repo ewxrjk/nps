@@ -46,28 +46,86 @@ void select_add(select_function *sfn, union arg *args, size_t nargs) {
   ++nselectors;
 }
 
+static const char *get_operator(const char *ptr,
+                                int *operator) {
+  int c = *ptr++;
+  switch(c) {
+  case '~':
+    *operator = c; 
+    return ptr;
+  case '<':
+    if(*ptr == '=') {
+      *operator = LE;
+      return ptr + 1;
+    }
+    if(*ptr == '>') {
+      *operator = NE;
+      return ptr + 1;
+    }
+    *operator = c;
+    return ptr;
+  case '>':
+    if(*ptr == '=') {
+      *operator = GE;
+      return ptr + 1;
+    }
+    *operator = c;
+    return ptr;
+  case '=':
+    if(*ptr == '=') {
+      *operator = c;
+      return ptr + 1;
+    } else
+      *operator = IDENTICAL;
+    return ptr;
+  case '!':
+    if(*ptr == '=') {
+      *operator = NE;
+      return ptr + 1;
+    }
+    break;
+  }
+  return 0;
+}
+
 void select_match(const char *expr) {
   const char *ptr;
   union arg *args;
-  int rc;
+  int rc, operator;
   char buffer[128];
 
-  for(ptr = expr; *ptr && *ptr != '=' && *ptr != '~'; ++ptr)
+  for(ptr = expr; 
+      *ptr && *ptr != '=' && *ptr != '~' 
+        && *ptr != '<' && *ptr != '>' && *ptr != '!';
+      ++ptr)
     ;
   if(!*ptr)
     fatal(0, "invalid match expression '%s'", expr);
-  args = xmalloc(2 * sizeof *args);
+  args = xmalloc(3 * sizeof *args);
   args[0].string = xstrndup(expr, ptr - expr);
-  if(*ptr++ == '=') {
-    args[1].string = xstrdup(ptr);
-    select_add(select_string_match, args, 2);
-  } else {
+  ptr = get_operator(ptr, &operator);
+  if(!ptr)
+    fatal(0, "%s: unrecognized match operator\n", expr);
+  if(*ptr == ':')
+     ++ptr;
+  switch(operator) {
+  case '~':
     rc = regcomp(&args[1].regex, ptr, REG_ICASE|REG_NOSUB);
     if(rc) {
       regerror(rc, &args[1].regex, buffer, sizeof buffer);
       fatal(0, "regexec: %s", buffer);
     }
     select_add(select_regex_match, args, 2);
+    break;
+  case IDENTICAL:
+    args[1].string = xstrdup(ptr);
+    select_add(select_string_match, args, 2);
+    break;
+  default:
+    args[1].operator = operator;
+    args[2].string = xstrdup(ptr);
+    select_add(select_compare, args, 3);
+    break;
   }
 }
 

@@ -49,6 +49,8 @@ union arg {
   char *string;                 /**< @brief String value */
 
   regex_t regex;                /**< @brief Compiled regexp */
+
+  int operator;                 /**< @brief Comparison operator */
 };
 
 /** @brief Parse a user name or UID
@@ -315,6 +317,25 @@ int select_string_match(struct procinfo *pi, pid_t pid, union arg *args,
  */
 int select_regex_match(struct procinfo *pi, pid_t pid, union arg *args,
                        size_t nargs);
+
+/** @brief Select by comparison
+ * @param pi Pointer to process information
+ * @param pid Process ID
+ * @param args Selector argument as passed to @ref select_add()
+ * @param nargs Argument cout as passed to @ref select_add()
+ * @return Nonzero to select @p pid
+ *
+ * @p nargs must be 3.  The first argument should be a property name;
+ * the second a comparison operator; and the third a value to compare
+ * against.
+ */
+int select_compare(struct procinfo *pi, pid_t pid, union arg *args,
+                   size_t nargs);
+
+#define IDENTICAL 0x2261
+#define NE 0x2260
+#define LE 0x2264
+#define GE 0x2265
 
 #endif /* SELECTORS_H */
 

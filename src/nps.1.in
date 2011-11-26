@@ -16,7 +16,7 @@ Select all processes.
 .IP "\fB-C \fINAME"
 Select processes by name.
 .IP
-Equivalent to \fBcomm=\fINAME\fR (see \fBMATCH EXPRESSIONS\fR below).
+Equivalent to \fBcomm=:\fINAME\fR (see \fBMATCH EXPRESSIONS\fR below).
 .IP \fB-d
 Select all processes that are not session leaders.
 .IP \fB-f
@@ -66,8 +66,16 @@ If no selection options are given then only processes that share an
 effective UID and terminal with the current process are selected.
 .SH "MATCH EXPRESSIONS"
 Following the options may appear one or more match expressions.
-These are general-purpose process selection options and come in two
+These are general-purpose process selection options and come in several
 forms.
+.PP
+As with other process selection options, the effect of match
+expressions is cumulative.
+.SS "Display Match Expressions"
+These match expressions match the value exactly as displayed.
+For numeric properties, this isn't usually very useful.
+For example, \fBrss=1048576\fR will never match, because it will
+always be \fB1M\fR in that case.
 .PP
 The first is \fIPROPERTY\fB=\fIVALUE\fR and matches only if the named
 property exactly matches the given value.
@@ -77,10 +85,55 @@ only.
 The second is \fIPROPERTY\fB~\fIREGEXP\fR and matches if the named
 property matches the extended POSIX regexp.
 For instance \fBargs~dbus\fR will match \fBdbus-daemon\fR,
-\dBdbus-launch\fR, etc.
+\fBdbus-launch\fR, etc.
+.SS "Value Match Expressions"
+These match expressions match the value as represented internally,
+with the following consequences:
+.IP \(bu
+Numbers are given their exact value, rather than rounding to
+kilobytes, megabytes, etc.
+For instance, \fBrss==1048576\fR will match processes with an RSS of
+exactly one megabyte.
+.IP \(bu
+TTY paths are not abbreviated.
+.IP \(bu
+Times are represnted as second counts.
 .PP
-As with other process selection options, the effect of match
-expressions is cumulative.
+The possible match expressions are \fIPROPERTY\fB<\fIVALUE\fR,
+\fIPROPERTY\fB<=\fIVALUE\fR, \fIPROPERTY\fB>\fIVALUE\fR,
+\fIPROPERTY\fB>=\fIVALUE\fR for ordering comparisons,
+\fIPROPERTY\fB==\fIVALUE\fR to test for equality and
+\fIPROPERTY\fB<>\fIVALUE\fR or \fIPROPERTY\fB!=\fIVALUE\fR to test for
+inequality.
+.PP
+In all cases, numbers are compared as numbers and strings are compared
+lexicographically.
+Where the \fIVALUE\fR is a number, it may be represented in hex (using
+a \fB0x\fR prefix) or octal (using a \fB0\fR prefix) and suffixed with
+\fBK\fR, \fBM\fR, \fBG\fR, \fBT\fR or \fBP\fR to represent kilobytes
+up to petabytes, or \fBp\fR to represent pages.
+(This is possible even when it doesn't make a great deal of sense,
+e.g. \fBpid<1K\fR.)
+.PP
+For example, to list processes with an RSS of at least one megabyte,
+you might use:
+.PP
+.RS
+\fBnps -o user,pid,rss,tty,comm 'rss>=1M'
+.RE
+.SS "Quoting"
+Since value match expressions include shell metacharacters, some
+shell quoting may be required.
+.PP
+In order to distinguish between (for instance) \fB==\fR and \fB=\fR
+where the first character of the \fIVALUE\fR is an \fB=\fR sign, any
+match operator may be followed by a single \fB:\fR.
+When the value is a shell variable it is advisable to always include
+the colon, for example:
+.PP
+.RS
+\fBnps -o user,pid,rss,tty,comm "comm=:${COMMAND}"
+.RE
 .SH FORMATTING
 The \fB-o\fR option specifies a list of process properties to display,
 separated by spaces or commas.

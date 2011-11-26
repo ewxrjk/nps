@@ -39,7 +39,8 @@ struct propinfo;
 
 typedef void formatfn(const struct propinfo *prop, struct buffer *b,
                       size_t columnsize,
-                      struct procinfo *pi, pid_t pid);
+                      struct procinfo *pi, pid_t pid,
+                      unsigned flags);
 
 typedef int comparefn(const struct propinfo *prop, struct procinfo *pi, 
                       pid_t a, pid_t b);
@@ -128,8 +129,13 @@ static void format_group(gid_t gid, struct buffer *b, size_t columnsize) {
 }
 
 static void format_interval(long seconds, struct buffer *b,
-                            int always_hours, size_t columnsize) {
+                            int always_hours, size_t columnsize,
+                            unsigned flags) {
   char t[64];
+  if(flags & FORMAT_RAW) {
+    format_decimal(seconds, b);
+    return;
+  }
   if(seconds >= 86400) {
     snprintf(t, sizeof t, "%ld-%02ld:%02ld:%02ld",
              seconds / 86400,
@@ -156,11 +162,16 @@ static void format_interval(long seconds, struct buffer *b,
   buffer_append(b, t);
 }
 
-static void format_time(time_t when, struct buffer *b, size_t columnsize) {
+static void format_time(time_t when, struct buffer *b, size_t columnsize,
+                        unsigned flags) {
   char t[64];
   time_t now;
   struct tm when_tm, now_tm;
 
+  if(flags & FORMAT_RAW) {
+    format_decimal(when, b);
+    return;
+  }
   time(&now);
   localtime_r(&when, &when_tm);
   localtime_r(&now, &now_tm);
@@ -186,53 +197,62 @@ static void format_time(time_t when, struct buffer *b, size_t columnsize) {
 
 static void property_decimal(const struct propinfo *prop, struct buffer *b,
                              size_t attribute((unused)) columnsize,
-                             struct procinfo *pi, pid_t pid) {
+                             struct procinfo *pi, pid_t pid,
+                             unsigned attribute((unused)) flags) {
   return format_decimal(prop->fetch.fetch_intmax(pi, pid), b);
 }
 
 static void property_uoctal(const struct propinfo *prop, struct buffer *b,
                             size_t attribute((unused)) columnsize,
-                            struct procinfo *pi, pid_t pid) {
+                            struct procinfo *pi, pid_t pid,
+                            unsigned attribute((unused)) flags) {
   return format_octal(prop->fetch.fetch_uintmax(pi, pid), b);
 }
 
 static void property_uhex(const struct propinfo *prop, struct buffer *b,
                           size_t attribute((unused)) columnsize,
-                          struct procinfo *pi, pid_t pid) {
+                          struct procinfo *pi, pid_t pid,
+                          unsigned attribute((unused)) flags) {
   format_hex(prop->fetch.fetch_uintmax(pi, pid), b);
 }
 
 static void property_pid(const struct propinfo *prop, struct buffer *b,
                          size_t attribute((unused)) columnsize, 
-                         struct procinfo *pi, pid_t pid) {
+                         struct procinfo *pi, pid_t pid,
+                         unsigned attribute((unused)) flags) {
   return format_decimal(prop->fetch.fetch_pid(pi, pid), b);
 }
 
 static void property_uid(const struct propinfo *prop, struct buffer *b,
                          size_t attribute((unused)) columnsize,
-                         struct procinfo *pi, pid_t pid) {
+                         struct procinfo *pi, pid_t pid,
+                         unsigned attribute((unused)) flags) {
   return format_decimal(prop->fetch.fetch_uid(pi, pid), b);
 }
 
 static void property_user(const struct propinfo *prop, struct buffer *b,
-                          size_t columnsize, struct procinfo *pi, pid_t pid) {
+                          size_t columnsize, struct procinfo *pi, pid_t pid,
+                          unsigned attribute((unused)) flags) {
   return format_user(prop->fetch.fetch_uid(pi, pid), b, columnsize);
 }
 
 static void property_gid(const struct propinfo *prop, struct buffer *b,
                          size_t attribute((unused)) columnsize,
-                         struct procinfo *pi, pid_t pid) {
+                         struct procinfo *pi, pid_t pid,
+                         unsigned attribute((unused)) flags) {
   return format_decimal(prop->fetch.fetch_gid(pi, pid), b);
 }
 
 static void property_group(const struct propinfo *prop, struct buffer *b,
-                           size_t columnsize, struct procinfo *pi, pid_t pid) {
+                           size_t columnsize, struct procinfo *pi, pid_t pid,
+                           unsigned attribute((unused)) flags) {
   return format_group(prop->fetch.fetch_gid(pi, pid), b, columnsize);
 }
 
 static void property_char(const struct propinfo *prop, struct buffer *b,
                           size_t attribute((unused)) columnsize,
-                          struct procinfo *pi, pid_t pid) {
+                          struct procinfo *pi, pid_t pid,
+                          unsigned attribute((unused)) flags) {
   buffer_putc(b, prop->fetch.fetch_int(pi, pid));
 }
 
@@ -240,29 +260,36 @@ static void property_char(const struct propinfo *prop, struct buffer *b,
 
 static void property_time(const struct propinfo *prop, struct buffer *b,
                           size_t columnsize,
-                          struct procinfo *pi, pid_t pid) {
+                          struct procinfo *pi, pid_t pid,
+                          unsigned flags) {
   /* time wants [dd-]hh:mm:ss */
-  return format_interval(prop->fetch.fetch_intmax(pi, pid), b, 1, columnsize);
+  return format_interval(prop->fetch.fetch_intmax(pi, pid), b, 1, columnsize,
+                         flags);
 }
 
 static void property_etime(const struct propinfo *prop, struct buffer *b,
                            size_t attribute((unused)) columnsize,
-                           struct procinfo *pi, pid_t pid) {
+                           struct procinfo *pi, pid_t pid,
+                           unsigned flags) {
   /* etime wants [[dd-]hh:]mm:ss */
-  return format_interval(prop->fetch.fetch_intmax(pi, pid), b, 0, columnsize);
+  return format_interval(prop->fetch.fetch_intmax(pi, pid), b, 0, columnsize,
+                         flags);
 }
 
 static void property_stime(const struct propinfo *prop, struct buffer *b,
                            size_t columnsize,
-                           struct procinfo *pi, pid_t pid) {
-  return format_time(prop->fetch.fetch_intmax(pi, pid), b, columnsize);
+                           struct procinfo *pi, pid_t pid,
+                           unsigned flags) {
+  return format_time(prop->fetch.fetch_intmax(pi, pid), b, columnsize,
+                     flags);
 }
 
 /* specific properties */
 
 static void property_tty(const struct propinfo *prop, struct buffer *b,
                          size_t attribute((unused)) columnsize,
-                         struct procinfo *pi, pid_t pid) {
+                         struct procinfo *pi, pid_t pid,
+                         unsigned flags) {
   const char *path;
   int tty = prop->fetch.fetch_int(pi, pid);
   if(tty <= 0) {
@@ -274,14 +301,16 @@ static void property_tty(const struct propinfo *prop, struct buffer *b,
     format_hex(tty, b);
     return;
   }
-  /* "On XSI-conformant systems, they shall be given in one of two
-   * forms: the device's filename (for example, tty04) or, if the
-   * device's filename starts with tty, just the identifier following
-   * the characters tty (for example, "04")" */
-  if(!strncmp(path, "/dev/", 5))
-    path += 5;
-  if(!strncmp(path, "tty", 3))
-    path += 3;
+  if(!(flags & FORMAT_RAW)) {
+    /* "On XSI-conformant systems, they shall be given in one of two
+     * forms: the device's filename (for example, tty04) or, if the
+     * device's filename starts with tty, just the identifier following
+     * the characters tty (for exameple, "04")" */
+    if(!strncmp(path, "/dev/", 5))
+      path += 5;
+    if(!strncmp(path, "tty", 3))
+      path += 3;
+  }
   buffer_append(b, path);
 }
 
@@ -320,36 +349,41 @@ static void property_command_general(const struct propinfo *prop,
 
 static void property_command(const struct propinfo *prop, struct buffer *b,
                              size_t columnsize,
-                             struct procinfo *pi, pid_t pid) {
+                             struct procinfo *pi, pid_t pid,
+                             unsigned attribute((unused)) flags) {
   return property_command_general(prop, b, columnsize, pi, pid, 0);
 }
 
 static void property_command_brief(const struct propinfo *prop,
                                    struct buffer *b, size_t columnsize, 
                                    struct procinfo *pi,
-                                   pid_t pid) {
+                                   pid_t pid,
+                                   unsigned attribute((unused)) flags) {
   return property_command_general(prop, b, columnsize, pi, pid, 1);
 }
 
 static void property_pcpu(const struct propinfo *prop, struct buffer *b,
                           size_t attribute((unused)) columnsize,
-                          struct procinfo *pi, pid_t pid) {
+                          struct procinfo *pi, pid_t pid,
+                          unsigned attribute((unused)) flags) {
   format_decimal(100 * prop->fetch.fetch_double(pi, pid), b);
 }
 
 static void property_mem(const struct propinfo *prop, struct buffer *b,
                          size_t attribute((unused)) columnsize,
-                         struct procinfo *pi, pid_t pid) {
+                         struct procinfo *pi, pid_t pid,
+                         unsigned flags) {
   char buffer[64];
   buffer_append(b,
                 bytes(prop->fetch.fetch_uintmax(pi, pid),
-                      0, bytes_ch(prop->name),
+                      0, (flags & FORMAT_RAW ? 'b' : bytes_ch(prop->name)),
                       buffer, sizeof buffer));
 }
 
 static void property_address(const struct propinfo *prop, struct buffer *b,
                              size_t attribute((unused)) columnsize,
-                             struct procinfo *pi, pid_t pid) {
+                             struct procinfo *pi, pid_t pid,
+                             unsigned attribute((unused)) flags) {
   unsigned long long addr = prop->fetch.fetch_uintmax(pi, pid);
   /* 0 and all-bits-1 are not very interesting addresses */
   if(addr && addr + 1 && addr != 0xFFFFFFFF)
@@ -361,11 +395,12 @@ static void property_address(const struct propinfo *prop, struct buffer *b,
 
 static void property_iorate(const struct propinfo *prop, struct buffer *b,
                             size_t attribute((unused)) columnsize,
-                            struct procinfo *pi, pid_t pid) {
+                            struct procinfo *pi, pid_t pid,
+                            unsigned flags) {
   char buffer[64];
   buffer_append(b,
                 bytes(prop->fetch.fetch_double(pi, pid),
-                      0, bytes_ch(prop->name),
+                      0, (flags & FORMAT_RAW ? 'b' : bytes_ch(prop->name)),
                       buffer, sizeof buffer));
 }
 
@@ -888,7 +923,7 @@ void format_columns(struct procinfo *pi, const pid_t *pids, size_t npids) {
       b->pos = 0;
       b->size = 0;
       columns[c].prop->format(columns[c].prop, b, columns[c].reqwidth,
-                              pi, pids[n]);
+                              pi, pids[n], 0);
       if(b->pos > w)
         w = b->pos;
     }
@@ -930,7 +965,7 @@ void format_process(struct procinfo *pi, pid_t pid,
     if(pid == -1)
       buffer_append(b, columns[c].heading);
     else
-      columns[c].prop->format(columns[c].prop, b, columns[c].width, pi, pid);
+      columns[c].prop->format(columns[c].prop, b, columns[c].width, pi, pid, 0);
     /* Figure out how much we wrote */
     w = b->pos - start;
     /* For non-final columns, pad to the column width and one more for
@@ -946,7 +981,8 @@ void format_process(struct procinfo *pi, pid_t pid,
 
 void format_value(struct procinfo *pi, pid_t pid,
                   const char *property,
-                  char *buffer, size_t bufsize) {
+                  char *buffer, size_t bufsize,
+                  unsigned flags) {
   struct buffer b[1];
   const struct propinfo *prop = find_property(property, 0);
   if(!prop)
@@ -954,7 +990,7 @@ void format_value(struct procinfo *pi, pid_t pid,
   b->base = buffer;
   b->pos = 0;
   b->size = bufsize;
-  prop->format(prop, b, SIZE_MAX, pi, pid);
+  prop->format(prop, b, SIZE_MAX, pi, pid, flags);
   buffer_terminate(b);
 }
 

@@ -397,19 +397,19 @@ static void loop(void) {
     if(next & NEXT_RESAMPLE) {
       /* Get fresh data */
       proc_free(last);
-      last = pi;
+      last = global_procinfo;
       update_last = clock_now();
-      pi = proc_enumerate(last);
+      global_procinfo = proc_enumerate(last);
       sysinfo_reset();
       free(pids);
-      pids = proc_get_selected(pi, &npids);
+      pids = proc_get_selected(global_procinfo, &npids);
       next |= NEXT_RESYSINFO|NEXT_RESORT|NEXT_REFORMAT;
     }
     if(next & NEXT_RESELECT) {
       /* Reselect processes to display after selection has changed */
       free(pids);
-      proc_reselect(pi);
-      pids = proc_get_selected(pi, &npids);
+      proc_reselect(global_procinfo);
+      pids = proc_get_selected(global_procinfo, &npids);
       next |= NEXT_RESORT|NEXT_REFORMAT;
     }
     if(next & NEXT_RESORT) {
@@ -419,7 +419,7 @@ static void loop(void) {
     }
     if(next & NEXT_REFORMAT) {
       /* Work out column widths */
-      format_columns(pi, pids, npids);
+      format_columns(global_procinfo, pids, npids);
       next |= NEXT_REDRAW;
     }
     if(next & NEXT_RESYSINFO) {
@@ -429,7 +429,7 @@ static void loop(void) {
       x = y = 0;
       getmaxyx(stdscr, maxy, maxx);
       /* System information */
-      for(n = 0; !sysinfo_format(pi, n, buffer, sizeof buffer); ++n) {
+      for(n = 0; !sysinfo_format(global_procinfo, n, buffer, sizeof buffer); ++n) {
         ptr = buffer;
         while(*ptr) {
           if((newline = strchr(ptr, '\n')))
@@ -471,7 +471,7 @@ static void loop(void) {
       /* Heading */
       if(y < ylimit) {
         attron(A_REVERSE);
-        format_heading(pi, buffer, sizeof buffer);
+        format_heading(global_procinfo, buffer, sizeof buffer);
         offset = min(display_offset, strlen(buffer));
         if(mvaddnstr(y, 0, buffer + offset, maxx) == ERR)
           fatal(0, "mvaddstr %d failed", y);
@@ -483,7 +483,7 @@ static void loop(void) {
 
       /* Processes */
       for(n = 0; n < npids && y < ylimit; ++n) {
-        format_process(pi, pids[n], buffer, sizeof buffer);
+        format_process(global_procinfo, pids[n], buffer, sizeof buffer);
         offset = min(display_offset, strlen(buffer));
         // curses seems to have trouble with the last position on the screen
         if(mvaddnstr(y, 0, buffer + offset, y == ylimit - 1 ? maxx - 1 : maxx) == ERR)
