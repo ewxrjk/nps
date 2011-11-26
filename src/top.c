@@ -518,7 +518,7 @@ static enum next_action await(void) {
   double update_next, started, finished, frac, delta;
   struct timeval tv;
   fd_set fdin;
-  int n, ch, ret;
+  int n, ch, ch2, ret;
   unsigned char sig;
   struct winsize ws;
 
@@ -555,9 +555,15 @@ static enum next_action await(void) {
   }
   /* Handle keyboard input */
   if(FD_ISSET(0, &fdin)) {
-    while((ch = getch()) != ERR)
+    while((ch = getch()) != ERR) {
+      if(ch == 27) {
+        ch2 = getch();
+        if(ch2 != ERR)
+          ch = ch2 + ESCBIT;
+      }
       if((ret = process_key(ch)) != NEXT_WAIT)
         return ret;
+    }
   }
   /* Handle signals */
   if(FD_ISSET(sigpipe[0], &fdin)) {

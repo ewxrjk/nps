@@ -22,6 +22,9 @@
 #include "utils.h"
 #include <curses.h>
 #include <string.h>
+#include <ctype.h>
+
+#define SPACE(c) isspace((unsigned char)(c))
 
 void input_key(int ch, struct input_context *ctx) {
   switch(ch) {
@@ -30,9 +33,23 @@ void input_key(int ch, struct input_context *ctx) {
     if(ctx->cursor)
       --ctx->cursor;
     break;
+  case ESCBIT + 'b':            /* alt-B */
+  case ESCBIT + 'B':
+    while(ctx->cursor > 0 && SPACE(ctx->buffer[ctx->cursor-1]))
+      --ctx->cursor;
+    while(ctx->cursor > 0 && !SPACE(ctx->buffer[ctx->cursor-1]))
+      --ctx->cursor;
+    break;
   case 6:                       /* ^F */
   case KEY_RIGHT:
     if(ctx->cursor < ctx->len)
+      ++ctx->cursor;
+    break;
+  case ESCBIT + 'f':            /* alt-F */
+  case ESCBIT + 'F':
+    while(ctx->cursor < ctx->len && !SPACE(ctx->buffer[ctx->cursor]))
+      ++ctx->cursor;
+    while(ctx->cursor < ctx->len && SPACE(ctx->buffer[ctx->cursor]))
       ++ctx->cursor;
     break;
   case 8:                       /* ^H */

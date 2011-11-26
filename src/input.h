@@ -35,5 +35,7 @@ struct input_context {
 void input_key(int ch, struct input_context *ctx);
 void input_draw(struct input_context *ctx);
 
+#define ESCBIT (KEY_MAX + 1)
+
 #endif /* INPUT_H */
 
