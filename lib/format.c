@@ -342,20 +342,9 @@ static void property_mem(const struct propinfo *prop, struct buffer *b,
                          struct procinfo *pi, pid_t pid) {
   char buffer[64];
   buffer_append(b,
-                bytes(prop->fetch.fetch_uintmax(pi, pid), 0,
+                bytes(prop->fetch.fetch_uintmax(pi, pid),
+                      0, bytes_ch(prop->name),
                       buffer, sizeof buffer));
-}
-
-static void property_memK(const struct propinfo *prop, struct buffer *b,
-                         size_t attribute((unused)) columnsize,
-                         struct procinfo *pi, pid_t pid) {
-  format_decimal(prop->fetch.fetch_uintmax(pi, pid) / 1024, b);
-}
-
-static void property_memM(const struct propinfo *prop, struct buffer *b,
-                          size_t attribute((unused)) columnsize,
-                          struct procinfo *pi, pid_t pid) {
-  format_decimal(prop->fetch.fetch_uintmax(pi, pid) / 1048476, b);
 }
 
 static void property_address(const struct propinfo *prop, struct buffer *b,
@@ -375,26 +364,9 @@ static void property_iorate(const struct propinfo *prop, struct buffer *b,
                             struct procinfo *pi, pid_t pid) {
   char buffer[64];
   buffer_append(b,
-                bytes(prop->fetch.fetch_double(pi, pid), 0,
+                bytes(prop->fetch.fetch_double(pi, pid),
+                      0, bytes_ch(prop->name),
                       buffer, sizeof buffer));
-}
-
-static void property_iorateK(const struct propinfo *prop, struct buffer *b,
-                             size_t attribute((unused)) columnsize,
-                             struct procinfo *pi, pid_t pid) {
-  format_decimal(prop->fetch.fetch_double(pi, pid) / 1024, b);
-}
-
-static void property_iorateM(const struct propinfo *prop, struct buffer *b,
-                             size_t attribute((unused)) columnsize,
-                             struct procinfo *pi, pid_t pid) {
-  format_decimal(prop->fetch.fetch_double(pi, pid) / 1048476, b);
-}
-
-static void property_iorateP(const struct propinfo *prop, struct buffer *b,
-                             size_t attribute((unused)) columnsize,
-                             struct procinfo *pi, pid_t pid) {
-  format_decimal(prop->fetch.fetch_double(pi, pid) / sysconf(_SC_PAGESIZE), b);
 }
 
 // ----------------------------------------------------------------------------
@@ -554,56 +526,56 @@ static const struct propinfo properties[] = {
     property_iorate, compare_double, { .fetch_double = proc_get_rw_bytes }
   },
   {
-    "ioK", "IO", "Recent read+write rate (1024 byte/s)",
-    property_iorateK, compare_double, { .fetch_double = proc_get_rw_bytes }
+    "ioK", "IO", "Recent read+write rate (kilobytes/s)",
+    property_iorate, compare_double, { .fetch_double = proc_get_rw_bytes }
   },
   {
     "ioM", "IO", "Recent read+write rate (megabytes/s)",
-    property_iorateM, compare_double, { .fetch_double = proc_get_rw_bytes }
+    property_iorate, compare_double, { .fetch_double = proc_get_rw_bytes }
   },
   {
     "majflt", "+FLT", "Major fault rate",
     property_iorate, compare_double, { .fetch_double = proc_get_majflt }
   },
   {
-    "majfltK", "+FLT", "Major fault rate (1024 byte/s)",
-    property_iorateK, compare_double, { .fetch_double = proc_get_majflt }
+    "majfltK", "+FLT", "Major fault rate (kilobytes/s)",
+    property_iorate, compare_double, { .fetch_double = proc_get_majflt }
   },
   {
     "majfltM", "+FLT", "Major fault rate (megabytes/s)",
-    property_iorateM, compare_double, { .fetch_double = proc_get_majflt }
+    property_iorate, compare_double, { .fetch_double = proc_get_majflt }
   },
   {
     "majfltP", "+FLT", "Major fault rate (pages/s)",
-    property_iorateP, compare_double, { .fetch_double = proc_get_majflt }
+    property_iorate, compare_double, { .fetch_double = proc_get_majflt }
   },
   {
     "mem", "MEM", "Memory usage",
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_mem }
   },
   {
-    "memK", "MEM", "Memory usage (megabytes)",
-    property_memK, compare_uintmax, { .fetch_uintmax = proc_get_mem }
+    "memK", "MEM", "Memory usage (kilobytes)",
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_mem }
   },
   {
     "memM", "MEM", "Memory usage (megabytes)",
-    property_memM, compare_uintmax, { .fetch_uintmax = proc_get_mem }
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_mem }
   },
   {
     "minflt", "-FLT", "Minor fault rate",
     property_iorate, compare_double, { .fetch_double = proc_get_minflt }
   },
   {
-    "minfltK", "-FLT", "Minor fault rate (1024 bytes/s)",
-    property_iorateK, compare_double, { .fetch_double = proc_get_minflt }
+    "minfltK", "-FLT", "Minor fault rate (kilobytes/s)",
+    property_iorate, compare_double, { .fetch_double = proc_get_minflt }
   },
   {
     "minfltM", "-FLT", "Minor fault rate (megabytes/s)",
-    property_iorateM, compare_double, { .fetch_double = proc_get_minflt }
+    property_iorate, compare_double, { .fetch_double = proc_get_minflt }
   },
   {
     "minfltP", "-FLT", "Minor fault rate (pages/s)",
-    property_iorateP, compare_double, { .fetch_double = proc_get_minflt }
+    property_iorate, compare_double, { .fetch_double = proc_get_minflt }
   },
   {
     "nice", "NI", "Nice value",
@@ -630,12 +602,12 @@ static const struct propinfo properties[] = {
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pmem }
   },
   {
-    "pmemK", "PMEM", "Proportional memory usage (1024 bytes)",
-    property_memK, compare_uintmax, { .fetch_uintmax = proc_get_pmem }
+    "pmemK", "PMEM", "Proportional memory usage (kilobytes)",
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pmem }
   },
   {
     "pmemM", "PMEM", "Proportional memory usage (megabytes)",
-    property_memM, compare_uintmax, { .fetch_uintmax = proc_get_pmem }
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pmem }
   },
   {
     "ppid", "PPID", "Parent process ID",
@@ -650,24 +622,24 @@ static const struct propinfo properties[] = {
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pss }
   },
   {
-    "pssK", "PSS", "Proportional resident set size (1024 bytes)",
-    property_memK, compare_uintmax, { .fetch_uintmax = proc_get_pss }
+    "pssK", "PSS", "Proportional resident set size (kilobytes)",
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pss }
   },
   {
     "pssM", "PSS", "Proportional resident set size (megabytes)",
-    property_memM, compare_uintmax, { .fetch_uintmax = proc_get_pss }
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pss }
   },
   {
-    "read", "RD", "Recent read rate (1024 bytes/s)",
+    "read", "RD", "Recent read rate",
     property_iorate, compare_double, { .fetch_double = proc_get_read_bytes }
   },
   {
-    "readK", "RD", "Recent read rate (1024 byte/s)",
-    property_iorateK, compare_double, { .fetch_double = proc_get_read_bytes }
+    "readK", "RD", "Recent read rate (kilobytes/s)",
+    property_iorate, compare_double, { .fetch_double = proc_get_read_bytes }
   },
   {
     "readM", "RD", "Recent read rate (megabyte/s)",
-    property_iorateM, compare_double, { .fetch_double = proc_get_read_bytes }
+    property_iorate, compare_double, { .fetch_double = proc_get_read_bytes }
   },
   {
     "rgid", "RGID", "Real group ID (decimal)",
@@ -683,11 +655,11 @@ static const struct propinfo properties[] = {
   },
   {
     "rssK", "RSS", "Resident set size (kilobytes)",
-    property_memK, compare_uintmax, { .fetch_uintmax = proc_get_rss }
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_rss }
   },
   {
     "rssM", "RSS", "Resident set size (megabytes)",
-    property_memM, compare_uintmax, { .fetch_uintmax = proc_get_rss }
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_rss }
   },
   {
     "ruid", "RUID", "Real user ID (decimal)",
@@ -710,12 +682,12 @@ static const struct propinfo properties[] = {
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_swap }
   },
   {
-    "swapK", "SWAP", "Swap usage (1024 bytes)",
-    property_memK, compare_uintmax, { .fetch_uintmax = proc_get_swap }
+    "swapK", "SWAP", "Swap usage (kilobytes)",
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_swap }
   },
   {
     "swapM", "SWAP", "Swap usage (megabytes)",
-    property_memM, compare_uintmax, { .fetch_uintmax = proc_get_swap }
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_swap }
   },
   {
     "time", "TIME", "Scheduled time",
@@ -738,12 +710,12 @@ static const struct propinfo properties[] = {
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_vsize }
   },
   {
-    "vszK", "VSZ", "Virtual memory used (1024 bytes)",
-    property_memK, compare_uintmax, { .fetch_uintmax = proc_get_vsize }
+    "vszK", "VSZ", "Virtual memory used (kilobytes)",
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_vsize }
   },
   {
-    "vszM", "VSZ", "Virtual memory used (1024 bytes)",
-    property_memM, compare_uintmax, { .fetch_uintmax = proc_get_vsize }
+    "vszM", "VSZ", "Virtual memory used (megabytes)",
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_vsize }
   },
   {
     "wchan", "WCHAN", "Wait channel (hex)",
@@ -754,12 +726,12 @@ static const struct propinfo properties[] = {
     property_iorate, compare_double, { .fetch_double = proc_get_write_bytes }
   },
   {
-    "writeK", "WR", "Recent write rate (1024 bytes/s)",
-    property_iorateK, compare_double, { .fetch_double = proc_get_write_bytes }
+    "writeK", "WR", "Recent write rate (kilobytes/s)",
+    property_iorate, compare_double, { .fetch_double = proc_get_write_bytes }
   },
   {
     "writeM", "WR", "Recent write rate (megabytes/s)",
-    property_iorateM, compare_double, { .fetch_double = proc_get_write_bytes }
+    property_iorate, compare_double, { .fetch_double = proc_get_write_bytes }
   },
 };
 #define NPROPERTIES (sizeof properties / sizeof *properties)

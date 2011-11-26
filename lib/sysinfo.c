@@ -30,6 +30,13 @@
 #include <math.h>
 #include <sys/time.h>
 
+struct sysprop {
+  const char *name;
+  const char *description;
+  void (*format)(const struct sysprop *sp,
+                 struct procinfo *pi, char *buffer, size_t bufsize);
+};
+
 static int got_uptime;
 static double up, idle;
 
@@ -248,7 +255,8 @@ static void sysprop_format_time(const char *what, double t,
 
 // ----------------------------------------------------------------------------
 
-static void sysprop_localtime(struct procinfo attribute((unused)) *pi,
+static void sysprop_localtime(const struct sysprop attribute((unused)) *prop,
+                              struct procinfo attribute((unused)) *pi,
                               char *buffer, size_t bufsize) {
   time_t now;
   struct tm now_tm;
@@ -257,24 +265,28 @@ static void sysprop_localtime(struct procinfo attribute((unused)) *pi,
   strftime(buffer, bufsize, "Time: %Y-%m-%d %H:%M:%S", &now_tm);
 }
 
-static void sysprop_processes(struct procinfo *pi,
+static void sysprop_processes(const struct sysprop attribute((unused)) *prop,
+                              struct procinfo *pi,
                               char *buffer, size_t bufsize) {
   snprintf(buffer, bufsize, "Tasks: %d", proc_count(pi));
 }
 
-static void sysprop_uptime(struct procinfo attribute((unused)) *pi,
+static void sysprop_uptime(const struct sysprop attribute((unused)) *prop,
+                              struct procinfo attribute((unused)) *pi,
                            char *buffer, size_t bufsize) {
   get_uptime();
   sysprop_format_time("Up", up, buffer, bufsize);
 }
 
-static void sysprop_idletime(struct procinfo attribute((unused)) *pi,
+static void sysprop_idletime(const struct sysprop attribute((unused)) *prop,
+                              struct procinfo attribute((unused)) *pi,
                              char *buffer, size_t bufsize) {
   get_uptime();
   sysprop_format_time("Idle", idle, buffer, bufsize);
 }
 
-static void sysprop_load(struct procinfo attribute((unused)) *pi,
+static void sysprop_load(const struct sysprop attribute((unused)) *prop,
+                         struct procinfo attribute((unused)) *pi,
                          char *buffer, size_t bufsize) {
   FILE *fp;
   double l1, l2, l3;
@@ -286,46 +298,42 @@ static void sysprop_load(struct procinfo attribute((unused)) *pi,
   snprintf(buffer, bufsize, "Load: %.1f %.1f %.1f", l1, l2, l3);
 }
 
-static void sysprop_mem(struct procinfo attribute((unused)) *pi,
+static void sysprop_mem(const struct sysprop *prop,
+                              struct procinfo attribute((unused)) *pi,
                         char *buffer, size_t bufsize) {
+  const int ch = bytes_ch(prop->name);
+  char btot[16], bused[16], bfree[16], bbuf[16], bcache[16];
+
   get_meminfo();
-  snprintf(buffer, bufsize, "RAM:  %9ju tot %9ju used %9ju free %9ju buf %9ju cache",
-           meminfo.MemTotal,
-           meminfo.MemTotal - meminfo.MemFree,
-           meminfo.MemFree,
-           meminfo.Buffers,
-           meminfo.Cached);
+  snprintf(buffer, bufsize, "RAM:  %s tot %s used %s free %s buf %s cache",
+           bytes(meminfo.MemTotal * 1024, 9, ch,
+                 btot, sizeof btot),
+           bytes((meminfo.MemTotal - meminfo.MemFree) * 1024, 9, ch,
+                 bused, sizeof bused),
+           bytes(meminfo.MemFree * 1024, 9, ch,
+                 bfree, sizeof bfree),
+           bytes(meminfo.Buffers * 1024, 9, ch,
+                 bbuf, sizeof bbuf),
+           bytes(meminfo.Cached * 1024, 9, ch,
+                 bcache, sizeof bcache));
 }
 
-static void sysprop_memM(struct procinfo attribute((unused)) *pi,
-                        char *buffer, size_t bufsize) {
-  get_meminfo();
-  snprintf(buffer, bufsize, "RAM:  %8juM tot %8juM used %8juM free %8juM buf %8juM cache",
-           meminfo.MemTotal / 1024,
-           (meminfo.MemTotal - meminfo.MemFree) / 1024,
-           meminfo.MemFree / 1024,
-           meminfo.Buffers / 1024,
-           meminfo.Cached / 1024);
-}
-
-static void sysprop_swap(struct procinfo attribute((unused)) *pi,
+static void sysprop_swap(const struct sysprop attribute((unused)) *prop,
+                              struct procinfo attribute((unused)) *pi,
                          char *buffer, size_t bufsize) {
-  get_meminfo();
-  snprintf(buffer, bufsize, "Swap: %9ju tot %9ju used %9ju free %9ju cache",
-           meminfo.SwapTotal,
-           meminfo.SwapTotal - meminfo.SwapFree,
-           meminfo.SwapFree,
-           meminfo.SwapCached);
-}
+  const int ch = bytes_ch(prop->name);
+  char btot[32], bused[32], bfree[32], bcache[32];
 
-static void sysprop_swapM(struct procinfo attribute((unused)) *pi,
-                          char *buffer, size_t bufsize) {
   get_meminfo();
-  snprintf(buffer, bufsize, "Swap: %8juM tot %8juM used %8juM free %8juM cache",
-           meminfo.SwapTotal / 1024,
-           (meminfo.SwapTotal - meminfo.SwapFree) / 1024,
-           meminfo.SwapFree / 1024,
-           meminfo.SwapCached / 1024);
+  snprintf(buffer, bufsize, "Swap: %s tot %s used %s free %s cache",
+           bytes(meminfo.SwapTotal * 1024, 9, ch,
+                 btot, sizeof btot),
+           bytes((meminfo.SwapTotal - meminfo.SwapFree) * 1024, 9, ch,
+                 bused, sizeof bused),
+           bytes(meminfo.SwapFree * 1024, 9, ch,
+                 bfree, sizeof bfree),
+           bytes(meminfo.Cached * 1024, 9, ch,
+                 bcache, sizeof bcache));
 }
 
 static void sysprop_cpu_one(const struct cpuhistory *cpu,
@@ -360,7 +368,8 @@ static void sysprop_cpu_one(const struct cpuhistory *cpu,
     
 }
 
-static void sysprop_cpu(struct procinfo attribute((unused)) *pi,
+static void sysprop_cpu(const struct sysprop attribute((unused)) *prop,
+                        struct procinfo attribute((unused)) *pi,
                         char *buffer, size_t bufsize) {
   get_stat();
   if(ncpuinfos) {
@@ -371,8 +380,9 @@ static void sysprop_cpu(struct procinfo attribute((unused)) *pi,
   }
 }
 
-static void sysprop_cpus(struct procinfo attribute((unused)) *pi,
-                        char *buffer, size_t bufsize) {
+static void sysprop_cpus(const struct sysprop attribute((unused)) *prop,
+                         struct procinfo attribute((unused)) *pi,
+                         char *buffer, size_t bufsize) {
   size_t n;
   get_stat();
   for(n = 1; n < ncpuinfos; ++n) {
@@ -393,11 +403,7 @@ static void sysprop_cpus(struct procinfo attribute((unused)) *pi,
 
 // ----------------------------------------------------------------------------
 
-const struct sysprop {
-  const char *name;
-  const char *description;
-  void (*format)(struct procinfo *pi, char *buffer, size_t bufsize);
-} sysproperties[] = {
+const struct sysprop sysproperties[] = {
   {
     "cpu", "CPU usage",
     sysprop_cpu
@@ -415,24 +421,32 @@ const struct sysprop {
     sysprop_load
   },
   {
-    "mem", "Memory information (kilobytes)",
+    "mem", "Memory information",
+    sysprop_mem
+  },
+  {
+    "memK", "Memory information (kilobytes)",
     sysprop_mem
   },
   {
     "memM", "Memory information (megabytes)",
-    sysprop_memM
+    sysprop_mem
   },
   {
     "processes", "Number of processes",
     sysprop_processes
   },
   {
-    "swap", "Swap information (kilobytes)",
+    "swap", "Swap information",
+    sysprop_swap
+  },
+  {
+    "swapK", "Swap information (kilobytes)",
     sysprop_swap
   },
   {
     "swapM", "Swap information (megabytes)",
-    sysprop_swapM
+    sysprop_swap
   },
   {
     "time", "Current (local) time",
@@ -525,7 +539,7 @@ size_t sysinfo_reset(void) {
 int sysinfo_format(struct procinfo *pi, size_t n, char buffer[], size_t bufsize) {
   buffer[0] = 0;
   if(n < nsysinfos) {
-    sysinfos[n].prop->format(pi, buffer, bufsize);
+    sysinfos[n].prop->format(sysinfos[n].prop, pi, buffer, bufsize);
     return 0;
   } else
     return -1;

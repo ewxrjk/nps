@@ -162,15 +162,33 @@ char *format_get_ordering(void);
 /** @brief Format a value in human-friendly units
  * @param n Integer to format
  * @param fieldwidth Field width (as per printf)
+ * @param ch Size code
  * @param buffer Output buffer
  * @param bufsize Output buffer size
  * @return @p buffer
  *
+ * Supported size codes are:
+ * - @c 0 to pick one automatically
+ * - @c b, @c K, @c G, @c M, @c T for bytes up to terabytes
+ * - @c p for pages
+ *
+ * In addition a negative size code means that the units should be
+ * included in the output (also true for 0).
  */
 char *bytes(uintmax_t n,
             int fieldwidth,
+            int ch,
             char buffer[],
             size_t bufsize);
+
+/** @brief Figure out size code
+ * @param name Property name
+ * @return Size code
+ *
+ * This function works out the proper @p ch argument to @ref bytes()
+ * from a property name.
+ */
+int bytes_ch(const char *name);
 
 /** @brief Include hierarchy spacing in comm/args */
 extern int format_hierarchy;

@@ -19,25 +19,47 @@
  */
 #include <config.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
 #include "format.h"
 
 char *bytes(uintmax_t n,
             int fieldwidth,
+            int ch,
             char buffer[],
             size_t bufsize) {
-  int ch;
-  if(n < 1024)
-    ch = 0;
-  else if(n < 1024 * 1024) {
-    n /= 1024;
-    ch = 'K';
-  } else if(n < 1024 * 1024 * 1024) {
-    n /= (1024 * 1024);
-    ch = 'M';
-  } else {
-    n /= (1024 * 1024 * 1024);
-    ch = 'G';
+  if(!ch) {
+    if(n < 1024)
+      ch = 0;
+    else if(n < 1024 * 1024)
+      ch = -'K';
+    else if(n < 1024 * 1024 * 1024)
+      ch = -'M';
+    else if(n < (uintmax_t)1024 * 1024 * 1024 * 1024)
+      ch = -'G';
+    else
+      ch = -'T';
   }
-  snprintf(buffer, bufsize, "%*ju%c", fieldwidth, n, ch);
+  switch(abs(ch)) {
+  case 'K': n /= 1024; break;
+  case 'M': n /= (1024 * 1024); break;
+  case 'G': n /= (1024 * 1024 * 1024); break;
+  case 'T': n /= ((uintmax_t)1024 * 1024 * 1024 * 1024); break;
+  case 'p': n /= sysconf(_SC_PAGESIZE); break;
+  }
+  if(ch < 0)
+    snprintf(buffer, bufsize, "%*ju%c", fieldwidth - 1, n, -ch);
+  else
+    snprintf(buffer, bufsize, "%*ju", fieldwidth, n);
   return buffer;
+}
+
+int bytes_ch(const char *name) {
+  const char *p = name + strlen(name) - 1;
+  switch(*p) {
+  case 'K': case 'M': case 'G': return *p;
+  case 'P': return 'p';
+  default: return 0;
+  }
 }
