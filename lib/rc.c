@@ -25,6 +25,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <ctype.h>
+#include <pwd.h>
+#include <unistd.h>
 
 #define RC_ITEM(X) \
   X(ps_f_format) \
@@ -63,18 +65,29 @@ static const struct rc_map *rc_find(const char *key) {
   return NULL;
 }
 
+static char *rcpath(const char *extra) {
+  const char *home = getenv("HOME");
+  char *path;
+  if(!home) {
+    struct passwd *pw = getpwuid(getuid());
+    if(!pw || !pw->pw_dir)
+      return NULL;
+    home = pw->pw_dir;
+  }
+  if(asprintf(&path, "%s/.npsrc%s", home, extra ? extra : "") < 0)
+    fatal(errno, "asprintf");
+  return path;
+}
+
 void read_rc(void) {
   FILE *fp;
-  const char *home;
-  char *path, *ptr, *eq;
+  char *path = rcpath(NULL), *ptr, *eq;
   char buffer[1024];
   int line = 0;
   const struct rc_map *m;
 
-  if(!(home = getenv("HOME")))
+  if(!path)
     return;
-  if(asprintf(&path, "%s/.npsrc", home) < 0)
-    fatal(errno, "asprintf");
   if(!(fp = fopen(path, "r"))) {
     if(errno != ENOENT)
       fatal(errno, "opening %s", path);
@@ -119,16 +132,11 @@ void read_rc(void) {
 
 void write_rc(void) {
   FILE *fp;
-  const char *home;
-  char *path, *tmp;
+  char *path = rcpath(NULL), *tmp = rcpath(".new");
   size_t n;
 
-  if(!(home = getenv("HOME")))
-    return;
-  if(asprintf(&path, "%s/.npsrc", home) < 0)
-    fatal(errno, "asprintf");
-  if(asprintf(&tmp, "%s/.npsrc.new", home) < 0)
-    fatal(errno, "asprintf");
+  if(!path)
+    fatal(0, "cannot determine path to .npsrc");
   if(!(fp = fopen(tmp, "w")))
     fatal(errno, "opening %s", tmp);
   for(n = 0; n < NRC; ++n) {
