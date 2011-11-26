@@ -1,0 +1,18 @@
+Source: nps
+Maintainer: Richard Kettlewell <rjk@terraraq.org.uk>
+Section: admin
+Priority: extra
+Standards-Version: 3.9.1.0
+Build-Depends: debhelper (>=8)
+
+Package: nps
+Architecture: any
+Depends: ${shlibs:Depends},${misc:Depends}
+Description: Alternative 'ps' and 'top' implementations
+ 'nps' is an alternative implementation of 'ps', intended to follow
+ SUSv4 but supporting a number of extra process properties and
+ formatting rules.
+ .
+ 'nps-top' is an implementation of 'top' supporting the same
+ properties and formatting rules as 'nps'.  Formatting, sorting and
+ system information configuration can readily be modified on the fly.

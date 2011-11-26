@@ -19,3 +19,7 @@ src/nps-top
 stamp-h1
 *.tar.gz
 TAGS
+debian/files
+debian/nps
+debian/*.debhelper.log
+debian/*.substvars

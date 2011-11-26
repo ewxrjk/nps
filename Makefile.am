@@ -16,3 +16,5 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 SUBDIRS=lib src
+EXTRA_DIST=debian/changelog debian/compat debian/control	\
+debian/copyright debian/rules debian/source/format
