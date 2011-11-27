@@ -189,15 +189,6 @@ char *bytes(uintmax_t n,
             char buffer[],
             size_t bufsize);
 
-/** @brief Figure out size code
- * @param name Property name
- * @return Size code
- *
- * This function works out the proper @p ch argument to @ref bytes()
- * from a property name.
- */
-int bytes_ch(const char *name);
-
 /** @brief Parse an argument string
  * @param ptr Pointer to input string
  * @param buffer Buffer for argument value

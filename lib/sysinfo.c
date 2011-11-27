@@ -22,6 +22,7 @@
 #include "format.h"
 #include "process.h"
 #include "utils.h"
+#include "general.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -317,15 +318,15 @@ static void sysprop_mem(const struct sysinfo *si,
 
   get_meminfo();
   snprintf(buffer, bufsize, "%s tot %s used %s free %s buf %s cache",
-           bytes(meminfo.MemTotal * 1024, 9, ch,
+           bytes(meminfo.MemTotal * KILOBYTE, 9, ch,
                  btot, sizeof btot),
-           bytes((meminfo.MemTotal - meminfo.MemFree) * 1024, 9, ch,
+           bytes((meminfo.MemTotal - meminfo.MemFree) * KILOBYTE, 9, ch,
                  bused, sizeof bused),
-           bytes(meminfo.MemFree * 1024, 9, ch,
+           bytes(meminfo.MemFree * KILOBYTE, 9, ch,
                  bfree, sizeof bfree),
-           bytes(meminfo.Buffers * 1024, 9, ch,
+           bytes(meminfo.Buffers * KILOBYTE, 9, ch,
                  bbuf, sizeof bbuf),
-           bytes(meminfo.Cached * 1024, 9, ch,
+           bytes(meminfo.Cached * KILOBYTE, 9, ch,
                  bcache, sizeof bcache));
 }
 
@@ -337,13 +338,13 @@ static void sysprop_swap(const struct sysinfo *si,
 
   get_meminfo();
   snprintf(buffer, bufsize, "%s tot %s used %s free %s cache",
-           bytes(meminfo.SwapTotal * 1024, 9, ch,
+           bytes(meminfo.SwapTotal * KILOBYTE, 9, ch,
                  btot, sizeof btot),
-           bytes((meminfo.SwapTotal - meminfo.SwapFree) * 1024, 9, ch,
+           bytes((meminfo.SwapTotal - meminfo.SwapFree) * KILOBYTE, 9, ch,
                  bused, sizeof bused),
-           bytes(meminfo.SwapFree * 1024, 9, ch,
+           bytes(meminfo.SwapFree * KILOBYTE, 9, ch,
                  bfree, sizeof bfree),
-           bytes(meminfo.Cached * 1024, 9, ch,
+           bytes(meminfo.Cached * KILOBYTE, 9, ch,
                  bcache, sizeof bcache));
 }
 
@@ -429,7 +430,7 @@ const struct sysprop sysproperties[] = {
     sysprop_load
   },
   {
-    "mem", "RAM ", "Memory information (argument: K/M/G/T/p)",
+    "mem", "RAM ", "Memory information (argument: K/M/G/T/P/p)",
     sysprop_mem
   },
   {
@@ -437,7 +438,7 @@ const struct sysprop sysproperties[] = {
     sysprop_processes
   },
   {
-    "swap", "Swap", "Swap information (argument: K/M/G/T/p)",
+    "swap", "Swap", "Swap information (argument: K/M/G/T/P/p)",
     sysprop_swap
   },
   {

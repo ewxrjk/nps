@@ -23,6 +23,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "format.h"
+#include "general.h"
 
 char *bytes(uintmax_t n,
             int fieldwidth,
@@ -30,22 +31,25 @@ char *bytes(uintmax_t n,
             char buffer[],
             size_t bufsize) {
   if(!ch) {
-    if(n < 1024)
+    if(n < KILOBYTE)
       ch = 0;
-    else if(n < 1024 * 1024)
+    else if(n < MEGABYTE)
       ch = -'K';
-    else if(n < 1024 * 1024 * 1024)
+    else if(n < GIGABYTE)
       ch = -'M';
-    else if(n < (uintmax_t)1024 * 1024 * 1024 * 1024)
+    else if(n < TERABYTE)
       ch = -'G';
-    else
+    else if(n < PETABYTE)
       ch = -'T';
+    else
+      ch = -'P';
   }
   switch(abs(ch)) {
-  case 'K': n /= 1024; break;
-  case 'M': n /= (1024 * 1024); break;
-  case 'G': n /= (1024 * 1024 * 1024); break;
-  case 'T': n /= ((uintmax_t)1024 * 1024 * 1024 * 1024); break;
+  case 'K': n /= KILOBYTE; break;
+  case 'M': n /= MEGABYTE; break;
+  case 'G': n /= GIGABYTE; break;
+  case 'T': n /= TERABYTE; break;
+  case 'P': n /= PETABYTE; break;
   case 'p': n /= sysconf(_SC_PAGESIZE); break;
   }
   if(ch < 0)
@@ -55,11 +59,3 @@ char *bytes(uintmax_t n,
   return buffer;
 }
 
-int bytes_ch(const char *name) {
-  const char *p = name + strlen(name) - 1;
-  switch(*p) {
-  case 'K': case 'M': case 'G': return *p;
-  case 'P': return 'p';
-  default: return 0;
-  }
-}

@@ -21,6 +21,7 @@
 #include "process.h"
 #include "utils.h"
 #include "selectors.h"
+#include "general.h"
 #include <stdio.h>
 #include <dirent.h>
 #include <errno.h>
@@ -709,13 +710,13 @@ double proc_get_minflt(struct procinfo *pi, pid_t pid) {
 uintmax_t proc_get_pss(struct procinfo *pi, pid_t pid) {
   struct process *p = proc_find(pi, pid);
   proc_smaps(p);
-  return p->prop_pss * 1024;
+  return p->prop_pss * KILOBYTE;
 }
 
 uintmax_t proc_get_swap(struct procinfo *pi, pid_t pid) {
   struct process *p = proc_find(pi, pid);
   proc_smaps(p);
-  return p->prop_swap * 1024;
+  return p->prop_swap * KILOBYTE;
 }
 
 uintmax_t proc_get_mem(struct procinfo *pi, pid_t pid) {

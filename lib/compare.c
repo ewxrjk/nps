@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include "format.h"
 #include "compare.h"
+#include "general.h"
 
 struct procinfo *global_procinfo;
 
@@ -35,17 +36,17 @@ int compare_pid(const void *av, const void *bv) {
   return format_compare(global_procinfo, a, b);
 }
 
-#define GET_VALUE(W) do {                                               \
-  errno = 0;                                                            \
-  W##d = strtoumax(W, &e##W, 0);                                        \
-  if(errno || W == e##W)                                                \
-    goto string_compare;                                                \
-  if(*e##W == 'K') { W##d *= 1024; ++e##W; }                            \
-  if(*e##W == 'M') { W##d *= 1024 * 1024; ++e##W; }                     \
-  if(*e##W == 'G') { W##d *= 1024 * 1024 * 1024; ++e##W; }              \
-  if(*e##W == 'T') { W##d *= (uintmax_t)1024 * 1024 * 1024 * 1024; ++e##W; } \
-  if(*e##W == 'P') { W##d *= (uintmax_t)1024 * 1024 * 1024 * 1024 * 1024; ++e##W; } \
-  if(*e##W == 'p') { W##d *= sysconf(_SC_PAGESIZE); ++e##W; }           \
+#define GET_VALUE(W) do {                                       \
+  errno = 0;                                                    \
+  W##d = strtoumax(W, &e##W, 0);                                \
+  if(errno || W == e##W)                                        \
+    goto string_compare;                                        \
+  if(*e##W == 'K') { W##d *= KILOBYTE; ++e##W; }                \
+  if(*e##W == 'M') { W##d *= MEGABYTE; ++e##W; }                \
+  if(*e##W == 'G') { W##d *= GIGABYTE; ++e##W; }                \
+  if(*e##W == 'T') { W##d *= TERABYTE; ++e##W; }                \
+  if(*e##W == 'P') { W##d *= PETABYTE; ++e##W; }                \
+  if(*e##W == 'p') { W##d *= sysconf(_SC_PAGESIZE); ++e##W; }   \
 } while(0)
 
 
