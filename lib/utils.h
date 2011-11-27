@@ -25,6 +25,7 @@
  */
 
 #include <sys/types.h>
+#include <inttypes.h>
 
 /** @brief Convert a ticks-since-boot count into a timestamp
  * @param ticks Ticks since boot
@@ -42,6 +43,47 @@ double clock_to_seconds(unsigned long long ticks);
  * @return Timestamp
  */
 double clock_now(void);
+
+/** @brief Format elapsed time
+ * @param format Format string
+ * @param seconds Number of seconds
+ * @param buffer Output buffer
+ * @param bufsize Size of @p buffer
+ * @return Number that would be written if buffer big enough
+ *
+ * The format string consists of ordinary characters and format specifiers.
+ *
+ * A format specifiers always starts with "%".
+ *
+ * This is followed by an optional minimum field width, as a decimal
+ * integer.  If this starts with a "0" then the field will be padded
+ * with zeroes, otherwise with spaces.  The default minimum field
+ * width is 0.  The field width includes the sign if the value is
+ * negative.
+ *
+ * Next is an optional precision, being a "." followed by a decimal
+ * integer.  This is the minimum number of digits to produce.  The
+ * default is 1, ensuring that 0 doesn't format to an empty string.
+ *
+ * Next is an optional "?".  If this is present then the value will be
+ * skipped entirely if it is 0.
+ *
+ * Next is an optional "+" and a follower character.  If this is
+ * present it will be written after the converted value (if it is not
+ * skipped).
+ *
+ * Finally there is a conversion specifier:
+ * - @c % to write a '%' (in which case all the other details are ignored)
+ * - @c d to write the day count
+ * - @c h to write the number of hours
+ * - @c H to write the number of hours, modulo one day
+ * - @c m to write the number of minutes
+ * - @c M to write the number of minutes, modulo one hour
+ * - @c s to write the number of seconds
+ * - @c S to write the number of seconds, modulo one minute
+ *
+ */
+size_t strfelapsed(const char *format, intmax_t seconds, char buffer[], size_t bufsize);
 
 // ----------------------------------------------------------------------------
 

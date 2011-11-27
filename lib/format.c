@@ -129,34 +129,30 @@ static void format_group(gid_t gid, struct buffer *b, size_t columnsize) {
 
 static void format_interval(long seconds, struct buffer *b,
                             int always_hours, size_t columnsize,
+                            const char *format,
                             unsigned flags) {
   char t[64];
   if(flags & FORMAT_RAW) {
     format_integer(seconds, b, 'd');
     return;
   }
-  if(seconds >= 86400) {
-    snprintf(t, sizeof t, "%ld-%02ld:%02ld:%02ld",
-             seconds / 86400,
-             (seconds % 86400) / 3600,
-             (seconds % 3600) / 60,
-             (seconds % 60));
-    if(strlen(t) > columnsize)
-      snprintf(t, sizeof t, "%ld-%02ld", 
-               seconds / 86400,
-               (seconds % 86400) / 3600);
-    if(strlen(t) > columnsize)
-      snprintf(t, sizeof t, "%ldd", 
-               seconds / 86400);
-  } else if(seconds >= 3600 || (always_hours && columnsize > 5)) {
-    snprintf(t, sizeof t, "%02ld:%02ld:%02ld",
-             seconds / 3600,
-             (seconds % 3600) / 60,
-             (seconds % 60));
-  } else {
-    snprintf(t, sizeof t, "%02ld:%02ld",
-             seconds / 60,
-             (seconds % 60));
+  if(format)
+    strfelapsed(format, seconds, t, sizeof t);
+  else {
+    if(always_hours)
+      strfelapsed("%?+-d%02H:%02M:%02S", seconds, t, sizeof t);
+    else
+      strfelapsed("%?+-d%02?+:H%02M:%02S", seconds, t, sizeof t);
+    /* If a column size was specified and we're too big, try more
+     * compact forms. */
+    if(strlen(t) > columnsize) {
+      if(seconds >= 86400)
+        strfelapsed("%dd%02H", seconds, t, sizeof t);
+      else if(seconds >= 3600)
+        strfelapsed("%02hh%02M", seconds, t, sizeof t);
+      else
+        strfelapsed("%02mm%02S", seconds, t, sizeof t);
+    }
   }
   buffer_append(b, t);
 }
@@ -259,7 +255,7 @@ static void property_time(const struct column *col, struct buffer *b,
                           unsigned flags) {
   /* time wants [dd-]hh:mm:ss */
   return format_interval(col->prop->fetch.fetch_intmax(pi, pid), b, 1, columnsize,
-                         flags);
+                         col->arg, flags);
 }
 
 static void property_etime(const struct column *col, struct buffer *b,
@@ -268,7 +264,7 @@ static void property_etime(const struct column *col, struct buffer *b,
                            unsigned flags) {
   /* etime wants [[dd-]hh:]mm:ss */
   return format_interval(col->prop->fetch.fetch_intmax(pi, pid), b, 0, columnsize,
-                         flags);
+                         col->arg, flags);
 }
 
 static void property_stime(const struct column *col, struct buffer *b,
@@ -542,7 +538,7 @@ static const struct propinfo properties[] = {
     property_command, compare_string, { .fetch_string = proc_get_comm }
   },
   {
-    "etime", "ELAPSED", "Elapsed time",
+    "etime", "ELAPSED", "Elapsed time (argument: format string)",
     property_etime, compare_intmax, { .fetch_intmax = proc_get_elapsed_time }
   },
   {
@@ -650,7 +646,7 @@ static const struct propinfo properties[] = {
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_swap }
   },
   {
-    "time", "TIME", "Scheduled time",
+    "time", "TIME", "Scheduled time (argument: format string)",
     property_time, compare_intmax, { .fetch_intmax = proc_get_scheduled_time }
   },
   {

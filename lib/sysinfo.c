@@ -244,22 +244,8 @@ static void get_stat(void) {
 
 // ----------------------------------------------------------------------------
 
-static void sysprop_format_time(double t, char *buffer, size_t bufsize) {
-  double id;
-  intmax_t i, d;
-  int h, m, s;
-  modf(t, &id);
-  i = id;
-  d = i / 86400;
-  s = i % 86400;
-  h = s / 3600;
-  s %= 3600;
-  m = s / 60;
-  s %= 60;
-  if(d)
-    snprintf(buffer, bufsize, "%jdd %d:%02d", d, h, m);
-  else
-    snprintf(buffer, bufsize, "%d:%02d:%02d", h, m, s);
+static void sysprop_format_time(intmax_t t, const char *format, char *buffer, size_t bufsize) {
+  strfelapsed(format ? format : "%?+dd%02?+:H%02M:%02S", t, buffer, bufsize);
 }
 
 // ----------------------------------------------------------------------------
@@ -281,18 +267,18 @@ static void sysprop_processes(const struct sysinfo attribute((unused)) *si,
   snprintf(buffer, bufsize, "%d", proc_count(pi));
 }
 
-static void sysprop_uptime(const struct sysinfo attribute((unused)) *si,
-                              struct procinfo attribute((unused)) *pi,
+static void sysprop_uptime(const struct sysinfo *si,
+                           struct procinfo attribute((unused)) *pi,
                            char *buffer, size_t bufsize) {
   get_uptime();
-  sysprop_format_time(up, buffer, bufsize);
+  sysprop_format_time(up, si->arg, buffer, bufsize);
 }
 
-static void sysprop_idletime(const struct sysinfo attribute((unused)) *si,
-                              struct procinfo attribute((unused)) *pi,
+static void sysprop_idletime(const struct sysinfo *si,
+                             struct procinfo attribute((unused)) *pi,
                              char *buffer, size_t bufsize) {
   get_uptime();
-  sysprop_format_time(idle, buffer, bufsize);
+  sysprop_format_time(idle, si->arg, buffer, bufsize);
 }
 
 static void sysprop_load(const struct sysinfo attribute((unused)) *si,
@@ -422,7 +408,7 @@ const struct sysprop sysproperties[] = {
     sysprop_cpus
   },
   {
-    "idletime", "Idle", "Cumulative time spent idle",
+    "idletime", "Idle", "Cumulative time spent idle (argument: format string)",
     sysprop_idletime
   },
   {
@@ -446,7 +432,7 @@ const struct sysprop sysproperties[] = {
     sysprop_localtime
   },
   {
-    "uptime", "Up", "Time since system booted",
+    "uptime", "Up", "Time since system booted (argument: format string)",
     sysprop_uptime
   },
 };

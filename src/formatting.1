@@ -170,7 +170,49 @@ representing the number of days, \fIHH\fR the number of hours,
 \fIMM\fR the number of minutes and \fISS\fR the number of seconds.
 .PP
 If a column width is requested then more compact forms may be used:
-\fIDD\fB-\fIHH\fR or \fIDD\fBd\fR.
+\fID\fBd\fIHH\fR for a multi-day time, \fIHH\fBh\fIMM\fR for a
+multi-hour time or \fIMM\fBm\fISS\fR for sub-hours times.
+.PP
+These columns can also take a format string as an argument, overriding
+the above.
+The format string consists of ordinary characters and format
+specifications starting with \fB%\fR.
+Within the format specification any of the following may appear, in
+order, the following modifiers:
+.IP \(bu
+A minimum field width, as a decimal integer.
+If this starts with a \fB0\fR then the field will be padded with
+zeroes; otherwise with spaces.
+The default minimum field width is 0.
+.IP \(bu
+A \fB.\fR followed by a minimum digit count, as a decimal integer.
+The default minimum digit count is 1.
+.IP \(bu
+A \fB?\fR indicating that the entire format specification is to be
+skipped if the value is 0.
+.IP \(bu
+A \fB+\fR followed by a single character, which will appear after the
+converted result (provided it is not skipped due to a \fB?\fR).
+.PP
+At the end of the format specification is a single-character
+conversion specifier:
+.IP \fBd
+The total number of days.
+.IP \fBh
+The total number of hours.
+.IP \fBH
+The number of hours disregarding any complete days.
+.IP \fBm
+The total number of minutes.
+.IP \fBM
+The number of minutes disregarding any complete hours.
+.IP \fBs
+The total number of seconds.
+.IP \fBS
+The number of seconds disregarding any complete minutes.
+.IP \fB%
+Writes a single \fB%\fR.
+All modifiers are ignored in this case.
 .SS "Timestamps"
 Timestamps (such as \fBstime\fR) are represented as
 \fIYYYY\fB-\fIMM\fB-\fIDD\fR for times outside than
