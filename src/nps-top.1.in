@@ -71,15 +71,22 @@ If no ordering option is specified then the default is equivalent to:
 The \fB-j\fR option specifies which whole-system properties should be
 displayed, separated by spaces or commas.
 .PP
-Properties may have their heading ("Time", etc) overridden, using the syntax
+The available system properties are:
+#include sysinfo.1
+.PP
+System properties are sampled at the same time as collecting process
+information, so the \fB-d\fR value defines how out of date they may be.
+The exception is \fBtime\fR which always reflects the current time.
+.SS Parameters
+System properties may have their heading ("Time", etc) overridden, using the syntax
 \fIPROPERTY\fB=\fIHEADING\fR.
 If \fIHEADING\fR contains spaces or quotes then it must be quoted.
 .PP
-Property names may have a parameter supplied, using the syntax
-\fIPROPERTY\fB/\fIPARAMETER\fR.
-If \fIPARAMETER\fR contains spaces or quotes then it must be quoted.
+System properties may have an argument supplied, using the syntax
+\fIPROPERTY\fB/\fIARGUMENT\fR.
+If \fIARGUMENT\fR contains spaces or quotes then it must be quoted.
 .PP
-Both a heading and a parameter can be set at once.
+Both a heading and an argument can be set at once.
 In that case the heading must come first, and it must be quoted.
 For example, to change both the heading and format of the current time:
 .PP
@@ -90,13 +97,6 @@ For example, to change both the heading and format of the current time:
 Headings are always followed by a colon and a space, unless they are empty.
 If heading ends with one or more spaces, they are moved to after the
 colon.
-.PP
-The available system properties are:
-#include sysinfo.1
-.PP
-These properties are sampled at the same time as collecting process
-information, so the \fB-d\fR value defines how out of date they may be.
-The exception is \fBtime\fR which always reflects the current time.
 .SS Defaults
 If \fB-j\fR is not specified then the default is equivalent to:
 .PP

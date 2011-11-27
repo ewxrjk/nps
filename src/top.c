@@ -283,9 +283,11 @@ int main(int argc, char **argv) {
              "commas or spaces. Multiple -o options accumulate rather than overriding\n"
              "one another.\n"
              "\n"
-             "Use property=heading to override the heading (but only for the last\n"
-             "property in each argument).  With -O, headings end at next comma and\n"
-             "can be quoted.\n"
+             "Use property=heading to override the heading and property/argument to set\n"
+             "an argument.  With -o, headings extend to the end of the string.\n"
+             "For headings with -O, and for arguments in general, they must be quoted\n"
+             "if they contain a space or a comma.  Headings must be quoted if an\n"
+             "argument follows.\n"
              "\n"
              "Multiple properties can also be specified with -s.  Later properties are\n"
              "used to order processes that match in earlier properties.  To reverse the\n"
@@ -303,7 +305,7 @@ int main(int argc, char **argv) {
              "\n"
              "Use property=heading to override the heading and property/argument to set\n"
              "an argument.  Headings and arguments must be quoted if they contain\n"
-             "spaces or commas, and headings must be quotde if an argument follows.\n");
+             "spaces or commas, and headings must be quoted if an argument follows.\n");
       return 0;
     case OPT_VERSION:
       printf("%s\n", PACKAGE_VERSION);

@@ -279,6 +279,8 @@ Paging.
 .RE
 .IP \fBstime
 The time that the process started.
+If an argument is supplied, it is passed to \fBstrftime\fR(3) to
+format the time.
 .IP \fBswap
 The amount of swap used.
 .IP
@@ -318,7 +320,7 @@ However if possible an alternative representation will be used to fit
 within the requested width.
 For certain properties such as \fBargs\fR requested widths are
 mandatory.
-.SS "Headings"
+.SS "Parameters"
 To give a property a different heading, use the syntax
 \fIPROPERTY\fB=\fIHEADING\fR.
 With \fB-o\fR this only works on the last property in a single argument.
@@ -326,6 +328,13 @@ Use multiple \fB-o\fR options to work around this.
 With \fB-O\fR this can be used on any or all of the properties within
 an argument.
 If the heading contains spaces or quotes then it must be quoted.
+.PP
+To supply an argument to a property, use the syntax
+\fIPROPERTY\fB/\fIPARAMETER\fR.
+If the argument contains spaces or quotes then it must be quoted.
+.PP
+If both a heading and an argument are supplied then the heading must
+be first and it must be quoted.
 .SS "Time Intervals"
 Time intervals (such as \fBetime\fR) are represented as
 [[\fIDD\fB-\fR]\fIHH\fB:\fR]\fIMM\fB:\fISS\fR, with \fIDD\fR
