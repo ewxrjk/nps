@@ -498,14 +498,16 @@ int sysinfo_set(const char *format, unsigned flags) {
     }
     buffer[i] = 0;
     if(*format == '=') {
-      format = format_parse_arg(format + 1, heading_buffer, sizeof heading_buffer,
-                                flags|FORMAT_QUOTED);
+      if(!(format = format_parse_arg(format + 1, heading_buffer, sizeof heading_buffer,
+                                     flags|FORMAT_QUOTED)))
+        return 0;
       heading = heading_buffer;
     } else
       heading = NULL;
     if(*format == '/') {
-      format = format_parse_arg(format + 1, arg_buffer, sizeof arg_buffer,
-                                flags|FORMAT_QUOTED);
+      if(!(format = format_parse_arg(format + 1, arg_buffer, sizeof arg_buffer,
+                                     flags|FORMAT_QUOTED)))
+        return 0;
       arg = arg_buffer;
     } else
       arg = NULL;
