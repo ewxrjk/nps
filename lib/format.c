@@ -89,19 +89,16 @@ static struct order *orders;
 
 // ----------------------------------------------------------------------------
 
-static void format_decimal(intmax_t im, struct buffer *b) {
+static void format_integer(intmax_t im, struct buffer *b, int base) {
   char t[64];
-  snprintf(t, sizeof t, "%jd", im);
+  snprintf(t, sizeof t, (base == 'o' ? "%jo" :
+                         base == 'x' ? "%jx" :
+                         base == 'X' ? "%jX" :
+                         "%jd"), im);
   buffer_append(b, t);
 }
 
-static void format_octal(uintmax_t im, struct buffer *b) {
-  char t[64];
-  snprintf(t, sizeof t, "%jo", im);
-  buffer_append(b, t);
-}
-
-static void format_hex(uintmax_t im, struct buffer *b) {
+static void format_addr(uintmax_t im, struct buffer *b) {
   char t[64];
   if(im > 0xFFFFFFFFFFFFLL)
     snprintf(t, sizeof t, "%016jx", im);
@@ -117,7 +114,7 @@ static void format_usergroup(intmax_t id, struct buffer *b, size_t columnsize,
   if(name && strlen(name) <= columnsize)
     buffer_append(b, name);
   else
-    format_decimal(id, b);
+    format_integer(id, b,'d');
 }
 
 static void format_user(uid_t uid, struct buffer *b, size_t columnsize) {
@@ -135,7 +132,7 @@ static void format_interval(long seconds, struct buffer *b,
                             unsigned flags) {
   char t[64];
   if(flags & FORMAT_RAW) {
-    format_decimal(seconds, b);
+    format_integer(seconds, b, 'd');
     return;
   }
   if(seconds >= 86400) {
@@ -171,7 +168,7 @@ static void format_time(time_t when, struct buffer *b, size_t columnsize,
   struct tm when_tm, now_tm;
 
   if(flags & FORMAT_RAW) {
-    format_decimal(when, b);
+    format_integer(when, b, 'd');
     return;
   }
   time(&now);
@@ -203,35 +200,29 @@ static void property_decimal(const struct column *col, struct buffer *b,
                              size_t attribute((unused)) columnsize,
                              struct procinfo *pi, pid_t pid,
                              unsigned attribute((unused)) flags) {
-  return format_decimal(col->prop->fetch.fetch_intmax(pi, pid), b);
+  return format_integer(col->prop->fetch.fetch_intmax(pi, pid), b, 'd');
 }
 
 static void property_uoctal(const struct column *col, struct buffer *b,
                             size_t attribute((unused)) columnsize,
                             struct procinfo *pi, pid_t pid,
                             unsigned attribute((unused)) flags) {
-  return format_octal(col->prop->fetch.fetch_uintmax(pi, pid), b);
-}
-
-static void property_uhex(const struct column *col, struct buffer *b,
-                          size_t attribute((unused)) columnsize,
-                          struct procinfo *pi, pid_t pid,
-                          unsigned attribute((unused)) flags) {
-  format_hex(col->prop->fetch.fetch_uintmax(pi, pid), b);
+  return format_integer(col->prop->fetch.fetch_uintmax(pi, pid), b,
+                        col->arg ? *col->arg : 'o');
 }
 
 static void property_pid(const struct column *col, struct buffer *b,
                          size_t attribute((unused)) columnsize, 
                          struct procinfo *pi, pid_t pid,
                          unsigned attribute((unused)) flags) {
-  return format_decimal(col->prop->fetch.fetch_pid(pi, pid), b);
+  return format_integer(col->prop->fetch.fetch_pid(pi, pid), b, 'd');
 }
 
 static void property_uid(const struct column *col, struct buffer *b,
                          size_t attribute((unused)) columnsize,
                          struct procinfo *pi, pid_t pid,
                          unsigned attribute((unused)) flags) {
-  return format_decimal(col->prop->fetch.fetch_uid(pi, pid), b);
+  return format_integer(col->prop->fetch.fetch_uid(pi, pid), b, 'd');
 }
 
 static void property_user(const struct column *col, struct buffer *b,
@@ -244,7 +235,7 @@ static void property_gid(const struct column *col, struct buffer *b,
                          size_t attribute((unused)) columnsize,
                          struct procinfo *pi, pid_t pid,
                          unsigned attribute((unused)) flags) {
-  return format_decimal(col->prop->fetch.fetch_gid(pi, pid), b);
+  return format_integer(col->prop->fetch.fetch_gid(pi, pid), b,'d');
 }
 
 static void property_group(const struct column *col, struct buffer *b,
@@ -302,7 +293,7 @@ static void property_tty(const struct column *col, struct buffer *b,
   }
   path = device_path(0, tty);
   if(!path) {
-    format_hex(tty, b);
+    format_integer(tty, b, 'x');
     return;
   }
   if(!(flags & FORMAT_RAW)) {
@@ -370,7 +361,7 @@ static void property_pcpu(const struct column *col, struct buffer *b,
                           size_t attribute((unused)) columnsize,
                           struct procinfo *pi, pid_t pid,
                           unsigned attribute((unused)) flags) {
-  format_decimal(100 * col->prop->fetch.fetch_double(pi, pid), b);
+  format_integer(100 * col->prop->fetch.fetch_double(pi, pid), b, 'd');
 }
 
 static void property_mem(const struct column *col, struct buffer *b,
@@ -391,7 +382,7 @@ static void property_address(const struct column *col, struct buffer *b,
   unsigned long long addr = col->prop->fetch.fetch_uintmax(pi, pid);
   /* 0 and all-bits-1 are not very interesting addresses */
   if(addr && addr + 1 && addr != 0xFFFFFFFF)
-    format_hex(addr, b);
+    format_addr(addr, b);
   else
     /* suppress pointless values */
     buffer_putc(b, '-');
@@ -545,12 +536,8 @@ static const struct propinfo properties[] = {
     property_etime, compare_intmax, { .fetch_intmax = proc_get_elapsed_time }
   },
   {
-    "flags", "F", "Flags (octal)",
+    "flags", "F", "Flags (octal; argument o/d/x)",
     property_uoctal, compare_uintmax, { .fetch_uintmax = proc_get_flags }
-  },
-  {
-    "flagsx", "F", "Flags (hex)",
-    property_uhex, compare_uintmax, { .fetch_uintmax = proc_get_flags }
   },
   {
     "gid", "GID","Effective group ID (decimal)",
