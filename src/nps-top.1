@@ -20,8 +20,6 @@ Display only non-idle processes.
 .IP "\fB-j\fR, \fB--sysinfo \fISYSINFO"
 Sets the system information format.
 See \fBSYSTEM INFORMATION\fR below.
-.IP \fB-M
-Use megabytes rather than selecting units automatically.
 .IP "\fB-s \fIORDER\fR, \fB--sort \fIORDER"
 Set the order in which processes are listed.
 See \fBSORTING\fR below.
@@ -323,8 +321,6 @@ equivalent to:
 .PP
 If the calling user is not \fBroot\fR then \fBread\fR and \fBwrite\fR
 are omitted.
-.PP
-If \fB-M\fR was specified then \fBrss\fR is replaced by \fBrssM\fR.
 .SH SORTING
 The \fB-s\fR option specifies the properties which control the order
 in which processes are displayed, separate by spaces or commas.
@@ -467,9 +463,6 @@ If \fB-j\fR is not specified then the default is equivalent to:
 .RS
 \fB-j time,uptime,processes,load,cpu,mem,swap
 .RE
-.PP
-If \fB-M\fR was specified then \fBmem\fR and \fBswap\fR are replaced
-with \fBmemM\fR and \fBswapM\fR.
 .SH KEYBOARD
 .SS Scrolling
 If the terminal is too narrow, the process table can be panned left

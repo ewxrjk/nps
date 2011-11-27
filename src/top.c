@@ -202,7 +202,6 @@ int main(int argc, char **argv) {
   int n;
   int have_set_format = 0;
   char *e;
-  int megabytes = 0;
   int have_set_sysinfo = 0;
   char **help;
   struct sigaction sa;
@@ -224,7 +223,7 @@ int main(int argc, char **argv) {
       update_interval = v;
   }
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+o:s:ij:d:MO:",
+  while((n = getopt_long(argc, argv, "+o:s:ij:d:O:",
                          options, NULL)) >= 0) {
     switch(n) {
     case 'o':
@@ -255,9 +254,6 @@ int main(int argc, char **argv) {
          || update_interval <= 0)
         fatal(0, "invalid update interval '%s'", optarg);
       break;
-    case 'M':
-      megabytes = 1;
-      break;
     case OPT_HELP:
       printf("Usage:\n"
              "  top [OPTIONS]\n"
@@ -265,7 +261,6 @@ int main(int argc, char **argv) {
              "  -d, --delay SECONDS        Set update interval\n"
              "  -i, --idle                 Hide idle processes\n"
              "  -j, --sysinfo SYSPROPS...  Set system information format; see --help-sysinfo\n"
-             "  -M                         Display memory sizes in megabytes\n"
              "  -o, -O, --format PROPS...  Set output format; see --help-format\n"
              "  -s, --sort [+/-]PROPS...   Set ordering; see --help-format\n"
              "  --help                     Display option summary\n"
@@ -319,8 +314,6 @@ int main(int argc, char **argv) {
   if(!have_set_sysinfo) {
     if(rc_top_sysinfo)
       sysinfo_set(rc_top_sysinfo, 0);
-    else if(megabytes)
-      sysinfo_set("time,uptime,processes,load,cpu,memM,swapM", 0);
     else
       sysinfo_set("time,uptime,processes,load,cpu,mem,swap", 0);
   }
@@ -331,12 +324,7 @@ int main(int argc, char **argv) {
     if(rc_top_format)
       format_set(rc_top_format, FORMAT_QUOTED);
     else {
-      format_set("user,pid,nice", FORMAT_QUOTED);
-      if(megabytes)
-        format_set("rssM", FORMAT_QUOTED|FORMAT_ADD);
-      else
-        format_set("rss", FORMAT_QUOTED|FORMAT_ADD);
-      format_set("pcpu=%C", FORMAT_QUOTED|FORMAT_ADD);
+      format_set("user,pid,nice,rss,pcpu=%C", FORMAT_QUOTED);
       if(!getuid())
         format_set("read,write", FORMAT_QUOTED|FORMAT_ADD);
       format_set("tty=TTY,argsbrief=CMD", FORMAT_QUOTED|FORMAT_ADD);
