@@ -1045,7 +1045,7 @@ char *format_get(void) {
   for(n = 0; n < ncolumns; ++n) {
     size += strlen(columns[n].prop->name);
     size += strlen(columns[n].prop->heading) * 2;
-    size += 20;
+    size += 40;
   }
   ptr = buffer = xmalloc(size);
   for(n = 0; n < ncolumns; ++n) {
