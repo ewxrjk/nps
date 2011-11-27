@@ -26,6 +26,7 @@
 #include "input.h"
 #include "rc.h"
 #include "compare.h"
+#include "priv.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <curses.h>
@@ -206,6 +207,8 @@ int main(int argc, char **argv) {
   char **help;
   struct sigaction sa;
 
+  /* Initialize privilege support (this must stay first) */
+  priv_init(argc, argv);
   /* Set locale */
   if(!setlocale(LC_ALL, ""))
     fatal(errno, "setlocale");
@@ -325,7 +328,7 @@ int main(int argc, char **argv) {
       format_set(rc_top_format, FORMAT_QUOTED);
     else {
       format_set("user,pid,nice,rss,pcpu=%C", FORMAT_QUOTED);
-      if(!getuid())
+      if(!priv_euid)
         format_set("read,write", FORMAT_QUOTED|FORMAT_ADD);
       format_set("tty=TTY,argsbrief=CMD", FORMAT_QUOTED|FORMAT_ADD);
     }

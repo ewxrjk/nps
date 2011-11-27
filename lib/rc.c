@@ -20,6 +20,7 @@
 #include <config.h>
 #include "rc.h"
 #include "utils.h"
+#include "priv.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,6 +28,7 @@
 #include <ctype.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <assert.h>
 
 #define RC_ITEM(X) \
   X(ps_f_format) \
@@ -69,7 +71,7 @@ static char *rcpath(const char *extra) {
   const char *home = getenv("HOME");
   char *path;
   if(!home) {
-    struct passwd *pw = getpwuid(getuid());
+    struct passwd *pw = getpwuid(priv_ruid);
     if(!pw || !pw->pw_dir)
       return NULL;
     home = pw->pw_dir;
@@ -88,6 +90,7 @@ void read_rc(void) {
 
   if(!path)
     return;
+  assert(getuid() == geteuid());
   if(!(fp = fopen(path, "r"))) {
     if(errno != ENOENT)
       fatal(errno, "opening %s", path);
@@ -137,6 +140,7 @@ void write_rc(void) {
 
   if(!path)
     fatal(0, "cannot determine path to .npsrc");
+  assert(getuid() == geteuid());
   if(!(fp = fopen(tmp, "w")))
     fatal(errno, "opening %s", tmp);
   for(n = 0; n < NRC; ++n) {

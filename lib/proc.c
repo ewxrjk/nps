@@ -21,6 +21,7 @@
 #include "process.h"
 #include "utils.h"
 #include "selectors.h"
+#include "priv.h"
 #include "general.h"
 #include <stdio.h>
 #include <dirent.h>
@@ -384,34 +385,49 @@ static void proc_cmdline(struct process *p) {
   p->prop_cmdline = xstrdup(buffer);
 }
 
-static void proc_io(struct process *p) {
+struct read_io_data {
   FILE *fp;
+  struct process *p;
+};
+
+static int read_io(void *u) {
+  struct read_io_data *d = u;
   char buffer[1024], *colon;
   size_t field;
   uintmax_t *ptr;
-
-  if(p->io || p->vanished)
-    return;
-  p->io = 1;
-  snprintf(buffer, sizeof buffer, "/proc/%ld/io", (long)p->pid);
-  if(!(fp = fopen(buffer, "r"))) {
-    if(errno != EACCES)
-      p->vanished = 1;
-    return;
-  }
   field = 0;
-  while(fgets(buffer, sizeof buffer, fp)) {
+  while(fgets(buffer, sizeof buffer, d->fp)) {
+    if(!strchr(buffer, '\n'))
+      return -1;
     colon = strchr(buffer, ':');
     if(colon) {
       ++colon;
       if(field < NIOS) {
-        ptr = (uintmax_t *)((char *)p + propinfo_io[field]);
+        ptr = (uintmax_t *)((char *)d->p + propinfo_io[field]);
         *ptr = strtoumax(colon + 1, NULL, 10);
       }
       ++field;
     }
   }
-  fclose(fp);
+  return 0;
+}
+
+static void proc_io(struct process *p) {
+  struct read_io_data d[1];
+  char buffer[128];
+
+  if(p->io || p->vanished)
+    return;
+  p->io = 1;
+  snprintf(buffer, sizeof buffer, "/proc/%ld/io", (long)p->pid);
+  if(!(d->fp = fopen(buffer, "r"))) {
+    if(errno != EACCES)
+      p->vanished = 1;
+    return;
+  }
+  d->p = p;
+  priv_run(read_io, d);
+  fclose(d->fp);
   if(gettimeofday(&p->io_time, NULL) < 0)
     fatal(errno, "gettimeofday");
 }
@@ -431,31 +447,46 @@ static void proc_oom_score(struct process *p) {
   fclose(fp);
 }
 
-static void proc_smaps(struct process *p) {
-  uintmax_t pss = 0, swap = 0;
-  char buffer[1024], *ptr;
+struct read_smaps_data {
   FILE *fp;
-  if(p->smaps || p->vanished)
-    return;
-  p->smaps =1;
-  snprintf(buffer, sizeof buffer, "/proc/%ld/smaps", (long)p->pid);
-  if(!(fp = fopen(buffer, "r"))) {
-    p->vanished = 1;
-    return;
-  }
-  while(fgets(buffer, sizeof buffer, fp)) {
+  uintmax_t pss;
+  uintmax_t swap;
+};
+
+static int read_smaps(void *u) {
+  struct read_smaps_data *d = u;
+  char buffer[1024], *ptr;
+  while(fgets(buffer, sizeof buffer, d->fp)) {
+    if(!strchr(buffer, '\n'))
+      return -1;
     if(buffer[0] >= 'A' && buffer[0] <= 'Z'
        && (ptr = strchr(buffer, ':'))) {
       *ptr++ = 0;
       if(!strcmp(buffer, "Pss"))
-        pss += strtoumax(ptr, NULL, 0);
+        d->pss += strtoumax(ptr, NULL, 0);
       else if(!strcmp(buffer, "Swap"))
-        swap += strtoumax(ptr, NULL, 0);
+        d->swap += strtoumax(ptr, NULL, 0);
     }
   }
-  fclose(fp);
-  p->prop_pss = pss;
-  p->prop_swap = swap;
+  return 0;
+}
+
+static void proc_smaps(struct process *p) {
+  struct read_smaps_data d[1];
+  char buffer[128];
+  if(p->smaps || p->vanished)
+    return;
+  p->smaps = 1;
+  snprintf(buffer, sizeof buffer, "/proc/%ld/smaps", (long)p->pid);
+  if(!(d->fp = fopen(buffer, "r"))) {
+    p->vanished = 1;
+    return;
+  }
+  d->pss = d->swap = 0;
+  priv_run(read_smaps, d);
+  fclose(d->fp);
+  p->prop_pss = d->pss;
+  p->prop_swap = d->swap;
 }
 
 // ----------------------------------------------------------------------------

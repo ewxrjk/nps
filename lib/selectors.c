@@ -139,7 +139,12 @@ int select_uid_tty(struct procinfo *pi, pid_t pid,
                    size_t attribute((unused)) nargs) {
   /* "By default, ps shall select all processes with the same
    * effective user ID as the current user and the same controlling
-   * terminal as the invoker." */
+   * terminal as the invoker."
+   *
+   * See also priv.h.  If we were installed setuid then the effective
+   * user in this case will be the real UID of the caller.  The
+   * effective UID of the caller will have been lost.
+   */
   return proc_get_euid(pi, pid) == geteuid()
          && proc_get_tty(pi, pid) == proc_get_tty(pi, getpid());
 }

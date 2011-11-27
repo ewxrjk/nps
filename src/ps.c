@@ -24,6 +24,7 @@
 #include "utils.h"
 #include "rc.h"
 #include "compare.h"
+#include "priv.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <errno.h>
@@ -80,6 +81,8 @@ int main(int argc, char **argv) {
   const char *s;
   char **help, *t;
 
+  /* Initialize privilege support (this must stay first) */
+  priv_init(argc, argv);
   /* Read configuration */
   read_rc();
   /* Parse command line */
