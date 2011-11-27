@@ -309,6 +309,14 @@ static void property_tty(const struct column *col, struct buffer *b,
   buffer_append(b, path);
 }
 
+static const char *property_pcomm(struct procinfo *pi, pid_t pid) {
+  pid_t parent = proc_get_ppid(pi, pid);
+  if(parent)
+    return proc_get_comm(pi, parent);
+  else
+    return NULL;
+}
+
 static void property_command_general(const struct column *col, 
                                      struct buffer *b,
                                      size_t columnsize,
@@ -318,6 +326,8 @@ static void property_command_general(const struct column *col,
   char *t;
   size_t start = b->pos;
   const char *comm = col->prop->fetch.fetch_string(pi, pid), *ptr;
+  if(!comm)
+    comm = "";
   if(brief && comm[0] != '[') {
     for(ptr = comm; *ptr && *ptr != ' '; ++ptr)
       if(*ptr == '/')
@@ -536,7 +546,7 @@ static const struct propinfo properties[] = {
     property_etime, compare_intmax, { .fetch_intmax = proc_get_elapsed_time }
   },
   {
-    "flags", "F", "Flags (octal; argument o/d/x)",
+    "flags", "F", "Flags (octal; argument o/d/x/X)",
     property_uoctal, compare_uintmax, { .fetch_uintmax = proc_get_flags }
   },
   {
@@ -570,6 +580,10 @@ static const struct propinfo properties[] = {
   {
     "oom", "OOM", "OOM score",
     property_decimal, compare_intmax, { .fetch_intmax = proc_get_oom_score }
+  },
+  {
+    "pcomm", "PCMD", "Process command name",
+    property_command, compare_string, { .fetch_string = property_pcomm },
   },
   {
     "pcpu", "%CPU", "%age CPU used",
