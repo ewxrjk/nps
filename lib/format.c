@@ -582,7 +582,7 @@ static const struct propinfo properties[] = {
     property_decimal, compare_intmax, { .fetch_intmax = proc_get_oom_score }
   },
   {
-    "pcomm", "PCMD", "Process command name",
+    "pcomm", "PCMD", "Parent command name",
     property_command, compare_string, { .fetch_string = property_pcomm },
   },
   {
