@@ -795,7 +795,6 @@ int format_set(const char *f, unsigned flags) {
   char buffer[128], heading_buffer[128], *e;
   const char *heading;
   size_t i;
-  int q;
   const struct propinfo *prop;
   size_t reqwidth;
   if(!(flags & (FORMAT_CHECK|FORMAT_ADD)))
@@ -826,51 +825,9 @@ int format_set(const char *f, unsigned flags) {
     } else
       reqwidth = SIZE_MAX;
     if(*f == '=') {
-      if(flags & FORMAT_QUOTED) {
-        /* property=heading extends until we hit a separator
-         * property="heading" extends to the close quote; ' is allowed too
-         */
-        i = 0;
-        ++f;
-        if(*f == '"' || *f == '\'') {
-          q = *f++;
-          while(*f && *f != q) {
-            /* \ escapes the next character (there must be one) */
-            if(*f == '\\') {
-              if(f[1] != 0)
-                ++f;
-              else if(flags & FORMAT_CHECK)
-                return 0;
-            }
-            if(i < sizeof heading_buffer - 1)
-              heading_buffer[i++] = *f;
-            ++f;
-          }
-          /* The close quotes must exist */
-          if(*f == q)
-            ++f;
-          else
-            if(flags & FORMAT_CHECK)
-              return 0;
-        } else {
-          /* unquoted heading */
-          while(*f && (*f != ' ' && *f != ',')) {
-            if(i < sizeof heading_buffer - 1)
-              heading_buffer[i++] = *f;
-            ++f;
-          }
-        }
-        heading_buffer[i] = 0;
-        heading = heading_buffer;
-      } else {
-        /* property=heading extends to the end of the argument, not until
-         * the next comma; "The default header can be overridden by
-         * appending an <equals-sign> and the new text of the
-         * header. The rest of the characters in the argument shall be
-         * used as the header text." */
-        heading = f + 1;
-        f += strlen(f);
-      }
+      if(!(f = format_parse_arg(f + 1, heading_buffer, sizeof heading_buffer, flags)))
+        return 0;
+      heading = heading_buffer;
     } else
       heading = NULL;
     prop = find_property(buffer, flags);
@@ -892,6 +849,62 @@ int format_set(const char *f, unsigned flags) {
     }
   }
   return 1;
+}
+
+const char *format_parse_arg(const char *ptr,
+                             char buffer[],
+                             size_t bufsize,
+                             unsigned flags) {
+  size_t i = 0;
+  int q;
+
+  if(flags & FORMAT_QUOTED) {
+    /* property=heading extends until we hit a separator
+     * property="heading" extends to the close quote; ' is allowed too
+     */
+    if(*ptr == '"' || *ptr == '\'') {
+      q = *ptr++;
+      while(*ptr && *ptr != q) {
+        /* \ escapes the next character (there must be one) */
+        if(*ptr == '\\') {
+          if(ptr[1] != 0)
+            ++ptr;
+          else if(flags & FORMAT_CHECK)
+            return 0;
+        }
+        if(i < bufsize - 1)
+          buffer[i++] = *ptr;
+        ++ptr;
+      }
+      /* The close quotes must exist */
+      if(*ptr == q)
+        ++ptr;
+      else
+        if(flags & FORMAT_CHECK)
+          return 0;
+    } else {
+      /* unquoted heading */
+      while(*ptr && (*ptr != ' ' && *ptr != ',')) {
+        if(i < bufsize - 1)
+          buffer[i++] = *ptr;
+        ++ptr;
+      }
+    }
+    buffer[i] = 0;
+  } else {
+    /* property=heading extends to the end of the argument, not until
+     * the next comma; "The default header can be overridden by
+     * appending an <equals-sign> and the new text of the
+     * header. The rest of the characters in the argument shall be
+     * used as the header text." */
+    while(*ptr) {
+      if(i < bufsize - 1)
+        buffer[i++] = *ptr;
+      ++ptr;
+    }
+  }
+  buffer[i] = 0;
+  return ptr;
 }
 
 void format_clear(void) {
@@ -1126,25 +1139,31 @@ char *format_get(void) {
     h = columns[n].heading;
     if(strcmp(h, columns[n].prop->heading)) {
       *ptr++ = '=';
-      if(strchr(h, ' ')
-         || strchr(h, '"')
-         || strchr(h, '\\')
-         || strchr(h, ',')) {
-        *ptr++ = '"';
-        while(*h) {
-          if(*h == '"' || *h == '\\')
-            *ptr++ = '\\';
-          *ptr++ = *h++;
-        }
-        *ptr++ = '"';
-      } else {
-        strcpy(ptr, h);
-        ptr += strlen(ptr);
-      }
+      ptr = format_get_arg(ptr, h, 0);
     }
   }
   *ptr = 0;
   return buffer;
+}
+
+char *format_get_arg(char *ptr, const char *arg, int quote) {
+  if(quote
+     || strchr(arg, ' ')
+     || strchr(arg, '"')
+     || strchr(arg, '\\')
+     || strchr(arg, ',')) {
+    *ptr++ = '"';
+    while(*arg) {
+      if(*arg == '"' || *arg == '\\')
+        *ptr++ = '\\';
+      *ptr++ = *arg++;
+    }
+    *ptr++ = '"';
+  } else {
+    strcpy(ptr, arg);
+    ptr += strlen(ptr);
+  }
+  return ptr;
 }
 
 int format_hierarchy;

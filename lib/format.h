@@ -198,6 +198,34 @@ char *bytes(uintmax_t n,
  */
 int bytes_ch(const char *name);
 
+/** @brief Parse an argument string
+ * @param ptr Pointer to input string
+ * @param buffer Buffer for argument value
+ * @param bufsize Size of buffer
+ * @param flags Flags
+ * @return POinter after parsed argument
+ *
+ * @p flags should be a combination of the following values:
+ * - @ref FORMAT_ARGUMENT if @p f is in argument syntax
+ * - @ref FORMAT_QUOTED if @p f is in quoted syntax
+ * - @ref FORMAT_CHECK to check @p f rather than act on it
+ *
+ * If @ref FORMAT_CHECK is specified then any errors cause a 0 return.
+ * If it is not specified then errors are ignored.
+ */
+const char *format_parse_arg(const char *ptr,
+                             char buffer[],
+                             size_t bufsize,
+                             unsigned flags);
+
+/** @brief Format an argument string
+ * @param ptr Buffer (must be big enough)
+ * @param arg Argument string
+ * @param quote True to force quoting
+ * @return Update buffer pointer
+ */
+char *format_get_arg(char *ptr, const char *arg, int quote);
+
 /** @brief Include hierarchy spacing in comm/args */
 extern int format_hierarchy;
 

@@ -27,6 +27,10 @@ The cumulative time the system has spent idle.
 The system load averages.
 These three figures are the number of tasks either runnable or blocked
 on disk IO averaged over 1, 5 and 15 minutes.
+.IP
+If a parameter is supplied, it controls the number of digits shown
+after the decimal point.
+The default is 1.
 .IP \fBmem
 Memory information.
 The fields are:
@@ -76,5 +80,7 @@ It can be used or swapped out without IO being required.
 Use \fBswapK\fR or \fBswapM\fR to display kilobytes or megabytes.
 .IP \fBtime
 The current time (using the local timezone).
+If a parameter is supplied, it is passed to \fBstrftime\fR(3) to
+format the time.
 .IP \fBuptime
 The amount of time since the system booted.

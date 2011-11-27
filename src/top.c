@@ -299,7 +299,11 @@ int main(int argc, char **argv) {
         puts(*help++);
       printf("\n"
              "Multiple properties can be specified in one -j option, separated by\n"
-             "commas or spaces.\n");
+             "commas or spaces.\n"
+             "\n"
+             "Use property=heading to override the heading and property/argument to set\n"
+             "an argument.  Headings and arguments must be quoted if they contain\n"
+             "spaces or commas, and headings must be quotde if an argument follows.\n");
       return 0;
     case OPT_VERSION:
       printf("%s\n", PACKAGE_VERSION);

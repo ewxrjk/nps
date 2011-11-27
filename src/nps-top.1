@@ -17,7 +17,7 @@ Set the time between updates.
 The default is 1 second.
 .IP "\fB-i\fR, \fB--idle"
 Display only non-idle processes.
-.IP "\fB-j \fISYSINFO"
+.IP "\fB-j\fR, \fB--sysinfo \fISYSINFO"
 Sets the system information format.
 See \fBSYSTEM INFORMATION\fR below.
 .IP \fB-M
@@ -301,6 +301,27 @@ If no ordering option is specified then the default is equivalent to:
 .SH "SYSTEM INFORMATION"
 The \fB-j\fR option specifies which whole-system properties should be
 displayed, separated by spaces or commas.
+.PP
+Properties may have their heading ("Time", etc) overridden, using the syntax
+\fIPROPERTY\fB=\fIHEADING\fR.
+If \fIHEADING\fR contains spaces or quotes then it must be quoted.
+.PP
+Property names may have a parameter supplied, using the syntax
+\fIPROPERTY\fB/\fIPARAMETER\fR.
+If \fIPARAMETER\fR contains spaces or quotes then it must be quoted.
+.PP
+Both a heading and a parameter can be set at once.
+In that case the heading must come first, and it must be quoted.
+For example, to change both the heading and format of the current time:
+.PP
+.RS
+\fBtime="When"/%H:%M:%S
+.RE
+.PP
+Headings are always followed by a colon and a space, unless they are empty.
+If heading ends with one or more spaces, they are moved to after the
+colon.
+.PP
 The available system properties are:
 .IP \fBcpu
 CPU usage information.
@@ -331,6 +352,10 @@ The cumulative time the system has spent idle.
 The system load averages.
 These three figures are the number of tasks either runnable or blocked
 on disk IO averaged over 1, 5 and 15 minutes.
+.IP
+If a parameter is supplied, it controls the number of digits shown
+after the decimal point.
+The default is 1.
 .IP \fBmem
 Memory information.
 The fields are:
@@ -380,6 +405,8 @@ It can be used or swapped out without IO being required.
 Use \fBswapK\fR or \fBswapM\fR to display kilobytes or megabytes.
 .IP \fBtime
 The current time (using the local timezone).
+If a parameter is supplied, it is passed to \fBstrftime\fR(3) to
+format the time.
 .IP \fBuptime
 The amount of time since the system booted.
 .PP

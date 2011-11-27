@@ -30,11 +30,20 @@
 #include <math.h>
 #include <sys/time.h>
 
+struct sysinfo;
+
 struct sysprop {
   const char *name;
+  const char *heading;
   const char *description;
-  void (*format)(const struct sysprop *sp,
+  void (*format)(const struct sysinfo *sp,
                  struct procinfo *pi, char *buffer, size_t bufsize);
+};
+
+struct sysinfo {
+  const struct sysprop *prop;
+  char *arg;
+  char *heading;
 };
 
 static int got_uptime;
@@ -234,8 +243,7 @@ static void get_stat(void) {
 
 // ----------------------------------------------------------------------------
 
-static void sysprop_format_time(const char *what, double t,
-                                char *buffer, size_t bufsize) {
+static void sysprop_format_time(double t, char *buffer, size_t bufsize) {
   double id;
   intmax_t i, d;
   int h, m, s;
@@ -248,64 +256,67 @@ static void sysprop_format_time(const char *what, double t,
   m = s / 60;
   s %= 60;
   if(d)
-    snprintf(buffer, bufsize, "%s: %jdd %d:%02d", what, d, h, m);
+    snprintf(buffer, bufsize, "%jdd %d:%02d", d, h, m);
   else
-    snprintf(buffer, bufsize, "%s: %d:%02d:%02d", what, h, m, s);
+    snprintf(buffer, bufsize, "%d:%02d:%02d", h, m, s);
 }
 
 // ----------------------------------------------------------------------------
 
-static void sysprop_localtime(const struct sysprop attribute((unused)) *prop,
+static void sysprop_localtime(const struct sysinfo *si,
                               struct procinfo attribute((unused)) *pi,
                               char *buffer, size_t bufsize) {
   time_t now;
   struct tm now_tm;
   time(&now);
   localtime_r(&now, &now_tm);
-  strftime(buffer, bufsize, "Time: %Y-%m-%d %H:%M:%S", &now_tm);
+  strftime(buffer, bufsize,
+           si->arg ? si->arg : "%Y-%m-%d %H:%M:%S", &now_tm);
 }
 
-static void sysprop_processes(const struct sysprop attribute((unused)) *prop,
+static void sysprop_processes(const struct sysinfo attribute((unused)) *si,
                               struct procinfo *pi,
                               char *buffer, size_t bufsize) {
-  snprintf(buffer, bufsize, "Tasks: %d", proc_count(pi));
+  snprintf(buffer, bufsize, "%d", proc_count(pi));
 }
 
-static void sysprop_uptime(const struct sysprop attribute((unused)) *prop,
+static void sysprop_uptime(const struct sysinfo attribute((unused)) *si,
                               struct procinfo attribute((unused)) *pi,
                            char *buffer, size_t bufsize) {
   get_uptime();
-  sysprop_format_time("Up", up, buffer, bufsize);
+  sysprop_format_time(up, buffer, bufsize);
 }
 
-static void sysprop_idletime(const struct sysprop attribute((unused)) *prop,
+static void sysprop_idletime(const struct sysinfo attribute((unused)) *si,
                               struct procinfo attribute((unused)) *pi,
                              char *buffer, size_t bufsize) {
   get_uptime();
-  sysprop_format_time("Idle", idle, buffer, bufsize);
+  sysprop_format_time(idle, buffer, bufsize);
 }
 
-static void sysprop_load(const struct sysprop attribute((unused)) *prop,
+static void sysprop_load(const struct sysinfo attribute((unused)) *si,
                          struct procinfo attribute((unused)) *pi,
                          char *buffer, size_t bufsize) {
   FILE *fp;
   double l1, l2, l3;
+  int prec;
   if(!(fp = fopen("/proc/loadavg", "r")))
     fatal(errno, "opening /proc/loadavg");
   if(fscanf(fp, "%lg %lg %lg", &l1, &l2, &l3) < 0)
     fatal(errno, "reading /proc/loadavg");
   fclose(fp);
-  snprintf(buffer, bufsize, "Load: %.1f %.1f %.1f", l1, l2, l3);
+  prec = si->arg ? atoi(si->arg) : 1;
+  snprintf(buffer, bufsize, "%.*f %.*f %.*f", prec, l1, prec, l2, prec, l3);
 }
 
-static void sysprop_mem(const struct sysprop *prop,
-                              struct procinfo attribute((unused)) *pi,
+static void sysprop_mem(const struct sysinfo *si,
+                        struct procinfo attribute((unused)) *pi,
                         char *buffer, size_t bufsize) {
-  const int ch = bytes_ch(prop->name);
+  const int ch = bytes_ch(si->prop->name);
   char btot[16], bused[16], bfree[16], bbuf[16], bcache[16];
 
   get_meminfo();
-  snprintf(buffer, bufsize, "RAM:  %s tot %s used %s free %s buf %s cache",
+  snprintf(buffer, bufsize, "%s tot %s used %s free %s buf %s cache",
            bytes(meminfo.MemTotal * 1024, 9, ch,
                  btot, sizeof btot),
            bytes((meminfo.MemTotal - meminfo.MemFree) * 1024, 9, ch,
@@ -318,14 +329,14 @@ static void sysprop_mem(const struct sysprop *prop,
                  bcache, sizeof bcache));
 }
 
-static void sysprop_swap(const struct sysprop attribute((unused)) *prop,
-                              struct procinfo attribute((unused)) *pi,
+static void sysprop_swap(const struct sysinfo *si,
+                         struct procinfo attribute((unused)) *pi,
                          char *buffer, size_t bufsize) {
-  const int ch = bytes_ch(prop->name);
+  const int ch = bytes_ch(si->prop->name);
   char btot[32], bused[32], bfree[32], bcache[32];
 
   get_meminfo();
-  snprintf(buffer, bufsize, "Swap: %s tot %s used %s free %s cache",
+  snprintf(buffer, bufsize, "%s tot %s used %s free %s cache",
            bytes(meminfo.SwapTotal * 1024, 9, ch,
                  btot, sizeof btot),
            bytes((meminfo.SwapTotal - meminfo.SwapFree) * 1024, 9, ch,
@@ -368,19 +379,16 @@ static void sysprop_cpu_one(const struct cpuhistory *cpu,
     
 }
 
-static void sysprop_cpu(const struct sysprop attribute((unused)) *prop,
+static void sysprop_cpu(const struct sysinfo attribute((unused)) *si,
                         struct procinfo attribute((unused)) *pi,
                         char *buffer, size_t bufsize) {
   get_stat();
   if(ncpuinfos) {
-    snprintf(buffer, bufsize, "CPU:  ");
-    bufsize -= strlen(buffer);
-    buffer += strlen(buffer);
     sysprop_cpu_one(&cpuinfos[0], buffer, bufsize);
   }
 }
 
-static void sysprop_cpus(const struct sysprop attribute((unused)) *prop,
+static void sysprop_cpus(const struct sysinfo attribute((unused)) *si,
                          struct procinfo attribute((unused)) *pi,
                          char *buffer, size_t bufsize) {
   size_t n;
@@ -405,63 +413,59 @@ static void sysprop_cpus(const struct sysprop attribute((unused)) *prop,
 
 const struct sysprop sysproperties[] = {
   {
-    "cpu", "CPU usage",
+    "cpu", "CPU  ", "CPU usage",
     sysprop_cpu
   },
   {
-    "cpus", "Per-CPU usage",
+    "cpus", NULL, "Per-CPU usage",
     sysprop_cpus
   },
   {
-    "idletime", "Cumulative time spent idle",
+    "idletime", "Idle", "Cumulative time spent idle",
     sysprop_idletime
   },
   {
-    "load", "System load",
+    "load", "Load", "System load (integer argument: precision)",
     sysprop_load
   },
   {
-    "mem", "Memory information",
+    "mem", "RAM ", "Memory information",
     sysprop_mem
   },
   {
-    "memK", "Memory information (kilobytes)",
+    "memK", "RAM ", "Memory information (kilobytes)",
     sysprop_mem
   },
   {
-    "memM", "Memory information (megabytes)",
+    "memM", "RAM ", "Memory information (megabytes)",
     sysprop_mem
   },
   {
-    "processes", "Number of processes",
+    "processes", "Tasks", "Number of processes",
     sysprop_processes
   },
   {
-    "swap", "Swap information",
+    "swap", "Swap", "Swap information",
     sysprop_swap
   },
   {
-    "swapK", "Swap information (kilobytes)",
+    "swapK", "Swap", "Swap information (kilobytes)",
     sysprop_swap
   },
   {
-    "swapM", "Swap information (megabytes)",
+    "swapM", "Swap", "Swap information (megabytes)",
     sysprop_swap
   },
   {
-    "time", "Current (local) time",
+    "time", "Time", "Current (local) time (argument: strftime format string)",
     sysprop_localtime
   },
   {
-    "uptime", "Time since system booted",
+    "uptime", "Up", "Time since system booted",
     sysprop_uptime
   },
 };
 #define NSYSPROPERTIES (sizeof sysproperties / sizeof *sysproperties)
-
-struct sysinfo {
-  const struct sysprop *prop;
-};
 
 // ----------------------------------------------------------------------------
 
@@ -485,11 +489,13 @@ static const struct sysprop *sysinfo_find(const char *name) {
 }
 
 int sysinfo_set(const char *format, unsigned flags) {
-  char buffer[128];
+  char buffer[128], heading_buffer[128], *heading, arg_buffer[128], *arg;
   size_t i;
   const struct sysprop *prop;
 
   if(!(flags & (FORMAT_CHECK|FORMAT_ADD))) {
+    for(i = 0; i < nsysinfos; ++i)
+      free(sysinfos[i].arg);
     free(sysinfos);
     sysinfos = NULL;
     nsysinfos = 0;
@@ -500,12 +506,25 @@ int sysinfo_set(const char *format, unsigned flags) {
       continue;
     }
     i = 0;
-    while(*format && *format != ' ' && *format != ',') {
+    while(*format && *format != ' ' && *format != ','
+          && *format != '/' && *format != '=') {
       if(i < sizeof buffer - 1)
         buffer[i++] = *format;
       ++format;
     }
     buffer[i] = 0;
+    if(*format == '=') {
+      format = format_parse_arg(format + 1, heading_buffer, sizeof heading_buffer,
+                                flags|FORMAT_QUOTED);
+      heading = heading_buffer;
+    } else
+      heading = NULL;
+    if(*format == '/') {
+      format = format_parse_arg(format + 1, arg_buffer, sizeof arg_buffer,
+                                flags|FORMAT_QUOTED);
+      arg = arg_buffer;
+    } else
+      arg = NULL;
     prop = sysinfo_find(buffer);
     if(flags & FORMAT_CHECK) {
       if(!prop)
@@ -517,6 +536,8 @@ int sysinfo_set(const char *format, unsigned flags) {
         fatal(0, "too many columns");
       sysinfos = xrecalloc(sysinfos, nsysinfos + 1, sizeof *sysinfos);
       sysinfos[nsysinfos].prop = prop;
+      sysinfos[nsysinfos].heading = heading ? xstrdup(heading) : NULL;
+      sysinfos[nsysinfos].arg = arg ? xstrdup(arg) : NULL;
       ++nsysinfos;
     }
   }
@@ -537,9 +558,23 @@ size_t sysinfo_reset(void) {
 }
 
 int sysinfo_format(struct procinfo *pi, size_t n, char buffer[], size_t bufsize) {
+  size_t i;
   buffer[0] = 0;
   if(n < nsysinfos) {
-    sysinfos[n].prop->format(sysinfos[n].prop, pi, buffer, bufsize);
+    const char *heading = sysinfos[n].heading;
+    if(!heading)
+      heading = sysinfos[n].prop->heading;
+    if(heading && *heading) {
+      /* Figure out how many spaces there are the end of the heading */
+      for(i = strlen(heading); i > 0 && heading[i - 1] == ' '; --i)
+        ;
+      snprintf(buffer, bufsize, "%.*s:%*s",
+               (int)i, heading,
+               (int)(strlen(heading) - i + 1), "");
+      bufsize -= strlen(buffer);
+      buffer += strlen(buffer);
+    }
+    sysinfos[n].prop->format(&sysinfos[n], pi, buffer, bufsize);
     return 0;
   } else
     return -1;
@@ -570,14 +605,25 @@ char **sysinfo_help(void) {
 char *sysinfo_get(void) {
   size_t size = 10, n;
   char *buffer, *ptr;
-  for(n = 0; n < nsysinfos; ++n)
+  for(n = 0; n < nsysinfos; ++n) {
     size += strlen(sysinfos[n].prop->name) + 1;
+    if(sysinfos[n].arg)
+      size += strlen(sysinfos[n].arg) * 2 + 3;
+  }
   ptr = buffer = xmalloc(size);
   for(n = 0; n < nsysinfos; ++n) {
     if(n)
       *ptr++ = ' ';
     strcpy(ptr, sysinfos[n].prop->name);
     ptr += strlen(ptr);
+    if(sysinfos[n].heading) {
+      *ptr++ = '=';
+      ptr = format_get_arg(ptr, sysinfos[n].heading, !!sysinfos[n].arg);
+    }
+    if(sysinfos[n].arg) {
+      *ptr++ = '/';
+      ptr = format_get_arg(ptr, sysinfos[n].arg, 0);
+    }
   }
   *ptr = 0;
   return buffer;
