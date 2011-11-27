@@ -97,6 +97,10 @@ For example, to change both the heading and format of the current time:
 Headings are always followed by a colon and a space, unless they are empty.
 If heading ends with one or more spaces, they are moved to after the
 colon.
+.PP
+The memory system properties (\fBmem\fR and \fBswap\fR) support the
+same arguments as the memory process properties (\fBrss\fR etc); see
+above for details.
 .SS Defaults
 If \fB-j\fR is not specified then the default is equivalent to:
 .PP

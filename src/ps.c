@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
       if(rc_ps_l_format)
         format_set(rc_ps_l_format, FORMAT_QUOTED);
       else
-        format_set("flags,state,uid,pid,ppid,pcpu=C,pri,nice,addr,vszK=SZ,wchan,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
+        format_set("flags,state,uid,pid,ppid,pcpu=C,pri,nice,addr,vsz='SZ'/K,wchan,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
       set_format = 1;
       break;
     case 'g':

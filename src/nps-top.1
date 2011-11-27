@@ -75,25 +75,15 @@ will be used instead.
 .IP \fBio
 IO rate.
 This is the sum of \fBread\fR and \fBwrite\fR.
-.IP
-Use \fBioK\fR or \fBioM\fR to display kilobytes or megabytes per second.
 .IP \fBmajflt
 Major fault rate.
 Major faults are page faults that require a page to be read from disk.
-.IP
-Use \fBmajfltK\fR or \fBmajfltM\fR to display kilobytes or megabytes
-per second, or \fBmajfltP\fR to display pages per second
 .IP \fBmem
 The total memory (resident and swapped) used by the process.
 Equivalent to \fBrss\fR+\fBswap\fR.
-.IP
-Use \fBmemK\fR or \fBmemM\fR to display kilobytes or megabytes.
 .IP \fBminflt
 Minor fault rate.
 Minor faults do not require a page to be read from disk.
-.IP
-Use \fBminfltK\fR or \fBminfltM\fR to display kilobytes or megabytes
-per second, or \fBminfltP\fR to display pages per second
 .IP \fBnice
 Nice value.
 Higher values mean lower priority ("nicer").
@@ -112,8 +102,6 @@ Process ID.
 The total memory (resident and swapped) used by the process,
 scaled down to account for sharing with other processes.
 Equivalent to \fBpss\fR+\fBswap\fR.
-.IP
-Use \fBpmemK\fR or \fBpmemM\fR to display kilobytes or megabytes.
 .IP \fBppid
 Parent process ID.
 .IP \fBpri
@@ -124,13 +112,8 @@ This the total amount of RAM used by the process, with each page's
 contribution divided by the number of processes it is shared with.
 .IP
 Only root can read the \fBpss\fR of processes it doesn't own.
-.IP
-Use \fBpssK\fR or \fBpssM\fR to display kilobytes or megabytes.
 .IP \fBread
 Read rate.
-.IP
-Use \fBreadK\fR or \fBreadM\fR to display kilobytes or megabytes per
-second.
 .IP \fBrgid
 Real group ID (decimal).
 .IP \fBrgroup
@@ -140,8 +123,6 @@ will be used instead.
 .IP \fBrss
 Resident set size.
 This the total amount of RAM used by the process.
-.IP
-Use \fBrssK\fR or \fBrssM\fR to display kilobytes or megabytes.
 .IP \fBruid
 Real user ID (decimal).
 .IP \fBruser
@@ -171,8 +152,6 @@ If an argument is supplied, it is passed to \fBstrftime\fR(3) to
 format the time.
 .IP \fBswap
 The amount of swap used.
-.IP
-Use \fBswapK\fR or \fBswapM\fR to display kilobytes or megabytes.
 .IP \fBtime
 The cumulative CPU time used over the process's lifetime (user and kernel).
 .IP \fBtty
@@ -187,14 +166,10 @@ will be used instead.
 .IP \fBvsz
 Virtual memory size.
 This is the total address space used by the process.
-.IP
-Use \fBvszK\fR or \fBvszM\fR to display kilobytes or megabytes.
 .IP \fBwchan
 Wait channel.
 .IP \fBwrite
 Write rate.
-.IP
-Use \fBwriteK\fR or \fBwriteM\fR to display kilobytes or megabytes per
 second.
 .SS "Column Width"
 By default, every column is made wide enough for every value that
@@ -270,10 +245,22 @@ RAM at the moment.
 The same caveats apply regarding shared pages, so \fBpmem\fR, which is
 the sum of \fBpss\fR and \fBswap\fR, is likely to be more useful.
 .PP
-The unadorned memory properties (and IO rates) all append \fBK\fR,
-\fBM\fR, \fBG\fR or \fBT\fR to the figure to indicate what units are
-in use.
-Use \fBrssK\fR, \fBrssM\fR, etc to select particular units.
+The memory properties (\fBrss\fR etc) all support the following arguments:
+.IP \fBK
+Display in kilobytes.
+.IP \fBM
+Display in megabytes.
+.IP \fBG
+Display in gigabytes.
+.IP \fBT
+Display in terabytes.
+.IP \fBp
+Display in pages.
+.PP
+With no argument, units are selected automatically.
+.PP
+The same applies to I/O rates, except that they are kilobytes per
+seconds, etc.
 .PP
 The kernel support for gathering \fBpss\fR was added in Linux 2.6.25
 and for \fBswap\fR in 2.6.26, so if your kernel is older than that you
@@ -422,6 +409,10 @@ For example, to change both the heading and format of the current time:
 Headings are always followed by a colon and a space, unless they are empty.
 If heading ends with one or more spaces, they are moved to after the
 colon.
+.PP
+The memory system properties (\fBmem\fR and \fBswap\fR) support the
+same arguments as the memory process properties (\fBrss\fR etc); see
+above for details.
 .SS Defaults
 If \fB-j\fR is not specified then the default is equivalent to:
 .PP

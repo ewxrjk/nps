@@ -312,7 +312,7 @@ static void sysprop_load(const struct sysinfo attribute((unused)) *si,
 static void sysprop_mem(const struct sysinfo *si,
                         struct procinfo attribute((unused)) *pi,
                         char *buffer, size_t bufsize) {
-  const int ch = bytes_ch(si->prop->name);
+  const int ch = si->arg ? *si->arg : 0;
   char btot[16], bused[16], bfree[16], bbuf[16], bcache[16];
 
   get_meminfo();
@@ -332,7 +332,7 @@ static void sysprop_mem(const struct sysinfo *si,
 static void sysprop_swap(const struct sysinfo *si,
                          struct procinfo attribute((unused)) *pi,
                          char *buffer, size_t bufsize) {
-  const int ch = bytes_ch(si->prop->name);
+  const int ch = si->arg ? *si->arg : 0;
   char btot[32], bused[32], bfree[32], bcache[32];
 
   get_meminfo();
@@ -429,15 +429,7 @@ const struct sysprop sysproperties[] = {
     sysprop_load
   },
   {
-    "mem", "RAM ", "Memory information",
-    sysprop_mem
-  },
-  {
-    "memK", "RAM ", "Memory information (kilobytes)",
-    sysprop_mem
-  },
-  {
-    "memM", "RAM ", "Memory information (megabytes)",
+    "mem", "RAM ", "Memory information (argument: K/M/G/T/p)",
     sysprop_mem
   },
   {
@@ -445,15 +437,7 @@ const struct sysprop sysproperties[] = {
     sysprop_processes
   },
   {
-    "swap", "Swap", "Swap information",
-    sysprop_swap
-  },
-  {
-    "swapK", "Swap", "Swap information (kilobytes)",
-    sysprop_swap
-  },
-  {
-    "swapM", "Swap", "Swap information (megabytes)",
+    "swap", "Swap", "Swap information (argument: K/M/G/T/p)",
     sysprop_swap
   },
   {
