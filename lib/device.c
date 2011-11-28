@@ -76,7 +76,7 @@ static void device_map(const char *dir) {
   if(!(dp = opendir(dir))) {
     /* Just skip bits of /dev we can't see into, for any reason; we'll
      * probably still be able to see the bits we care about and if
-     * something's *really* wrong someone will find out soon enoug. */
+     * something's *really* wrong someone will find out soon enough. */
     return;
   }
   errno = 0;
