@@ -98,6 +98,7 @@ static void device_map(const char *dir) {
   }
   if(errno)
     fatal(errno, "readdir %s", dir);
+  closedir(dp);
 }
 
 char *device_path(int type, dev_t device) {
