@@ -19,6 +19,7 @@
  */
 #include <config.h>
 #include "utils.h"
+#include "buffer.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -53,20 +54,13 @@ double clock_now(void) {
   return tv.tv_sec + tv.tv_usec / 1000000.0;
 }
 
-size_t strfelapsed(const char *format, intmax_t seconds, char buffer[], size_t bufsize) {
+size_t strfelapsed(struct buffer *b, const char *format, intmax_t seconds) {
   int ch;
-  size_t n = 0, i;
+  size_t i;
   unsigned fill, width, digits, skip0, follower, sign;
   intmax_t value;
   uintmax_t uvalue;
   char formatted[32];
-
-#define PUT(CH) do {                            \
-  const int pch = (CH);                         \
-  if(n < bufsize - 1)                           \
-    buffer[n] = pch;                            \
-  ++n;                                          \
-} while(0)
 
   while(*format) {
     ch = *format++;
@@ -99,7 +93,7 @@ size_t strfelapsed(const char *format, intmax_t seconds, char buffer[], size_t b
         break;
       switch(*format++) {
       case '%':
-        PUT('%');
+        buffer_putc(b, '%');
         value = 0;
         skip0 = 1;
         break;
@@ -146,20 +140,20 @@ size_t strfelapsed(const char *format, intmax_t seconds, char buffer[], size_t b
       }
       /* Start with the sign */
       if(sign) {
-        PUT('-');
+        buffer_putc(b, '-');
         if(width > 0)
           --width;
       }
       /* Add padding until there's only enough space for the formatted value */
       while(width-- > i)
-        PUT(fill);
+        buffer_putc(b, fill);
       while(i > 0)
-        PUT(formatted[sizeof formatted - i--]);
+        buffer_putc(b, formatted[sizeof formatted - i--]);
       if(follower)
-        PUT(follower);
+        buffer_putc(b, follower);
     } else
-      PUT(ch);
+      buffer_putc(b, ch);
   }
-  PUT(0);
-  return n - 1;
+  buffer_terminate(b);
+  return b->pos;
 }

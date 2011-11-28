@@ -23,9 +23,11 @@
 #include "utils.h"
 #include "format.h"
 #include "compare.h"
+#include "buffer.h"
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <assert.h>
 
 int select_has_terminal(struct procinfo *pi,
@@ -158,19 +160,23 @@ int select_nonidle(struct procinfo *pi, pid_t pid,
 
 int select_string_match(struct procinfo *pi, pid_t pid, union arg *args,
                         size_t nargs) {
-  char buffer[1024];
+  struct buffer b[1];
+  int rc;
   assert(nargs == 2);
-  format_value(pi, pid, args[0].string, buffer, sizeof buffer, 0);
-  return !strcmp(buffer, args[1].string);
+  format_value(pi, pid, args[0].string, b, 0);
+  rc = !strcmp(b->base, args[1].string);
+  free(b->base);
+  return rc;
 }
 
 int select_compare(struct procinfo *pi, pid_t pid, union arg *args,
                    size_t nargs) {
-  char buffer[1024];
+  struct buffer b[1];
   int c;
   assert(nargs == 3);
-  format_value(pi, pid, args[0].string, buffer, sizeof buffer, FORMAT_RAW);
-  c = qlcompare(buffer, args[2].string);
+  format_value(pi, pid, args[0].string, b, FORMAT_RAW);
+  c = qlcompare(b->base, args[2].string);
+  free(b->base);
   switch(args[1].operator) {
   case '<': return c < 0;
   case '=': return c == 0;
@@ -186,10 +192,13 @@ int select_compare(struct procinfo *pi, pid_t pid, union arg *args,
 int select_regex_match(struct procinfo *pi, pid_t pid, union arg *args,
                        size_t nargs) {
   char buffer[1024];
+  struct buffer b[1];
   int rc;
   assert(nargs == 2);
-  format_value(pi, pid, args[0].string, buffer, sizeof buffer, 0);
-  switch(rc = regexec(&args[1].regex, buffer, 0, 0, 0)) {
+  format_value(pi, pid, args[0].string, b, 0);
+  rc = regexec(&args[1].regex, b->base, 0, 0, 0);
+  free(b->base);
+  switch(rc) {
   case 0:
     return 1;
   case REG_NOMATCH:

@@ -36,6 +36,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+struct buffer;
 struct procinfo;
 
 /** @brief Format string is in argument syntax */
@@ -88,38 +89,43 @@ void format_columns(struct procinfo *pi, const pid_t *pids, size_t npids);
 
 /** @brief Construct the heading
  * @param pi Pointer to process information
- * @param buffer Where to put heading string
- * @param bufsize Size of buffer
+ * @param b Where to put heading string
  *
  * format_columns() must have been called.
+ *
+ * Any existing contents of @p b will be overwritten.  It will be
+ * 0-terminated.
  */
-void format_heading(struct procinfo *pi, char *buffer, size_t bufsize);
+void format_heading(struct procinfo *pi, struct buffer *b);
 
 /** @brief Construct the output for one process
  * @param pi Pointer to process information
  * @param pid Process ID
- * @param buffer Where to put header string
- * @param bufsize Size of buffer
+ * @param b Where to store output
  *
  * format_columns() must have been called.
+ *
+ * Any existing contents of @p b will be overwritten.  It will be
+ * 0-terminated.
  */
-void format_process(struct procinfo *pi, pid_t pid,
-                    char *buffer, size_t bufsize);
+void format_process(struct procinfo *pi, pid_t pid, struct buffer *b);
 
 /** @brief Format a single property
  * @param pi Pointer to process information
  * @param pid Process ID
  * @param property Property name
+ * @param b Where to store output
  * @param flags Flags
- * @param buffer Where to put header string
- * @param bufsize Size of buffer
  *
  * @p flags should be a combination of:
  * - @ref FORMAT_RAW to suppress use of K, M, etc
+ *
+ * Any existing contents of @p b will be overwritten.  It will be
+ * 0-terminated.
  */
 void format_value(struct procinfo *pi, pid_t pid,
                   const char *property,
-                  char *buffer, size_t bufsize,
+                  struct buffer *b,
                   unsigned flags);
 
 /** @brief Set the process ordering
@@ -194,7 +200,7 @@ char *bytes(uintmax_t n,
  * @param buffer Buffer for argument value
  * @param bufsize Size of buffer
  * @param flags Flags
- * @return POinter after parsed argument
+ * @return Pointer after parsed argument
  *
  * @p flags should be a combination of the following values:
  * - @ref FORMAT_ARGUMENT if @p f is in argument syntax
@@ -210,12 +216,11 @@ const char *format_parse_arg(const char *ptr,
                              unsigned flags);
 
 /** @brief Format an argument string
- * @param ptr Buffer (must be big enough)
+ * @param b String buffer for output
  * @param arg Argument string
  * @param quote True to force quoting
- * @return Update buffer pointer
  */
-char *format_get_arg(char *ptr, const char *arg, int quote);
+void format_get_arg(struct buffer *b, const char *arg, int quote);
 
 /** @brief Include hierarchy spacing in comm/args */
 extern int format_hierarchy;

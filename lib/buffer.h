@@ -19,29 +19,46 @@
  */
 #ifndef BUFFER_H
 #define BUFFER_H
-
 /** @file buffer.h
  * @brief String buffer
  */
+
+#include <string.h>
+
+struct tm;
 
 /** @brief String buffer
  *
  * Use buffer_putc() and buffer_append() to add to buffers, and
  * buffer_terminate() to write a 0 terminator when finished.
- *
- * You can write more than @p size bytes to a buffer, but the excess
- * bytes will be discarded.
- *
- * Buffers can have size 0, in which case no bytes are ever written,
- * not even a terminator.  In this case @c base is never used so it is
- * safe to make it a null pointer.
  */
 struct buffer {
   char *base;                   /**< @brief Base of buffer */
-  size_t pos;                   /**< @brief Where to write next character
-                                 * Can be larger than @p size */
-  size_t size;                  /**< @brief Buffer size */
+  size_t pos;                   /**< @brief Where to write next character */
+  size_t size;                  /**< @brief Current buffer size */
 };
+
+/** @brief Initialize a string buffer
+ * @param Pointer to string buffer
+ */
+static inline void buffer_init(struct buffer *b) {
+  b->base = 0;
+  b->pos = 0;
+  b->size = 0;
+}
+
+/** @brief Append a character to a string buffer
+ * @param b Pointer to string buffer
+ * @param c Character to append
+ */
+void buffer_putc_outline(struct buffer *b, int c);
+
+/** @brief Append a string to a string buffer
+ * @param b Pointer to string buffer
+ * @param s String to append
+ * @param n Length of string
+ */
+void buffer_append_n(struct buffer *b, const char *s, size_t n);
 
 /** @brief Append a character to a string buffer
  * @param b Pointer to string buffer
@@ -49,8 +66,9 @@ struct buffer {
  */
 static inline void buffer_putc(struct buffer *b, int c) {
   if(b->pos < b->size)
-    b->base[b->pos] = c;
-  ++b->pos;
+    b->base[b->pos++] = c;
+  else
+    buffer_putc_outline(b, c);
 }
 
 /** @brief Append a string to a string buffer
@@ -58,31 +76,28 @@ static inline void buffer_putc(struct buffer *b, int c) {
  * @param s String to append
  */
 static inline void buffer_append(struct buffer *b, const char *s) {
-  if(s)
-    while(*s)
-      buffer_putc(b, *s++);
+  buffer_append_n(b, s, strlen(s));
 }
 
-/** @brief Append a string to a string buffer
+/** @brief Append a formatted string to a string buffer
  * @param b Pointer to string buffer
- * @param s String to append
- * @param n Length of string
+ * @param fmt Format string
+ * @param ... Arguments to @p fmt
+ * @return Number of characters appended or -1 on error
  */
-static inline void buffer_append_n(struct buffer *b, const char *s, size_t n) {
-  if(s) {
-    while(n--)
-      buffer_putc(b, *s++);
-  }
-}
+int buffer_printf(struct buffer *b, const char *fmt, ...)
+  attribute((format(printf,2,3)));
+
+/** @brief Append a formatted time to a strinf buffer
+ * @param b Pointer to string buffer
+ * @param fmt Format string
+ * @param tm Time to format
+ */
+void buffer_strftime(struct buffer *b, const char *format, const struct tm *tm);
 
 /** @brief Null-terminate a string buffer
  * @param b Pointer to string buffer
  */
-static inline void buffer_terminate(struct buffer *b) {
-  if(b->pos < b->size)
-    b->base[b->pos] = 0;
-  else if(b->size)
-    b->base[b->size - 1] = 0;
-}
+void buffer_terminate(struct buffer *b);
 
 #endif

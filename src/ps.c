@@ -25,6 +25,7 @@
 #include "rc.h"
 #include "compare.h"
 #include "priv.h"
+#include "buffer.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <errno.h>
@@ -70,16 +71,16 @@ const struct option options[] = {
 };
 
 int main(int argc, char **argv) {
-  int n, width = 0, sorting = 0;
+  int n, sorting = 0;
   union arg *args;
   size_t nargs, npids;
   pid_t *pids;
-  size_t i;
+  size_t i, width = 0;
   int set_format = 0;
-  char buffer[1024];
   struct winsize ws;
   const char *s;
   char **help, *t;
+  struct buffer b[1];
 
   /* Initialize privilege support (this must stay first) */
   priv_init(argc, argv);
@@ -260,7 +261,8 @@ int main(int argc, char **argv) {
     qsort(pids, npids, sizeof *pids, compare_pid);
   /* Set up output formatting */
   format_columns(global_procinfo, pids, npids);
-  format_heading(global_procinfo, buffer, sizeof buffer);
+  buffer_init(b);
+  format_heading(global_procinfo, b);
   /* Figure out the display width */
   if(!width) {
     if((s = getenv("COLUMNS")) && (n = atoi(s)))
@@ -273,15 +275,17 @@ int main(int argc, char **argv) {
       width = INT_MAX;            /* don't truncate */
   }
   /* Generate the output */
-  if(*buffer && printf("%.*s\n", width, buffer) < 0) 
+  if(b->pos && printf("%.*s\n", (int)min(b->pos, width), b->base) < 0) 
     fatal(errno, "writing to stdout");
   for(i = 0; i < npids; ++i) {
-    format_process(global_procinfo, pids[i], buffer, sizeof buffer);
-    if(printf("%.*s\n", width, buffer) < 0) 
+    b->pos = 0;
+    format_process(global_procinfo, pids[i], b);
+    if(printf("%.*s\n", (int)min(b->pos, width), b->base) < 0) 
       fatal(errno, "writing to stdout");
   }
   if(fclose(stdout) < 0)
     fatal(errno, "writing to stdout");
   proc_free(global_procinfo);
+  free(b->base);
   exit(0);
 }

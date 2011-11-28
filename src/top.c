@@ -27,6 +27,7 @@
 #include "rc.h"
 #include "compare.h"
 #include "priv.h"
+#include "buffer.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <curses.h>
@@ -388,13 +389,15 @@ static void sighandler(int sig) {
 /** @brief The main display loop */
 static void loop(void) {
   struct procinfo *last = NULL;
-  char buffer[1024], *ptr, *newline;
+  char *ptr, *newline;
   int x, y, maxx, maxy, ystart = 0, ylimit;
   size_t n, npids, len, offset;
   pid_t *pids = NULL;
   enum next_action next = NEXT_RESAMPLE;
   const struct help_page *help;
+  struct buffer b[1];
 
+  buffer_init(b);
   while(!(next & NEXT_QUIT)) {
     if(next & NEXT_RESAMPLE) {
       /* Get fresh data */
@@ -431,8 +434,8 @@ static void loop(void) {
       x = y = 0;
       getmaxyx(stdscr, maxy, maxx);
       /* System information */
-      for(n = 0; !sysinfo_format(global_procinfo, n, buffer, sizeof buffer); ++n) {
-        ptr = buffer;
+      for(n = 0; !sysinfo_format(global_procinfo, n, b); ++n) {
+        ptr = b->base;
         while(*ptr) {
           if((newline = strchr(ptr, '\n')))
             *newline++ = 0;
@@ -471,22 +474,23 @@ static void loop(void) {
       /* Heading */
       if(y < ylimit) {
         attron(A_REVERSE);
-        format_heading(global_procinfo, buffer, sizeof buffer);
-        offset = min(display_offset, strlen(buffer));
-        if(mvaddnstr(y, 0, buffer + offset, maxx) == ERR)
+        format_heading(global_procinfo, b);
+        offset = min(display_offset, b->pos);
+        if(mvaddnstr(y, 0, b->base + offset, maxx) == ERR)
           fatal(0, "mvaddstr %d failed", y);
         ++y;
-        for(x = strlen(buffer + offset); x < maxx; ++x)
+        for(x = strlen(b->base + offset); x < maxx; ++x)
           addch(' ');
         attroff(A_REVERSE);
       }
 
       /* Processes */
       for(n = 0; n < npids && y < ylimit; ++n) {
-        format_process(global_procinfo, pids[n], buffer, sizeof buffer);
-        offset = min(display_offset, strlen(buffer));
+        format_process(global_procinfo, pids[n], b);
+        offset = min(display_offset, b->pos);
         // curses seems to have trouble with the last position on the screen
-        if(mvaddnstr(y, 0, buffer + offset, y == ylimit - 1 ? maxx - 1 : maxx) == ERR)
+        if(mvaddnstr(y, 0, b->base + offset,
+                     y == ylimit - 1 ? maxx - 1 : maxx) == ERR)
           fatal(0, "mvaddstr %d failed", y);
         ++y;
       }
@@ -509,6 +513,10 @@ static void loop(void) {
       next = await();
     } while(next == NEXT_WAIT);
   }
+  free(pids);
+  proc_free(global_procinfo);
+  proc_free(last);
+  free(b->base);
 }
 
 /** @brief Handle keyboard input and wait for the next update

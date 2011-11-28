@@ -90,23 +90,19 @@ static struct order *orders;
 // ----------------------------------------------------------------------------
 
 static void format_integer(intmax_t im, struct buffer *b, int base) {
-  char t[64];
-  snprintf(t, sizeof t, (base == 'o' ? "%jo" :
-                         base == 'x' ? "%jx" :
-                         base == 'X' ? "%jX" :
-                         "%jd"), im);
-  buffer_append(b, t);
+  buffer_printf(b, (base == 'o' ? "%jo" :
+                    base == 'x' ? "%jx" :
+                    base == 'X' ? "%jX" :
+                    "%jd"), im);
 }
 
 static void format_addr(uintmax_t im, struct buffer *b) {
-  char t[64];
   if(im > 0xFFFFFFFFFFFFLL)
-    snprintf(t, sizeof t, "%016jx", im);
+    buffer_printf(b, "%016jx", im);
   else if(im > 0xFFFFFFFF)
-    snprintf(t, sizeof t, "%012jx", im);
+    buffer_printf(b, "%012jx", im);
   else
-    snprintf(t, sizeof t, "%08jx", im);
-  buffer_append(b, t);
+    buffer_printf(b, "%08jx", im);
 }
 
 static void format_usergroup(intmax_t id, struct buffer *b, size_t columnsize,
@@ -131,35 +127,35 @@ static void format_interval(long seconds, struct buffer *b,
                             int always_hours, size_t columnsize,
                             const char *format,
                             unsigned flags) {
-  char t[64];
+  size_t startpos;
   if(flags & FORMAT_RAW) {
     format_integer(seconds, b, 'd');
     return;
   }
   if(format)
-    strfelapsed(format, seconds, t, sizeof t);
+    strfelapsed(b, format, seconds);
   else {
+    startpos = b->pos;
     if(always_hours)
-      strfelapsed("%?+-d%02H:%02M:%02S", seconds, t, sizeof t);
+      strfelapsed(b, "%?+-d%02H:%02M:%02S", seconds);
     else
-      strfelapsed("%?+-d%02?+:H%02M:%02S", seconds, t, sizeof t);
+      strfelapsed(b, "%?+-d%02?+:H%02M:%02S", seconds);
     /* If a column size was specified and we're too big, try more
      * compact forms. */
-    if(strlen(t) > columnsize) {
+    if(b->pos - startpos > columnsize) {
+      b->pos = startpos;        /* wind back */
       if(seconds >= 86400)
-        strfelapsed("%dd%02H", seconds, t, sizeof t);
+        strfelapsed(b, "%dd%02H", seconds);
       else if(seconds >= 3600)
-        strfelapsed("%02hh%02M", seconds, t, sizeof t);
+        strfelapsed(b, "%02hh%02M", seconds);
       else
-        strfelapsed("%02mm%02S", seconds, t, sizeof t);
+        strfelapsed(b, "%02mm%02S", seconds);
     }
   }
-  buffer_append(b, t);
 }
 
 static void format_time(time_t when, struct buffer *b, size_t columnsize,
                         const char *format, unsigned flags) {
-  char t[64];
   time_t now;
   struct tm when_tm, now_tm;
 
@@ -171,21 +167,20 @@ static void format_time(time_t when, struct buffer *b, size_t columnsize,
   localtime_r(&when, &when_tm);
   localtime_r(&now, &now_tm);
   if(format)
-    strftime(t, sizeof t, format, &when_tm);
+    buffer_strftime(b, format, &when_tm);
   else if(columnsize != SIZE_MAX && columnsize >= 19)
-    strftime(t, sizeof t, "%Y-%m-%dT%H:%M:%S", &when_tm);
+    buffer_strftime(b, "%Y-%m-%dT%H:%M:%S", &when_tm);
   else if(now_tm.tm_year == when_tm.tm_year
           && now_tm.tm_mon == when_tm.tm_mon
           && now_tm.tm_mday == when_tm.tm_mday) {
     if(columnsize < 8)
-      strftime(t, sizeof t, "%H:%M", &when_tm);
+      buffer_strftime(b, "%H:%M", &when_tm);
     else
-      strftime(t, sizeof t, "%H:%M:%S", &when_tm);
+      buffer_strftime(b, "%H:%M:%S", &when_tm);
   } else if(columnsize < 10 && now_tm.tm_year == when_tm.tm_year)
-    strftime(t, sizeof t, "%m-%d", &when_tm);
+    buffer_strftime(b, "%m-%d", &when_tm);
   else
-    strftime(t, sizeof t, "%Y-%m-%d", &when_tm);
-  buffer_append(b, t);
+    buffer_strftime(b, "%Y-%m-%d", &when_tm);
 }
 
 // ----------------------------------------------------------------------------
@@ -319,7 +314,6 @@ static void property_command_general(const struct column *col,
                                      struct procinfo *pi,
                                      pid_t pid, int brief) {
   int n;
-  char *t;
   size_t start = b->pos;
   const char *comm = col->prop->fetch.fetch_string(pi, pid), *ptr;
   if(!comm)
@@ -335,14 +329,10 @@ static void property_command_general(const struct column *col,
   }
   /* "A process that has exited and has a parent, but has not yet been
    * waited for by the parent, shall be marked defunct." */
-  if(proc_get_state(pi, pid) != 'Z') {
+  if(proc_get_state(pi, pid) != 'Z')
     buffer_append(b, comm);
-  } else {
-    if(asprintf(&t, "%s <defunct>", comm) < 0)
-      fatal(errno, "asprintf");
-    buffer_append(b, t);
-    free(t);
-  }
+  else
+    buffer_printf(b, "%s <defunct>", comm);
   /* Truncate to column size */
   if(b->pos - start > columnsize)
     b->pos = start + columnsize;
@@ -846,11 +836,10 @@ void format_columns(struct procinfo *pi, const pid_t *pids, size_t npids) {
     for(n = 0; n < npids; ++n) {
       // Render the value to a false buffer to find out how big it is
       struct buffer b[1];
-      b->base = 0;
-      b->pos = 0;
-      b->size = 0;
+      buffer_init(b);
       columns[c].prop->format(&columns[c], b, columns[c].reqwidth,
                               pi, pids[n], 0);
+      free(b->base);
       if(b->pos > w)
         w = b->pos;
     }
@@ -870,23 +859,17 @@ void format_columns(struct procinfo *pi, const pid_t *pids, size_t npids) {
   }
 }
 
-void format_heading(struct procinfo *pi, char *buffer, size_t bufsize) {
+void format_heading(struct procinfo *pi, struct buffer *b) {
   size_t c;
   for(c = 0; c < ncolumns && !*columns[c].heading; ++c)
     ;
   if(c < ncolumns)
-    format_process(pi, -1, buffer, bufsize);
-  else
-    *buffer = 0;
+    format_process(pi, -1, b);
 }
 
-void format_process(struct procinfo *pi, pid_t pid,
-                    char *buffer, size_t bufsize) {
+void format_process(struct procinfo *pi, pid_t pid, struct buffer *b) {
   size_t w, left, c, start;
-  struct buffer b[1];
-  b->base = buffer;
   b->pos = 0;
-  b->size = bufsize;
   for(c = 0; c < ncolumns; ++c) {
     start = b->pos;
     if(pid == -1)
@@ -908,21 +891,18 @@ void format_process(struct procinfo *pi, pid_t pid,
 
 void format_value(struct procinfo *pi, pid_t pid,
                   const char *property,
-                  char *buffer, size_t bufsize,
+                  struct buffer *b,
                   unsigned flags) {
   struct column c;              /* stunt column */
-  struct buffer b[1];
   const struct propinfo *prop = find_property(property, 0);
   if(!prop)
     fatal(0, "unknown process property '%s'", property);
-  b->base = buffer;
-  b->pos = 0;
-  b->size = bufsize;
   c.prop = prop;
   c.reqwidth = SIZE_MAX;
   c.width = SIZE_MAX;
   c.heading = NULL;
   c.arg = NULL;
+  b->pos = 0;
   prop->format(&c, b, SIZE_MAX, pi, pid, flags);
   buffer_terminate(b);
 }
@@ -983,21 +963,17 @@ int format_ordering(const char *ordering, unsigned flags) {
 
 char *format_get_ordering(void) {
   size_t n;
-  size_t size = 10;
-  char *buffer, *ptr;
+  struct buffer b[1];
 
-  for(n = 0; n < norders; ++n)
-    size += strlen(orders[n].prop->name) + 5;
-  ptr = buffer = xmalloc(size);
+  buffer_init(b);
   for(n = 0; n < norders; ++n) {
     if(n)
-      *ptr++ = ' ';
-    *ptr++ = orders[n].sign < 0 ? '+' : '-';
-    strcpy(ptr, orders[n].prop->name);
-    ptr += strlen(ptr);
+      buffer_putc(b, ' ');
+    buffer_putc(b, orders[n].sign < 0 ? '+' : '-');
+    buffer_append(b, orders[n].prop->name);
   }
-  *ptr = 0;
-  return buffer;
+  buffer_terminate(b);
+  return b->base;
 }
 
 int format_compare(struct procinfo *pi, pid_t a, pid_t b) {
@@ -1038,56 +1014,45 @@ char **format_help(void) {
 
 char *format_get(void) {
   size_t n;
-  size_t size = 10;
-  char *buffer, *ptr;
   const char *h;
-
-  for(n = 0; n < ncolumns; ++n) {
-    size += strlen(columns[n].prop->name);
-    size += strlen(columns[n].prop->heading) * 2;
-    size += 40;
-  }
-  ptr = buffer = xmalloc(size);
+  struct buffer b[1];
+  
+  buffer_init(b);
   for(n = 0; n < ncolumns; ++n) {
     if(n)
-      *ptr++ = ' ';
-    strcpy(ptr, columns[n].prop->name);
-    ptr += strlen(ptr);
-    if(columns[n].reqwidth != SIZE_MAX) {
-      ptr += sprintf(ptr, ":%zu", columns[n].reqwidth);
-    }
+      buffer_putc(b, ' ');
+    buffer_append(b, columns[n].prop->name);
+    if(columns[n].reqwidth != SIZE_MAX)
+      buffer_printf(b, ":%zu", columns[n].reqwidth);
     h = columns[n].heading;
     if(strcmp(h, columns[n].prop->heading)) {
-      *ptr++ = '=';
-      ptr = format_get_arg(ptr, h, !!columns[n].arg);
+      buffer_putc(b, '=');
+      format_get_arg(b, h, !!columns[n].arg);
     }
     if(columns[n].arg) {
-      *ptr++ = '/';
-      ptr = format_get_arg(ptr, columns[n].arg, 0);
+      buffer_putc(b, '/');
+      format_get_arg(b, columns[n].arg, 0);
     }
   }
-  *ptr = 0;
-  return buffer;
+  buffer_terminate(b);
+  return b->base;
 }
 
-char *format_get_arg(char *ptr, const char *arg, int quote) {
+void format_get_arg(struct buffer *b, const char *arg, int quote) {
   if(quote
      || strchr(arg, ' ')
      || strchr(arg, '"')
      || strchr(arg, '\\')
      || strchr(arg, ',')) {
-    *ptr++ = '"';
+    buffer_putc(b, '"');
     while(*arg) {
       if(*arg == '"' || *arg == '\\')
-        *ptr++ = '\\';
-      *ptr++ = *arg++;
+        buffer_putc(b, '\\');
+      buffer_putc(b, *arg++);
     }
-    *ptr++ = '"';
-  } else {
-    strcpy(ptr, arg);
-    ptr += strlen(ptr);
-  }
-  return ptr;
+    buffer_putc(b, '"');
+  } else
+    buffer_append(b, arg);
 }
 
 int format_hierarchy;

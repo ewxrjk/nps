@@ -27,6 +27,7 @@
 #include <stddef.h>
 
 struct procinfo;
+struct buffer;
 
 /** @brief Set system information format
  * @param format Format string
@@ -51,12 +52,14 @@ size_t sysinfo_reset(void);
 
 /** @brief Get a system information element
  * @param pi Pointer to process information
- * @param n Elemet number
- * @param buffer Where to put header string
- * @param bufsize Size of buffer
+ * @param n Element number
+ * @param b String buffer for output
  * @return 0 on success, -1 if there are no more elements
+ *
+ * Any existing contents of @p b will be overwritten.  It will not be
+ * 0-terminated.
  */
-int sysinfo_format(struct procinfo *pi, size_t n, char buffer[], size_t bufsize);
+int sysinfo_format(struct procinfo *pi, size_t n, struct buffer *b);
 
 /** @brief Return system information help
  * @return NULL-terminated list of strings
