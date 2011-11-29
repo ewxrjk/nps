@@ -33,11 +33,12 @@
  * for non-final columns.
  */
 
+#include "process.h"
+
 #include <stdint.h>
 #include <sys/types.h>
 
 struct buffer;
-struct procinfo;
 
 /** @brief Format string is in argument syntax */
 #define FORMAT_ARGUMENT 0x0000
@@ -82,10 +83,10 @@ void format_clear(void);
 
 /** @brief Set internal column sizes
  * @param pi Pointer to process information
- * @param pids Process IDs
- * @param npids Number of processes
+ * @param tasks Process or thread IDs
+ * @param ntasks Number of processes
  */
-void format_columns(struct procinfo *pi, const pid_t *pids, size_t npids);
+void format_columns(struct procinfo *pi, const taskident *tasks, size_t ntasks);
 
 /** @brief Construct the heading
  * @param pi Pointer to process information
@@ -100,7 +101,7 @@ void format_heading(struct procinfo *pi, struct buffer *b);
 
 /** @brief Construct the output for one process
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process or thread ID
  * @param b Where to store output
  *
  * format_columns() must have been called.
@@ -108,11 +109,11 @@ void format_heading(struct procinfo *pi, struct buffer *b);
  * Any existing contents of @p b will be overwritten.  It will be
  * 0-terminated.
  */
-void format_process(struct procinfo *pi, pid_t pid, struct buffer *b);
+void format_process(struct procinfo *pi, taskident task, struct buffer *b);
 
 /** @brief Format a single property
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process or thread ID
  * @param property Property name
  * @param b Where to store output
  * @param flags Flags
@@ -123,7 +124,7 @@ void format_process(struct procinfo *pi, pid_t pid, struct buffer *b);
  * Any existing contents of @p b will be overwritten.  It will be
  * 0-terminated.
  */
-void format_value(struct procinfo *pi, pid_t pid,
+void format_value(struct procinfo *pi, taskident pid,
                   const char *property,
                   struct buffer *b,
                   unsigned flags);
@@ -149,7 +150,7 @@ int format_ordering(const char *ordering, unsigned flags);
  * @param b Second process ID
  * @return -1, 0 or -1
  */
-int format_compare(struct procinfo *pi, pid_t a, pid_t b);
+int format_compare(struct procinfo *pi, taskident a, taskident b);
 
 /** @brief Return formatting help
  * @return NULL-terminated list of strings

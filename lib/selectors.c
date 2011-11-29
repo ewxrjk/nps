@@ -31,41 +31,41 @@
 #include <assert.h>
 
 int select_has_terminal(struct procinfo *pi,
-                        pid_t pid,
+                        taskident task,
                         union arg attribute((unused)) *args,
                         size_t attribute((unused)) nargs) {
-  return proc_get_tty(pi, pid) > 0;
+  return proc_get_tty(pi, task) > 0;
 }
 
 int select_all(struct procinfo attribute((unused)) *pi,
-               pid_t attribute((unused)) pid,
+               taskident attribute((unused)) task,
                union arg attribute((unused)) *args,
                size_t attribute((unused)) nargs) {
   return 1;
 }
 
 int select_not_session_leader(struct procinfo *pi,
-                              pid_t pid,
+                              taskident task,
                               union arg attribute((unused)) *args,
                               size_t attribute((unused)) nargs) {
-  return proc_get_session(pi, pid) != pid;
+  return proc_get_session(pi, task) != task.pid;
 }
 
-int select_pid(struct procinfo attribute((unused)) *pi, pid_t pid,
+int select_pid(struct procinfo attribute((unused)) *pi, taskident task,
                union arg *args, size_t nargs) {
   size_t n;
 
   for(n = 0; n < nargs; ++n) {
-    if(pid == args[n].pid)
+    if(task.pid == args[n].pid)
       return 1;
   }
   return 0;
 }
 
-int select_ppid(struct procinfo *pi, pid_t pid,
+int select_ppid(struct procinfo *pi, taskident task,
                union arg *args, size_t nargs) {
   size_t n;
-  pid_t ppid = proc_get_ppid(pi, pid);
+  pid_t ppid = proc_get_ppid(pi, task);
 
   for(n = 0; n < nargs; ++n) {
     if(ppid == args[n].pid)
@@ -74,10 +74,10 @@ int select_ppid(struct procinfo *pi, pid_t pid,
   return 0;
 }
 
-int select_terminal(struct procinfo *pi, pid_t pid,
+int select_terminal(struct procinfo *pi, taskident task,
                     union arg *args, size_t nargs) {
   size_t n;
-  int tty_nr = proc_get_tty(pi, pid);
+  int tty_nr = proc_get_tty(pi, task);
   for(n = 0; n < nargs; ++n) {
     if(tty_nr == args[n].tty)
       return 1;
@@ -85,18 +85,18 @@ int select_terminal(struct procinfo *pi, pid_t pid,
   return 0;
 }
 
-int select_leader(struct procinfo *pi, pid_t pid,
+int select_leader(struct procinfo *pi, taskident task,
                   union arg *args, size_t nargs) {
-  pid_t leader = proc_get_session(pi, pid);
-  if(leader == -1)
+  taskident leader = { proc_get_session(pi, task), -1 };
+  if(leader.pid == -1)
     return 0;
   return select_pid(pi, leader, args, nargs);
 }
 
-int select_rgid(struct procinfo *pi, pid_t pid,
+int select_rgid(struct procinfo *pi, taskident task,
                 union arg *args, size_t nargs) {
   size_t n;
-  gid_t gid = proc_get_egid(pi, pid);
+  gid_t gid = proc_get_egid(pi, task);
   for(n = 0; n < nargs; ++n) {
     if(gid == args[n].gid)
       return 1;
@@ -104,10 +104,10 @@ int select_rgid(struct procinfo *pi, pid_t pid,
   return 0;
 }
 
-int select_egid(struct procinfo *pi, pid_t pid,
+int select_egid(struct procinfo *pi, taskident task,
                 union arg *args, size_t nargs) {
   size_t n;
-  gid_t gid = proc_get_egid(pi, pid);
+  gid_t gid = proc_get_egid(pi, task);
   for(n = 0; n < nargs; ++n) {
     if(gid == args[n].gid)
       return 1;
@@ -115,10 +115,10 @@ int select_egid(struct procinfo *pi, pid_t pid,
   return 0;
 }
 
-int select_euid(struct procinfo *pi, pid_t pid,
+int select_euid(struct procinfo *pi, taskident task,
                 union arg *args, size_t nargs) {
   size_t n;
-  uid_t uid = proc_get_euid(pi, pid);
+  uid_t uid = proc_get_euid(pi, task);
   for(n = 0; n < nargs; ++n) {
     if(uid == args[n].uid)
       return 1;
@@ -126,9 +126,9 @@ int select_euid(struct procinfo *pi, pid_t pid,
   return 0;
 }
 
-int select_ruid(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs) {
+int select_ruid(struct procinfo *pi, taskident task, union arg *args, size_t nargs) {
   size_t n;
-  uid_t uid = proc_get_ruid(pi, pid);
+  uid_t uid = proc_get_ruid(pi, task);
   for(n = 0; n < nargs; ++n) {
     if(uid == args[n].uid)
       return 1;
@@ -136,9 +136,10 @@ int select_ruid(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs) {
   return 0;
 }
 
-int select_uid_tty(struct procinfo *pi, pid_t pid,
+int select_uid_tty(struct procinfo *pi, taskident task,
                    union arg attribute((unused)) *args, 
                    size_t attribute((unused)) nargs) {
+  taskident self = { getpid(), -1 };
   /* "By default, ps shall select all processes with the same
    * effective user ID as the current user and the same controlling
    * terminal as the invoker."
@@ -147,34 +148,34 @@ int select_uid_tty(struct procinfo *pi, pid_t pid,
    * user in this case will be the real UID of the caller.  The
    * effective UID of the caller will have been lost.
    */
-  return proc_get_euid(pi, pid) == geteuid()
-         && proc_get_tty(pi, pid) == proc_get_tty(pi, getpid());
+  return proc_get_euid(pi, task) == geteuid()
+    && proc_get_tty(pi, task) == proc_get_tty(pi, self);
 }
 
-int select_nonidle(struct procinfo *pi, pid_t pid,
+int select_nonidle(struct procinfo *pi, taskident task,
                    union arg attribute((unused)) *args, 
                    size_t attribute((unused)) nargs) {
-  return proc_get_state(pi, pid) != 'Z'
-    && proc_get_pcpu(pi, pid) > 0;
+  return proc_get_state(pi, task) != 'Z'
+    && proc_get_pcpu(pi, task) > 0;
 }
 
-int select_string_match(struct procinfo *pi, pid_t pid, union arg *args,
+int select_string_match(struct procinfo *pi, taskident task, union arg *args,
                         size_t nargs) {
   struct buffer b[1];
   int rc;
   assert(nargs == 2);
-  format_value(pi, pid, args[0].string, b, 0);
+  format_value(pi, task, args[0].string, b, 0);
   rc = !strcmp(b->base, args[1].string);
   free(b->base);
   return rc;
 }
 
-int select_compare(struct procinfo *pi, pid_t pid, union arg *args,
+int select_compare(struct procinfo *pi, taskident task, union arg *args,
                    size_t nargs) {
   struct buffer b[1];
   int c;
   assert(nargs == 3);
-  format_value(pi, pid, args[0].string, b, FORMAT_RAW);
+  format_value(pi, task, args[0].string, b, FORMAT_RAW);
   c = qlcompare(b->base, args[2].string);
   free(b->base);
   switch(args[1].operator) {
@@ -189,13 +190,13 @@ int select_compare(struct procinfo *pi, pid_t pid, union arg *args,
   }
 }
 
-int select_regex_match(struct procinfo *pi, pid_t pid, union arg *args,
+int select_regex_match(struct procinfo *pi, taskident task, union arg *args,
                        size_t nargs) {
   char buffer[1024];
   struct buffer b[1];
   int rc;
   assert(nargs == 2);
-  format_value(pi, pid, args[0].string, b, 0);
+  format_value(pi, task, args[0].string, b, 0);
   rc = regexec(&args[1].regex, b->base, 0, 0, 0);
   free(b->base);
   switch(rc) {

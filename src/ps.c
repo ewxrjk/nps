@@ -63,6 +63,7 @@ const struct option options[] = {
   { "tty", required_argument, 0, 't' },
   { "ppid", required_argument, 0, OPT_PPID },
   { "sort", required_argument, 0, OPT_SORT },
+  { "threads", no_argument, 0, 'L' },
   { "help", no_argument, 0, OPT_HELP },
   { "help-format", no_argument, 0, OPT_HELP_FORMAT },
   { "help-match", no_argument, 0, OPT_HELP_MATCH },
@@ -73,21 +74,22 @@ const struct option options[] = {
 int main(int argc, char **argv) {
   int n, sorting = 0;
   union arg *args;
-  size_t nargs, npids;
-  pid_t *pids;
+  size_t nargs, ntasks;
+  taskident *tasks;
   size_t i, width = 0;
-  int set_format = 0;
   struct winsize ws;
   const char *s;
   char **help, *t;
   struct buffer b[1];
+  unsigned procflags = PROC_PROCESSES;
+  int format = 0;
 
   /* Initialize privilege support (this must stay first) */
   priv_init(argc, argv);
   /* Read configuration */
   read_rc();
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:O:p:t:u:U:R:C:wH", 
+  while((n = getopt_long(argc, argv, "+aAdeflg:G:n:o:O:p:t:u:U:R:C:wHL", 
                          options, NULL)) >= 0) {
     switch(n) {
     case 'a':
@@ -104,18 +106,13 @@ int main(int argc, char **argv) {
       select_add(select_not_session_leader, NULL, 0);
       break;
     case 'f':
-      if(rc_ps_f_format)
-        format_set(rc_ps_f_format, FORMAT_QUOTED);
-      else
-        format_set("user=UID,pid,ppid,pcpu=C,stime,tty=TTY,time,argsbrief=CMD", FORMAT_QUOTED);
-      set_format = 1;
+      format = 'f';
       break;
     case 'l':
-      if(rc_ps_l_format)
-        format_set(rc_ps_l_format, FORMAT_QUOTED);
-      else
-        format_set("flags,state,uid,pid,ppid,pcpu=C,pri,nice,addr,vsz='SZ'/K,wchan,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
-      set_format = 1;
+      format = 'l';
+      break;
+    case 'L':
+      procflags = PROC_THREADS;
       break;
     case 'g':
       args = split_arg(optarg, arg_process, &nargs);
@@ -139,11 +136,11 @@ int main(int argc, char **argv) {
       break;
     case 'o':
       format_set(optarg, FORMAT_ARGUMENT|FORMAT_ADD);
-      set_format = 1;
+      format = -1;
       break;
     case 'O':
       format_set(optarg, FORMAT_QUOTED|FORMAT_ADD);
-      set_format = 1;
+      format = -1;
       break;
     case 'p':
       args = split_arg(optarg, arg_process, &nargs);
@@ -184,6 +181,7 @@ int main(int argc, char **argv) {
              "  -g SIDS                 Select processes by session ID\n"
              "  -G GIDS, --group GIDS   Select processes by real/effective group ID\n"
              "  -H, --forest            Hierarchical display\n"
+             "  -L, --threads           Display threads\n"
              "  -o, -O, --format PROPS  Set output format; see --help-format\n"
              "  -p, --pids PIDS         Select processes by process ID\n"
              "  --ppid PIDS             Select processes by parent process ID\n"
@@ -245,22 +243,46 @@ int main(int argc, char **argv) {
       select_match(argv[optind++]);
   }
   /* Set the default format */
-  if(!set_format) {
+  switch(format) {
+  case 0:
     if(rc_ps_format)
       format_set(rc_ps_format, FORMAT_QUOTED);
+    else if(procflags & PROC_THREADS)
+      format_set("pid,tid,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
     else
       format_set("pid,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
+    break;
+  case 'f':
+    if(rc_ps_f_format)
+      format_set(rc_ps_f_format, FORMAT_QUOTED);
+    else {
+      format_set("user=UID,pid", FORMAT_QUOTED);
+      if(procflags & PROC_THREADS)
+        format_set("tid", FORMAT_QUOTED|FORMAT_ADD);
+      format_set("ppid,pcpu=C,stime,tty=TTY,time,argsbrief=CMD", FORMAT_ADD|FORMAT_QUOTED);
+    }
+    break;
+  case 'l':
+    if(rc_ps_l_format)
+      format_set(rc_ps_l_format, FORMAT_QUOTED);
+    else {
+      format_set("flags,state,uid,pid", FORMAT_QUOTED);
+      if(procflags & PROC_THREADS)
+        format_set("tid", FORMAT_QUOTED|FORMAT_ADD);
+      format_set("ppid,pcpu=C,pri,nice,addr,vsz='SZ'/K,wchan,tty=TTY,time,comm=CMD", FORMAT_QUOTED|FORMAT_ADD);
+    }
+    break;
   }
   /* Set the default selection */
   select_default(select_uid_tty, NULL, 0);
   /* Get the list of processes */
-  global_procinfo = proc_enumerate(NULL);
-  pids = proc_get_selected(global_procinfo, &npids);
+  global_procinfo = proc_enumerate(NULL, procflags);
+  tasks = proc_get_selected(global_procinfo, &ntasks, procflags);
   /* Put them into order */
   if(sorting)
-    qsort(pids, npids, sizeof *pids, compare_pid);
+    qsort(tasks, ntasks, sizeof *tasks, compare_task);
   /* Set up output formatting */
-  format_columns(global_procinfo, pids, npids);
+  format_columns(global_procinfo, tasks, ntasks);
   buffer_init(b);
   format_heading(global_procinfo, b);
   /* Figure out the display width */
@@ -277,9 +299,9 @@ int main(int argc, char **argv) {
   /* Generate the output */
   if(b->pos && printf("%.*s\n", (int)min(b->pos, width), b->base) < 0) 
     fatal(errno, "writing to stdout");
-  for(i = 0; i < npids; ++i) {
+  for(i = 0; i < ntasks; ++i) {
     b->pos = 0;
-    format_process(global_procinfo, pids[i], b);
+    format_process(global_procinfo, tasks[i], b);
     if(printf("%.*s\n", (int)min(b->pos, width), b->base) < 0) 
       fatal(errno, "writing to stdout");
   }

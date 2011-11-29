@@ -101,7 +101,7 @@
 #define UPDATE_BASE(X) p->base_##X = lastp->prop_##X;
 
 struct process {
-  pid_t pid;                    /* process ID */
+  taskident taskid;      /* process/thread ID */
   size_t link;                  /* hash table linkage */
   unsigned selected:1;          /* nonzero if selected */
   unsigned stat:1;              /* nonzero if proc_stat() called */
@@ -145,10 +145,11 @@ static const size_t propinfo_io[] = {
 struct procinfo {
   size_t nprocs, nslots;
   struct process *procs;
+  unsigned flags;
   size_t lookup[HASH_SIZE];
 };
 
-static struct process *proc_find(const struct procinfo *pi, pid_t pid);
+static struct process *proc_find(const struct procinfo *pi, taskident taskid);
 
 // ----------------------------------------------------------------------------
 
@@ -170,12 +171,66 @@ void proc_free(struct procinfo *pi) {
   }
 }
 
-struct procinfo *proc_enumerate(struct procinfo *last) {
+static struct process *proc_add(struct procinfo *pi, struct procinfo *last,
+                                pid_t pid, pid_t tid) {
+  struct process *p, *lastp;
+  /* Make sure the array is big enough */
+  if(pi->nprocs >= pi->nslots) {
+    if((ssize_t)(pi->nslots = pi->nslots ? 2 * pi->nslots : 64) <= 0)
+      fatal(0, "too many processes");
+    pi->procs = xrecalloc(pi->procs, pi->nslots, sizeof *pi->procs);
+  }
+  p = &pi->procs[pi->nprocs++];
+  memset(p, 0, sizeof *p);
+  p->taskid.pid = pid;
+  p->taskid.tid = tid;
+  /* Retrieve bases for delta values */
+  if(last && (lastp = proc_find(last, p->taskid)) && lastp->stat) {
+    p->base_utime = lastp->prop_utime;
+    p->base_stime = lastp->prop_stime;
+    p->base_stat_time = lastp->stat_time;
+    p->base_majflt = lastp->prop_majflt;
+    p->base_minflt = lastp->prop_minflt;
+    IO_PROPS(UPDATE_BASE, UPDATE_BASE);
+    p->base_io_time = lastp->io_time;
+  }
+  p->link = SIZE_MAX;
+  return p;
+}
+
+static void proc_enumerate_threads(struct procinfo *pi, struct procinfo *last,
+                                   pid_t pid) {
+  DIR *dp;
+  struct dirent *de;
+  char buffer[128];
+  pid_t tid;
+
+  snprintf(buffer, sizeof buffer, "/proc/%ld/task", (long)pid);
+  if(!(dp = opendir(buffer))) {
+    /* TODO we should mark the process as vanished */
+    return;
+  }
+  errno = 0;
+  while((de = readdir(dp))) {
+    errno = 0;
+    /* Only consider files that look like threads */
+    if(strspn(de->d_name, "0123456789") == strlen(de->d_name)) {
+      tid = conv(de->d_name);
+      proc_add(pi, last, pid, tid);
+    }
+  }
+  if(errno)
+    fatal(errno, "reading %s", buffer);
+  closedir(dp);
+}
+
+struct procinfo *proc_enumerate(struct procinfo *last,
+                                unsigned flags) {
   DIR *dp;
   struct dirent *de;
   size_t n;
   struct procinfo *pi;
-  struct process *p, *lastp;
+  pid_t pid;
 
   pi = xmalloc(sizeof *pi);
   memset(pi, 0, sizeof *pi);
@@ -187,26 +242,10 @@ struct procinfo *proc_enumerate(struct procinfo *last) {
     errno = 0;
     /* Only consider files that look like processes */
     if(strspn(de->d_name, "0123456789") == strlen(de->d_name)) {
-      /* Make sure the array is big enough */
-      if(pi->nprocs >= pi->nslots) {
-        if((ssize_t)(pi->nslots = pi->nslots ? 2 * pi->nslots : 64) <= 0)
-          fatal(0, "too many processes");
-        pi->procs = xrecalloc(pi->procs, pi->nslots, sizeof *pi->procs);
-      }
-      p = &pi->procs[pi->nprocs++];
-      memset(p, 0, sizeof *p);
-      p->pid = conv(de->d_name);
-      /* Retrieve bases for delta values */
-      if(last && (lastp = proc_find(last, p->pid)) && lastp->stat) {
-        p->base_utime = lastp->prop_utime;
-        p->base_stime = lastp->prop_stime;
-        p->base_stat_time = lastp->stat_time;
-        p->base_majflt = lastp->prop_majflt;
-        p->base_minflt = lastp->prop_minflt;
-        IO_PROPS(UPDATE_BASE, UPDATE_BASE);
-        p->base_io_time = lastp->io_time;
-      }
-      p->link = SIZE_MAX;
+      pid = conv(de->d_name);
+      proc_add(pi, last, pid, -1);
+      if(flags & PROC_THREADS)
+        proc_enumerate_threads(pi, last, pid);
     }
   }
   if(errno)
@@ -215,7 +254,7 @@ struct procinfo *proc_enumerate(struct procinfo *last) {
   for(n = 0; n < HASH_SIZE; ++n)
     pi->lookup[n] = SIZE_MAX;
   for(n = 0; n < pi->nprocs; ++n) {
-    size_t h = pi->procs[n].pid % HASH_SIZE;
+    size_t h = (pi->procs[n].taskid.pid + pi->procs[n].taskid.tid) % HASH_SIZE;
     if(pi->lookup[h] != SIZE_MAX)
       pi->procs[n].link = pi->lookup[h];
     pi->lookup[h] = n;
@@ -231,19 +270,32 @@ int proc_count(struct procinfo *pi) {
 void proc_reselect(struct procinfo *pi) {
   size_t n;
   for(n = 0; n < pi->nprocs; ++n)
-    pi->procs[n].selected = select_test(pi, pi->procs[n].pid);
+    pi->procs[n].selected = select_test(pi, pi->procs[n].taskid);
 }
 
 // ----------------------------------------------------------------------------
 
-static struct process *proc_find(const struct procinfo *pi, pid_t pid) {
-  size_t n = pi->lookup[pid % HASH_SIZE];
-  while(n != SIZE_MAX && pi->procs[n].pid != pid)
+static struct process *proc_find(const struct procinfo *pi, taskident taskid) {
+  size_t n = pi->lookup[(taskid.pid + taskid.tid) % HASH_SIZE];
+  while(n != SIZE_MAX
+        && (pi->procs[n].taskid.pid != taskid.pid
+            || pi->procs[n].taskid.tid != taskid.tid))
     n = pi->procs[n].link;
   return n != SIZE_MAX ? &pi->procs[n] : NULL;
 }
 
 // ----------------------------------------------------------------------------
+
+static void getpath(const struct process *p,
+                    const char *what,
+                    char buffer[],
+                    size_t bufsize) {
+  if(p->taskid.tid == -1)
+    snprintf(buffer, bufsize, "/proc/%ld/%s", (long)p->taskid.pid, what);
+  else
+    snprintf(buffer, bufsize, "/proc/%ld/task/%ld/%s",
+             (long)p->taskid.pid, (long)p->taskid.tid, what);
+}
 
 static void proc_stat(struct process *p) {
   FILE *fp;
@@ -255,7 +307,7 @@ static void proc_stat(struct process *p) {
   if(p->stat || p->vanished)
     return;
   p->stat = 1;
-  snprintf(buffer, sizeof buffer, "/proc/%ld/stat", (long)p->pid);
+  getpath(p, "stat", buffer, sizeof buffer);
   if(!(fp = fopen(buffer, "r"))) {
     p->vanished = 1;
     return;
@@ -324,7 +376,7 @@ static void proc_status(struct process *p) {
   if(p->status || p->vanished)
     return;
   p->status = 1;
-  snprintf(buffer, sizeof buffer, "/proc/%ld/status", (long)p->pid);
+  getpath(p, "status", buffer, sizeof buffer);
   if(!(fp = fopen(buffer, "r"))) {
     p->vanished = 1;
     return;
@@ -363,7 +415,7 @@ static void proc_cmdline(struct process *p) {
 
   if(p->prop_cmdline || p->vanished)
     return;
-  snprintf(buffer, sizeof buffer, "/proc/%ld/cmdline", (long)p->pid);
+  getpath(p, "cmdline", buffer, sizeof buffer);
   if(!(fp = fopen(buffer, "r"))) {
     p->vanished = 1;
     return;
@@ -419,7 +471,7 @@ static void proc_io(struct process *p) {
   if(p->io || p->vanished)
     return;
   p->io = 1;
-  snprintf(buffer, sizeof buffer, "/proc/%ld/io", (long)p->pid);
+  getpath(p, "io", buffer, sizeof buffer);
   if(!(d->fp = fopen(buffer, "r"))) {
     if(errno != EACCES)
       p->vanished = 1;
@@ -438,7 +490,7 @@ static void proc_oom_score(struct process *p) {
   if(p->oom_score_set || p->vanished)
     return;
   p->oom_score_set =1;
-  snprintf(buffer, sizeof buffer, "/proc/%ld/oom_score", (long)p->pid);
+  getpath(p, "oom_score", buffer, sizeof buffer);
   if(!(fp = fopen(buffer, "r"))) {
     p->vanished = 1;
     return;
@@ -477,7 +529,7 @@ static void proc_smaps(struct process *p) {
   if(p->smaps || p->vanished)
     return;
   p->smaps = 1;
-  snprintf(buffer, sizeof buffer, "/proc/%ld/smaps", (long)p->pid);
+  getpath(p, "smaps", buffer, sizeof buffer);
   if(!(d->fp = fopen(buffer, "r"))) {
     p->vanished = 1;
     return;
@@ -491,41 +543,45 @@ static void proc_smaps(struct process *p) {
 
 // ----------------------------------------------------------------------------
 
-pid_t proc_get_pid(struct procinfo attribute((unused)) *pi, pid_t pid) {
-  return pid;
+pid_t proc_get_pid(struct procinfo attribute((unused)) *pi, taskident taskid) {
+  return taskid.pid;
 }
 
-pid_t proc_get_session(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+pid_t proc_get_tid(struct procinfo attribute((unused)) *pi, taskident taskid) {
+  return taskid.tid;
+}
+
+pid_t proc_get_session(struct procinfo *pi, taskident taskid) {
+ struct process *p = proc_find(pi, taskid);
 
   proc_stat(p);
   return p->prop_session;
 }
 
-uid_t proc_get_ruid(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+uid_t proc_get_ruid(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
 
   proc_status(p);
   return p->prop_ruid;
 }
 
-uid_t proc_get_euid(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+uid_t proc_get_euid(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
 
   if(!p->eid_set)
     proc_status(p);
   return p->prop_euid;
 }
 
-gid_t proc_get_rgid(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+gid_t proc_get_rgid(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
 
   proc_status(p);
   return p->prop_rgid;
 }
 
-gid_t proc_get_egid(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+gid_t proc_get_egid(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
 
   if(!p->eid_set)
     proc_status(p);
@@ -533,36 +589,36 @@ gid_t proc_get_egid(struct procinfo *pi, pid_t pid) {
   return p->prop_egid;
 }
 
-pid_t proc_get_ppid(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+pid_t proc_get_ppid(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
 
   proc_stat(p);
   return p->prop_ppid;
 }
 
-pid_t proc_get_pgid(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+pid_t proc_get_pgid(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
 
   proc_stat(p);
   return p->prop_tpgid;
 }
 
-int proc_get_tty(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+int proc_get_tty(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
 
   proc_stat(p);
   return p->prop_tty_nr;
 }
 
-const char *proc_get_comm(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+const char *proc_get_comm(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
 
   proc_stat(p);
   return p->prop_comm;
 }
 
-const char *proc_get_cmdline(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+const char *proc_get_cmdline(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
 
   proc_cmdline(p);
   if(!p->prop_cmdline || !*p->prop_cmdline) {
@@ -576,15 +632,15 @@ const char *proc_get_cmdline(struct procinfo *pi, pid_t pid) {
   return p->prop_cmdline;
 }
 
-intmax_t proc_get_scheduled_time(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+intmax_t proc_get_scheduled_time(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   
   proc_stat(p);
   return clock_to_seconds(p->prop_utime + p->prop_stime);
 }
 
-intmax_t proc_get_elapsed_time(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+intmax_t proc_get_elapsed_time(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   
   /* We have to return consistent values, otherwise the column size
    * computation becomes inconsistent */
@@ -596,32 +652,32 @@ intmax_t proc_get_elapsed_time(struct procinfo *pi, pid_t pid) {
   return p->elapsed;
 }
 
-intmax_t proc_get_start_time(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+intmax_t proc_get_start_time(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_stat(p);
   return clock_to_time(p->prop_starttime);
 }
 
-uintmax_t proc_get_flags(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+uintmax_t proc_get_flags(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_stat(p);
   return p->prop_flags;
 }
 
-intmax_t proc_get_nice(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+intmax_t proc_get_nice(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_stat(p);
   return p->prop_nice;
 }
 
-intmax_t proc_get_priority(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+intmax_t proc_get_priority(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_stat(p);
   return p->prop_priority;
 }
 
-int proc_get_state(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+int proc_get_state(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_stat(p);
   return p->prop_state;
 }
@@ -650,150 +706,173 @@ static double proc_rate(struct process *p,
   return quantity / seconds;
 }
 
-double proc_get_pcpu(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+double proc_get_pcpu(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_stat(p);
   return proc_rate(p, p->base_stat_time, p->stat_time,
                    clock_to_seconds((p->prop_utime + p->prop_stime)
                                     - (p->base_utime + p->base_stime)));
 }
 
-uintmax_t proc_get_vsize(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+uintmax_t proc_get_vsize(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_stat(p);
   return p->prop_vsize;
 }
 
-uintmax_t proc_get_rss(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+uintmax_t proc_get_rss(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_stat(p);
   return p->prop_rss * sysconf(_SC_PAGESIZE);
 }
 
-uintmax_t proc_get_insn_pointer(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+uintmax_t proc_get_insn_pointer(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_stat(p);
   return p->prop_kstkeip;
 }
 
-uintmax_t proc_get_wchan(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+uintmax_t proc_get_wchan(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_stat(p);
   return p->prop_wchan;
 }
 
-double proc_get_rchar(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+double proc_get_rchar(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_io(p);
   return proc_rate(p, p->base_io_time, p->io_time,
                    p->prop_rchar - p->base_rchar);
 }
 
-double proc_get_wchar(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+double proc_get_wchar(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_io(p);
   return proc_rate(p, p->base_io_time, p->io_time,
                    p->prop_wchar - p->base_wchar);
 }
 
-double proc_get_read_bytes(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+double proc_get_read_bytes(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_io(p);
   return proc_rate(p, p->base_io_time, p->io_time,
                    p->prop_read_bytes - p->base_read_bytes);
 }
 
-double proc_get_write_bytes(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+double proc_get_write_bytes(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_io(p);
   return proc_rate(p, p->base_io_time, p->io_time,
                    p->prop_write_bytes - p->base_write_bytes);
 }
 
-double proc_get_rw_bytes(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+double proc_get_rw_bytes(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_io(p);
   return proc_rate(p, p->base_io_time, p->io_time,
                    p->prop_read_bytes + p->prop_write_bytes
                    - p->base_read_bytes - p->base_write_bytes);
 }
 
-intmax_t proc_get_oom_score(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+intmax_t proc_get_oom_score(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_oom_score(p);
   return p->oom_score;
 }
 
-double proc_get_majflt(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+double proc_get_majflt(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_stat(p);
   return proc_rate(p, p->base_stat_time, p->stat_time,
                    p->prop_majflt - p->base_majflt) * sysconf(_SC_PAGE_SIZE);
 }
 
-double proc_get_minflt(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+double proc_get_minflt(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_stat(p);
   return proc_rate(p, p->base_stat_time, p->stat_time,
                    p->prop_minflt - p->base_minflt) * sysconf(_SC_PAGE_SIZE);
 }
 
-uintmax_t proc_get_pss(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+uintmax_t proc_get_pss(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_smaps(p);
   return p->prop_pss * KILOBYTE;
 }
 
-uintmax_t proc_get_swap(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+uintmax_t proc_get_swap(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   proc_smaps(p);
   return p->prop_swap * KILOBYTE;
 }
 
-uintmax_t proc_get_mem(struct procinfo *pi, pid_t pid) {
-  return proc_get_rss(pi, pid) + proc_get_swap(pi, pid);
+uintmax_t proc_get_mem(struct procinfo *pi, taskident taskid) {
+  return proc_get_rss(pi, taskid) + proc_get_swap(pi, taskid);
 }
 
-uintmax_t proc_get_pmem(struct procinfo *pi, pid_t pid) {
-  return proc_get_pss(pi, pid) + proc_get_swap(pi, pid);
+uintmax_t proc_get_pmem(struct procinfo *pi, taskident taskid) {
+  return proc_get_pss(pi, taskid) + proc_get_swap(pi, taskid);
+}
+
+int proc_get_num_threads(struct procinfo *pi, taskident taskid) {
+  if(taskid.tid < 0) {
+    struct process *p = proc_find(pi, taskid);
+    proc_stat(p);
+    return p->prop_num_threads;
+  } else
+    return -1;
 }
 
 // ----------------------------------------------------------------------------
 
-int proc_get_depth(struct procinfo *pi, pid_t pid) {
-  struct process *p = proc_find(pi, pid);
+int proc_get_depth(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
   if(!p)
     return -1;
   proc_stat(p);
-  if(pid == p->prop_ppid)
+  if(taskid.pid == p->prop_ppid)
     return 0;
-  else
-    return proc_get_depth(pi, p->prop_ppid) + 1;
+  else {
+    taskident parent = { p->prop_ppid, -1 };
+    return proc_get_depth(pi, parent) + 1;
+  }
 }
 
-int proc_is_ancestor(struct procinfo *pi, pid_t a, pid_t b) {
+int proc_is_ancestor(struct procinfo *pi, taskident a, taskident b) {
   struct process *p;
-  if(b == a)
+  if(b.pid == a.pid)
     return 1;
   p = proc_find(pi, b);
   proc_stat(p);
-  return proc_is_ancestor(pi, a, p->prop_ppid);
+  taskident parent = { p->prop_ppid, -1 };
+  return proc_is_ancestor(pi, a, parent);
 }
 
 // ----------------------------------------------------------------------------
 
-pid_t *proc_get_selected(struct procinfo *pi, size_t *npids) {
+static int selected(const struct process *p, unsigned flags) {
+  if(p->selected && !p->vanished) {
+    if((flags & PROC_PROCESSES) && p->taskid.tid == -1)
+      return 1;
+    if((flags & PROC_THREADS) && p->taskid.tid != -1)
+      return 1;
+  }
+  return 0;
+}
+
+taskident *proc_get_selected(struct procinfo *pi, size_t *ntasks,
+                             unsigned flags) {
   size_t n, count = 0;
-  pid_t *pids;
+  taskident *tasks;
   for(n = 0; n < pi->nprocs; ++n)
-    if(pi->procs[n].selected && !pi->procs[n].vanished)
+    if(selected(&pi->procs[n], flags))
       ++count;
-  pids = xrecalloc(NULL, count, sizeof *pids);
+  tasks = xrecalloc(NULL, count, sizeof *tasks);
   count = 0;
   for(n = 0; n < pi->nprocs; ++n)
-    if(pi->procs[n].selected && !pi->procs[n].vanished)
-      pids[count++] = pi->procs[n].pid;
-  *npids = count;
-  return pids; 
+    if(selected(&pi->procs[n], flags))
+      tasks[count++] = pi->procs[n].taskid;
+  *ntasks = count;
+  return tasks; 
 }
 

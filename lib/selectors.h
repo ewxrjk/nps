@@ -24,6 +24,8 @@
  * @brief Selecting processes
  */
 
+#include "process.h"
+
 #include <sys/types.h>
 #include <regex.h>
 
@@ -110,7 +112,7 @@ union arg *split_arg(char *arg,
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
  */
-typedef int select_function(struct procinfo *pi, pid_t pid,
+typedef int select_function(struct procinfo *pi, taskident task,
                             union arg *args, size_t nargs);
 
 /** @brief Register a selector function
@@ -127,16 +129,16 @@ void select_add(select_function *sfn, union arg *args, size_t nargs);
  */
 void select_match(const char *expr);
 
-/** @brief Test whether a proces should be selected
+/** @brief Test whether a process should be selected
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param pident Process/thread identifier
  * @return Nonzero to select @p pid
  *
  * If at least one reistered selector function returns nonzero then
  * the return value is 0.  If all return zero then the return value is
  * zero.
  */
-int select_test(struct procinfo *pi, pid_t pid);
+int select_test(struct procinfo *pi, taskident pident);
 
 /** @brief Set the default selector
  * @param sfn Selector function
@@ -155,30 +157,30 @@ void select_clear(void);
 
 /** @brief Select processes that have a controlling terminal
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
  *
  * @p args and @p nargs are not used.
  */
-int select_has_terminal(struct procinfo *pi, pid_t pid,
+int select_has_terminal(struct procinfo *pi, taskident task,
                         union arg *args, size_t nargs);
 
 /** @brief Select all processes
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
  *
  * @p args and @p nargs are not used.
  */
-int select_all(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs);
+int select_all(struct procinfo *pi, taskident task, union arg *args, size_t nargs);
 
 /** @brief Select processes that are not session leaders
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
@@ -186,126 +188,126 @@ int select_all(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs);
  * @p args and @p nargs are not used.
  */
 int select_not_session_leader(struct procinfo *pi,
-                              pid_t pid, union arg *args, size_t nargs);
+                              taskident task, union arg *args, size_t nargs);
 
 /** @brief Select specific processes
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
  *
  * Parse the argument string with @ref arg_process().
  */
-int select_pid(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs);
+int select_pid(struct procinfo *pi, taskident task, union arg *args, size_t nargs);
 
 /** @brief Select processes by parent process ID
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
  *
  * Parse the argument string with @ref arg_process().
  */
-int select_ppid(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs);
+int select_ppid(struct procinfo *pi, taskident task, union arg *args, size_t nargs);
 
 /** @brief Select processes by controlling terminal
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
  *
  * Parse the argument string with @ref arg_tty().
  */
-int select_terminal(struct procinfo *pi, pid_t pid,
+int select_terminal(struct procinfo *pi, taskident task,
                     union arg *args, size_t nargs);
 
 /** @brief Select processes by session leader
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
  *
  * Parse the argument string with @ref arg_process().
  */
-int select_leader(struct procinfo *pi, pid_t pid,
+int select_leader(struct procinfo *pi, taskident task,
                   union arg *args, size_t nargs);
 
 /** @brief Select processes by real GID
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
  *
  * Parse the argument string with @ref arg_group().
  */
-int select_rgid(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs);
+int select_rgid(struct procinfo *pi, taskident task, union arg *args, size_t nargs);
 
 /** @brief Select processes by effective GID
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
  *
  * Parse the argument string with @ref arg_group().
  */
-int select_egid(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs);
+int select_egid(struct procinfo *pi, taskident task, union arg *args, size_t nargs);
 
 /** @brief Select processes by real UID
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
  *
  * Parse the argument string with @ref arg_user().
  */
-int select_euid(struct procinfo *pi, pid_t pid, union arg *args, size_t nargs);
+int select_euid(struct procinfo *pi, taskident task, union arg *args, size_t nargs);
 
 /** @brief Select processes by effective UID
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
  *
  * Parse the argument string with @ref arg_user().
  */
-int select_ruid(struct procinfo *pi, pid_t pid,
+int select_ruid(struct procinfo *pi, taskident task,
                 union arg *args, size_t nargs);
 
 /** @brief Select processes with current effective UID and terminal
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
  *
  * @p args and @p nargs are not used.
  */
-int select_uid_tty(struct procinfo *pi, pid_t pid, union arg *args,
+int select_uid_tty(struct procinfo *pi, taskident task, union arg *args,
                    size_t nargs);
 
 /** @brief Select non-idle processes
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
  *
  * @p args and @p nargs are not used.
  */
-int select_nonidle(struct procinfo *pi, pid_t pid, union arg *args,
+int select_nonidle(struct procinfo *pi, taskident task, union arg *args,
                    size_t nargs);
 
 /** @brief Select by string match
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
@@ -313,12 +315,12 @@ int select_nonidle(struct procinfo *pi, pid_t pid, union arg *args,
  * @p nargs must be 2.  The first argument should be a property name
  * and the second a value
  */
-int select_string_match(struct procinfo *pi, pid_t pid, union arg *args,
+int select_string_match(struct procinfo *pi, taskident task, union arg *args,
                         size_t nargs);
 
 /** @brief Select by regular expression match
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
@@ -326,12 +328,12 @@ int select_string_match(struct procinfo *pi, pid_t pid, union arg *args,
  * @p nargs must be 2.  The first argument should be a property name
  * and the second a compiled regexp.
  */
-int select_regex_match(struct procinfo *pi, pid_t pid, union arg *args,
+int select_regex_match(struct procinfo *pi, taskident task, union arg *args,
                        size_t nargs);
 
 /** @brief Select by comparison
  * @param pi Pointer to process information
- * @param pid Process ID
+ * @param task Process/thread ID
  * @param args Selector argument as passed to @ref select_add()
  * @param nargs Argument cout as passed to @ref select_add()
  * @return Nonzero to select @p pid
@@ -340,7 +342,7 @@ int select_regex_match(struct procinfo *pi, pid_t pid, union arg *args,
  * the second a comparison operator; and the third a value to compare
  * against.
  */
-int select_compare(struct procinfo *pi, pid_t pid, union arg *args,
+int select_compare(struct procinfo *pi, taskident task, union arg *args,
                    size_t nargs);
 
 #define IDENTICAL 0x2261

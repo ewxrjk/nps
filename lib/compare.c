@@ -30,9 +30,9 @@
 
 struct procinfo *global_procinfo;
 
-int compare_pid(const void *av, const void *bv) {
-  pid_t a = *(const pid_t *)av;
-  pid_t b = *(const pid_t *)bv;
+int compare_task(const void *av, const void *bv) {
+  taskident a = *(const taskident *)av;
+  taskident b = *(const taskident *)bv;
   return format_compare(global_procinfo, a, b);
 }
 

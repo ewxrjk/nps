@@ -34,6 +34,8 @@ Select all processes whose real group ID is in \fILIST\fR (by name or
 number).
 .IP "\fB-H\fR, \fB--forest"
 Hierarchical display.
+.IP "\fB-L\fR, \fB--threads"
+Display threads instead of processes.
 .IP "\fB-n \fIANYTHING"
 Ignored.
 .IP "\fB-o \fIFORMAT\fR, \fB-O \fIFORMAT\fR, \fB--format \fIFORMAT"
@@ -170,6 +172,8 @@ The \fB-l\fR option is equivalent to:
 \fB-Oflags,state,uid,pid,ppid,pcpu=C,pri,nice,addr,vsz="SZ"/K,
 wchan,tty=TTY,time,argsbrief=CMD
 .RE
+.PP
+In all cases, if \fB-L\fR is used, \fBtid\fR is added after \fBpid\fR.
 .SH SORTING
 The \fB--sort\fR option specifies the properties which control the order
 in which processes are displayed, separate by spaces or commas.

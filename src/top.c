@@ -55,6 +55,7 @@ const struct option options[] = {
   { "idle", no_argument, 0, 'i' },
   { "sysinfo", required_argument, 0, 'j' },
   { "delay", required_argument, 0, 'd' },
+  { "threads", no_argument, 0, 'L' },
   { "help", no_argument, 0, OPT_HELP },
   { "help-format", no_argument, 0, OPT_HELP_FORMAT },
   { "help-sysinfo", no_argument, 0, OPT_HELP_SYSINFO },
@@ -129,6 +130,18 @@ static double update_last;
 /** @brief Whether to show idle processes */
 static int show_idle = 1;
 
+/** @brief Thread mode */
+static int thread_mode;
+
+/** @brief Mapping of thread mode to selection flags */
+static unsigned thread_mode_flags[] = {
+  PROC_PROCESSES,
+  PROC_THREADS,
+  PROC_PROCESSES|PROC_THREADS
+};
+
+#define THREAD_MODES (sizeof thread_mode_flags / sizeof *thread_mode_flags)
+
 /** @brief Keypress handler 
  *
  * Usually this is process_command() but it switches to
@@ -178,7 +191,8 @@ static const const char *const command_help[] = {
   "^L  Redisplay                j  Edit system info",
   " d  Edit update interval     o  Edit column list",
   " h  Help (repeat for more)   s  Edit sort order",
-  " i  Toggle idle processes    q  Quit",
+  " i  Toggle idle processes    t  Toggle thread display",
+  "                             q  Quit",
 };
 
 static const const char *const panning_help[] = {
@@ -227,7 +241,7 @@ int main(int argc, char **argv) {
       update_interval = v;
   }
   /* Parse command line */
-  while((n = getopt_long(argc, argv, "+o:s:ij:d:O:",
+  while((n = getopt_long(argc, argv, "+o:s:ij:d:O:L",
                          options, NULL)) >= 0) {
     switch(n) {
     case 'o':
@@ -240,6 +254,9 @@ int main(int argc, char **argv) {
       break;
     case 's':
       format_ordering(optarg, 0);
+      break;
+    case 'L':
+      thread_mode = (thread_mode + 1) % THREAD_MODES;
       break;
     case 'i':
       show_idle = 0;
@@ -264,6 +281,7 @@ int main(int argc, char **argv) {
              "Options:\n"
              "  -d, --delay SECONDS        Set update interval\n"
              "  -i, --idle                 Hide idle processes\n"
+             "  -L, --threads              Display threads\n"
              "  -j, --sysinfo SYSPROPS...  Set system information format; see --help-sysinfo\n"
              "  -o, -O, --format PROPS...  Set output format; see --help-format\n"
              "  -s, --sort [+/-]PROPS...   Set ordering; see --help-format\n"
@@ -391,8 +409,8 @@ static void loop(void) {
   struct procinfo *last = NULL;
   char *ptr, *newline;
   int x, y, maxx, maxy, ystart = 0, ylimit;
-  size_t n, npids, len, offset;
-  pid_t *pids = NULL;
+  size_t n, ntasks, len, offset;
+  taskident *tasks = NULL;
   enum next_action next = NEXT_RESAMPLE;
   const struct help_page *help;
   struct buffer b[1];
@@ -404,27 +422,29 @@ static void loop(void) {
       proc_free(last);
       last = global_procinfo;
       update_last = clock_now();
-      global_procinfo = proc_enumerate(last);
+      global_procinfo = proc_enumerate(last, PROC_PROCESSES|PROC_THREADS);
       sysinfo_reset();
-      free(pids);
-      pids = proc_get_selected(global_procinfo, &npids);
+      free(tasks);
+      tasks = proc_get_selected(global_procinfo, &ntasks, 
+                                thread_mode_flags[thread_mode]);
       next |= NEXT_RESYSINFO|NEXT_RESORT|NEXT_REFORMAT;
     }
     if(next & NEXT_RESELECT) {
       /* Reselect processes to display after selection has changed */
-      free(pids);
+      free(tasks);
       proc_reselect(global_procinfo);
-      pids = proc_get_selected(global_procinfo, &npids);
+      tasks = proc_get_selected(global_procinfo, &ntasks,
+                                thread_mode_flags[thread_mode]);
       next |= NEXT_RESORT|NEXT_REFORMAT;
     }
     if(next & NEXT_RESORT) {
       /* Put processes into order */
-      qsort(pids, npids, sizeof *pids, compare_pid);
+      qsort(tasks, ntasks, sizeof *tasks, compare_task);
       next |= NEXT_REDRAW;
     }
     if(next & NEXT_REFORMAT) {
       /* Work out column widths */
-      format_columns(global_procinfo, pids, npids);
+      format_columns(global_procinfo, tasks, ntasks);
       next |= NEXT_REDRAW;
     }
     if(next & NEXT_RESYSINFO) {
@@ -485,8 +505,8 @@ static void loop(void) {
       }
 
       /* Processes */
-      for(n = 0; n < npids && y < ylimit; ++n) {
-        format_process(global_procinfo, pids[n], b);
+      for(n = 0; n < ntasks && y < ylimit; ++n) {
+        format_process(global_procinfo, tasks[n], b);
         offset = min(display_offset, b->pos);
         // curses seems to have trouble with the last position on the screen
         if(mvaddnstr(y, 0, b->base + offset,
@@ -513,7 +533,7 @@ static void loop(void) {
       next = await();
     } while(next == NEXT_WAIT);
   }
-  free(pids);
+  free(tasks);
   proc_free(global_procinfo);
   proc_free(last);
   free(b->base);
@@ -648,6 +668,10 @@ static enum next_action process_command(int ch) {
     strcpy(input_buffer, f);
     free(f);
     break;
+  case 't':
+  case 'T':
+    thread_mode = (thread_mode + 1) % THREAD_MODES;
+    return NEXT_RESELECT;
   case 'i':
   case 'I':
     show_idle = !show_idle;

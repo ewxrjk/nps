@@ -20,6 +20,9 @@ Display only non-idle processes.
 .IP "\fB-j\fR, \fB--sysinfo \fISYSINFO"
 Sets the system information format.
 See \fBSYSTEM INFORMATION\fR below.
+.IP "\fB-L\fR, \fB--threads\fR"
+Display threads instead of processes.
+If used twice, both threads and processes are used.
 .IP "\fB-s \fIORDER\fR, \fB--sort \fIORDER"
 Set the order in which processes are listed.
 See \fBSORTING\fR below.
@@ -74,6 +77,10 @@ will be used instead.
 .IP \fBio
 IO rate.
 This is the sum of \fBread\fR and \fBwrite\fR.
+.IP \fBlwp
+An alias for \fBthread\fR.
+.IP \fBnlwp
+An alias for \fBthreads\fR.
 .IP \fBmajflt
 Major fault rate.
 Major faults are page faults that require a page to be read from disk.
@@ -154,6 +161,10 @@ If an argument is supplied, it is passed to \fBstrftime\fR(3) to
 format the time.
 .IP \fBswap
 The amount of swap used.
+.IP \fBthreads
+The number of threads, or \fB-\fR a thread.
+.IP \fBtid
+The thread ID, or \fB-\fR for a process.
 .IP \fBtime
 The cumulative CPU time used over the process's lifetime (user and kernel).
 .IP \fBtty
@@ -503,6 +514,8 @@ space, comma or quotes).
 .IP \fBs
 Changes the order specification.
 Equivalent to the \fB-s\fR option.
+.IP \fBt
+Switch between display of processes, threads and both.
 .IP \fBq
 Quits immediately.
 .SS Input

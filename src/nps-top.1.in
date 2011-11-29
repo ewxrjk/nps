@@ -20,6 +20,9 @@ Display only non-idle processes.
 .IP "\fB-j\fR, \fB--sysinfo \fISYSINFO"
 Sets the system information format.
 See \fBSYSTEM INFORMATION\fR below.
+.IP "\fB-L\fR, \fB--threads\fR"
+Display threads instead of processes.
+If used twice, both threads and processes are used.
 .IP "\fB-s \fIORDER\fR, \fB--sort \fIORDER"
 Set the order in which processes are listed.
 See \fBSORTING\fR below.
@@ -143,6 +146,8 @@ space, comma or quotes).
 .IP \fBs
 Changes the order specification.
 Equivalent to the \fB-s\fR option.
+.IP \fBt
+Switch between display of processes, threads and both.
 .IP \fBq
 Quits immediately.
 .SS Input

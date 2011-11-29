@@ -24,7 +24,7 @@
 extern struct procinfo *global_procinfo;
 
 /** @brief Shim for use with qsort() */
-int compare_pid(const void *av, const void *bv);
+int compare_task(const void *av, const void *bv);
 
 /** @brief Multimodal comparison operator
  * @param a String to compare
