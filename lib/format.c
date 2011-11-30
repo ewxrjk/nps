@@ -531,6 +531,9 @@ static const struct propinfo properties[] = {
     NULL, compare_hier, { }
   },
   {
+    "%cpu", NULL, "=pcpu", NULL, NULL, {}
+  },
+  {
     "addr", "ADDR", "Instruction pointer address (hex)",
     property_address, compare_uintmax, { .fetch_uintmax = proc_get_insn_pointer }
   },
@@ -543,12 +546,39 @@ static const struct propinfo properties[] = {
     property_command_brief, compare_string, { .fetch_string = proc_get_cmdline }
   },
   {
+    "cmd", NULL, "=argsbrief", NULL, NULL, {}
+  },
+  {
     "comm", "COMMAND", "Command",
     property_command, compare_string, { .fetch_string = proc_get_comm }
   },
   {
+    "command", NULL, "=argsbrief", NULL, NULL, {}
+  },
+  {
+    "cputime", NULL, "=time", NULL, NULL, {}
+  },
+  {
+    "egid", NULL, "=gid", NULL, NULL, {}
+  },
+  {
+    "egroup", NULL, "=group", NULL, NULL, {}
+  },
+  {
     "etime", "ELAPSED", "Elapsed time (argument: format string)",
     property_etime, compare_intmax, { .fetch_intmax = proc_get_elapsed_time }
+  },
+  {
+    "euid", NULL, "=uid", NULL, NULL, {}
+  },
+  {
+    "euser", NULL, "=user", NULL, NULL, {}
+  },
+  {
+    "f", NULL, "=flags", NULL, NULL, {}
+  },
+  {
+    "flag", NULL, "=flags", NULL, NULL, {}
   },
   {
     "flags", "F", "Flags (octal; argument o/d/x/X)",
@@ -567,12 +597,10 @@ static const struct propinfo properties[] = {
     property_iorate, compare_double, { .fetch_double = proc_get_rw_bytes }
   },
   {
-    "lwp", "LWP", "Thread ID",
-    property_pid, compare_pid, { .fetch_pid = proc_get_tid }
+    "lwp", NULL, "=tid", NULL, NULL, {}
   },
   {
-    "nlwp", "NLWP", "Number of threads",
-    property_num_threads, compare_pid, { .fetch_int = proc_get_num_threads }
+    "nlwp", NULL, "=threads", NULL, NULL, {}
   },
   {
     "majflt", "+FLT", "Major fault rate (argument: K/M/G/T/P/p)",
@@ -585,6 +613,9 @@ static const struct propinfo properties[] = {
   {
     "minflt", "-FLT", "Minor fault rate (argument: K/M/G/T/P/p)",
     property_iorate, compare_double, { .fetch_double = proc_get_minflt }
+  },
+  {
+    "ni", NULL, "=ni", NULL, NULL, {}
   },
   {
     "nice", "NI", "Nice value",
@@ -605,6 +636,9 @@ static const struct propinfo properties[] = {
   {
     "pgid", "PGID", "Process group ID",
     property_pid, compare_pid, { .fetch_pid = proc_get_pgid }
+  },
+  {
+    "pgrp", NULL, "=pgid", NULL, NULL, {}
   },
   {
     "pid", "PID", "Process ID",
@@ -663,6 +697,9 @@ static const struct propinfo properties[] = {
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_swap }
   },
   {
+    "thcount", NULL, "=threads", NULL, NULL, {}
+  },
+  {
     "threads", "T", "Number of threads",
     property_num_threads, compare_pid, { .fetch_int = proc_get_num_threads }
   },
@@ -675,6 +712,9 @@ static const struct propinfo properties[] = {
     property_time, compare_intmax, { .fetch_intmax = proc_get_scheduled_time }
   },
   {
+    "tname", NULL, "=tty", NULL, NULL, {}
+  },
+  {
     "tty", "TT", "Terminal",
     property_tty, compare_int, { .fetch_int = proc_get_tty }
   },
@@ -685,6 +725,9 @@ static const struct propinfo properties[] = {
   {
     "user", "USER", "Effective user ID (name)",
     property_user, compare_user, { .fetch_uid = proc_get_euid }
+  },
+  {
+    "vsize", NULL, "=vsz", NULL, NULL, {}
   },
   {
     "vsz", "VSZ", "Virtual memory used (argument: K/M/G/T/P/p)",
@@ -712,9 +755,11 @@ static const struct propinfo *find_property(const char *name, unsigned flags) {
     else if(c > 0)
       l = m + 1;
     else {
-      if(properties[m].description || (flags & FORMAT_INTERNAL))
+      if(properties[m].description || (flags & FORMAT_INTERNAL)) {
+        if(properties[m].description[0] == '=')
+          return find_property(properties[m].description + 1, flags);
         return &properties[m];
-      else
+      } else
         return NULL;
     }
   }
@@ -1036,7 +1081,7 @@ char **format_help(void) {
   char *ptr, **result, **next;
 
   for(n = 0; n < NPROPERTIES; ++n)
-    if(properties[n].description)
+    if(properties[n].description && properties[n].description[0] != '=')
       size += max(strlen(properties[n].name), 9)
         + max(strlen(properties[n].heading), 7)
         + strlen(properties[n].description)
@@ -1046,7 +1091,7 @@ char **format_help(void) {
   *next++ = strcpy(ptr, "  Property   Heading  Description");
   ptr += strlen(ptr) + 1;
   for(n = 0; n < NPROPERTIES; ++n) {
-    if(properties[n].description) {
+    if(properties[n].description && properties[n].description[0] != '=') {
       *next++ = ptr;
       ptr += 1 + sprintf(ptr, "  %-9s  %-7s  %s",
                          properties[n].name,

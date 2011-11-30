@@ -1,3 +1,5 @@
+.IP \fB%cpu
+Alias for \fBpcpu\fR.
 .IP \fBaddr
 The current instruction pointer (hex).
 .IP \fBargs
@@ -13,6 +15,8 @@ Requested widths are mandatory for \fBargs\fR.
 .IP \fBargsbrief
 Exactly the same as \fBargs\fR but with the directory part of the
 command stripped.
+.IP \fBcmd
+Alias for \fBargsbrief\fR.
 .IP \fBcomm
 Program filename.
 This corresponds to the first argument to \fBexecve\fR(3); for a
@@ -20,8 +24,24 @@ script it is the basename of the script, not the name of the
 interpreter.
 .IP
 Requested widths are mandatory for \fBcomm\fR.
+.IP \fBcommand
+Alias for \fBargsbrief\fR.
+.IP \fBcputime
+Alias for \fBtime\fR.
+.IP \fBegid
+Alias for \fBgid\fR.
+.IP \fBegroup
+Alias for \fBgroup\fR.
 .IP \fBetime
 Time elapsed since the process started.
+.IP \fBeuid
+Alias for \fBuid\fR.
+.IP \fBeuser
+Alias for \fBuser\fR.
+.IP \fBf
+Alias for \fBflags\fR.
+.IP \fBflag
+Alias for \fBflags\fR.
 .IP \fBflags
 Flags word from the kernel (octal).
 You will need a copy of the kernel sources to be able to interpret this.
@@ -50,6 +70,8 @@ Equivalent to \fBrss\fR+\fBswap\fR.
 .IP \fBminflt
 Minor fault rate.
 Minor faults do not require a page to be read from disk.
+.IP \fBni
+Alias for \Bnice\fR.
 .IP \fBnice
 Nice value.
 Higher values mean lower priority ("nicer").
@@ -65,6 +87,8 @@ CPU usage, as a percentage.
 (See \fBBUGS\fR below.)
 .IP \fBpgid
 Process group ID.
+.IP \fBpgrp
+Alias for \fBpgid\fR.
 .IP \fBpid
 Process ID.
 .IP \fBpmem
@@ -121,12 +145,16 @@ If an argument is supplied, it is passed to \fBstrftime\fR(3) to
 format the time.
 .IP \fBswap
 The amount of swap used.
+.IP \fBthcount
+Alias for \fBthreads\fR.
 .IP \fBthreads
 The number of threads, or \fB-\fR a thread.
 .IP \fBtid
 The thread ID, or \fB-\fR for a process.
 .IP \fBtime
 The cumulative CPU time used over the process's lifetime (user and kernel).
+.IP \fBtname
+Alias for \fBtty\fR.
 .IP \fBtty
 Controlling terminal.
 The leading \fI/dev/tty\fR or \fI/dev\fR is stripped for compactness.
@@ -136,6 +164,8 @@ Effective user ID (decimal).
 Effective user ID as a string.
 If the user name will not fit into the requested width, the numeric ID
 will be used instead.
+.IP \fBvsize
+Alias for \fBvsz\fR.
 .IP \fBvsz
 Virtual memory size.
 This is the total address space used by the process.
