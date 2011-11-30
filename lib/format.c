@@ -527,11 +527,11 @@ static int compare_hier(const struct propinfo *prop, struct procinfo *pi,
 
 static const struct propinfo properties[] = {
   {
-    "_hier", NULL, NULL,
-    NULL, compare_hier, { }
+    "%cpu", NULL, "=pcpu", NULL, NULL, {}
   },
   {
-    "%cpu", NULL, "=pcpu", NULL, NULL, {}
+    "_hier", NULL, NULL,
+    NULL, compare_hier, { }
   },
   {
     "addr", "ADDR", "Instruction pointer address (hex)",
@@ -691,6 +691,16 @@ static const struct propinfo properties[] = {
     property_user, compare_user, { .fetch_uid = proc_get_ruid }
   },
   {
+    "sess", NULL, "=sid", NULL, NULL, {},
+  },
+  {
+    "session", NULL, "=sid", NULL, NULL, {},
+  },
+  {
+    "sid", "SID", "Session ID",
+    property_pid, compare_pid, { .fetch_pid = proc_get_session }
+  },
+  {
     "state", "S", "Process state",
     property_char, compare_int, { .fetch_int = proc_get_state }
   },
@@ -765,7 +775,7 @@ static const struct propinfo *find_property(const char *name, unsigned flags) {
       l = m + 1;
     else {
       if(properties[m].description || (flags & FORMAT_INTERNAL)) {
-        if(properties[m].description[0] == '=')
+        if(properties[m].description && properties[m].description[0] == '=')
           return find_property(properties[m].description + 1, flags);
         return &properties[m];
       } else
