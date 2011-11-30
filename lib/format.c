@@ -677,6 +677,12 @@ static const struct propinfo properties[] = {
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_rss }
   },
   {
+    "rssize", NULL, "=rss", NULL, NULL, {},
+  },
+  {
+    "rsz", NULL, "=rss", NULL, NULL, {},
+  },
+  {
     "ruid", "RUID", "Real user ID (decimal)",
     property_uid, compare_uid, { .fetch_uid = proc_get_ruid }
   },
@@ -713,6 +719,9 @@ static const struct propinfo properties[] = {
   },
   {
     "tname", NULL, "=tty", NULL, NULL, {}
+  },
+  {
+    "tt", NULL, "=tty", NULL, NULL, {}
   },
   {
     "tty", "TT", "Terminal",
