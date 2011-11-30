@@ -42,6 +42,8 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 
+#include "threads.h"
+
 enum {
   OPT_HELP = 256,
   OPT_HELP_FORMAT,
@@ -129,18 +131,6 @@ static double update_last;
 
 /** @brief Whether to show idle processes */
 static int show_idle = 1;
-
-/** @brief Thread mode */
-static int thread_mode;
-
-/** @brief Mapping of thread mode to selection flags */
-static unsigned thread_mode_flags[] = {
-  PROC_PROCESSES,
-  PROC_THREADS,
-  PROC_PROCESSES|PROC_THREADS
-};
-
-#define THREAD_MODES (sizeof thread_mode_flags / sizeof *thread_mode_flags)
 
 /** @brief Keypress handler 
  *

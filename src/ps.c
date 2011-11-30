@@ -36,6 +36,8 @@
 #include <limits.h>
 #include <ctype.h>
 
+#include "threads.h"
+
 enum {
   OPT_HELP = 256,
   OPT_HELP_FORMAT,
@@ -81,7 +83,7 @@ int main(int argc, char **argv) {
   const char *s;
   char **help, *t;
   struct buffer b[1];
-  unsigned procflags = PROC_PROCESSES;
+  unsigned procflags;
   int format = 0;
 
   /* Initialize privilege support (this must stay first) */
@@ -112,7 +114,7 @@ int main(int argc, char **argv) {
       format = 'l';
       break;
     case 'L':
-      procflags = PROC_THREADS;
+      thread_mode = (thread_mode + 1) % THREAD_MODES;
       break;
     case 'g':
       args = split_arg(optarg, arg_process, &nargs);
@@ -242,6 +244,7 @@ int main(int argc, char **argv) {
     } else
       select_match(argv[optind++]);
   }
+  procflags = thread_mode_flags[thread_mode];
   /* Set the default format */
   switch(format) {
   case 0:
