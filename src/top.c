@@ -775,7 +775,7 @@ static enum next_action process_input_key(int ch) {
     process_key = process_command;
     input.bufsize = 0;
     if(input_help.lines) {
-      free((void *)input_help.lines);
+      free_strings((char **)input_help.lines);
       input_help.lines = 0;
       input_help.nlines = 0;
       help_offset = 0;
@@ -786,7 +786,7 @@ static enum next_action process_input_key(int ch) {
       process_key = process_command;
       input.bufsize = 0;
       if(input_help.lines) {
-        free((void *)input_help.lines);
+        free_strings((char **)input_help.lines);
         input_help.lines = 0;
         input_help.nlines = 0;
         help_offset = 0;

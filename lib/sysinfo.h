@@ -64,8 +64,8 @@ int sysinfo_format(struct procinfo *pi, size_t n, struct buffer *b);
 /** @brief Return system information help
  * @return NULL-terminated list of strings
  *
- * Caller is responsible for freeing the returned array (one free()
- * will do to release everything).
+ * Caller is responsible for freeing the returned array including all
+ * the strings in it.
  */
 char **sysinfo_help(void);
 

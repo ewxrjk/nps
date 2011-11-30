@@ -57,3 +57,11 @@ char *xstrndup(const char *s, size_t n) {
   ptr[n] = 0;
   return ptr;
 }
+
+void free_strings(char **strings) {
+  char **s;
+
+  for(s = strings; *s; ++s)
+    free(*s);
+  free(strings);
+}

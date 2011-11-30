@@ -155,8 +155,8 @@ int format_compare(struct procinfo *pi, taskident a, taskident b);
 /** @brief Return formatting help
  * @return NULL-terminated list of strings
  *
- * Caller is responsible for freeing the returned array (one free()
- * will do to release everything).
+ * Caller is responsible for freeing the returned array including all
+ * the strings in it.
  */
 char **format_help(void);
 

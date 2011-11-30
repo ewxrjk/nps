@@ -160,6 +160,13 @@ void fatal(int errno_value, const char *fmt, ...)
 /** @brief Function to call before issuing error message */
 extern int (*onfatal)(void);
 
+/** @brief Free a list of strings
+ * @param strings NULL-terminated list of strings
+ *
+ * @p strings and all its members are freed.
+ */
+void free_strings(char **strings);
+
 // ----------------------------------------------------------------------------
 
 /** @brief Find the minimum

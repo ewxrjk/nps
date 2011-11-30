@@ -548,22 +548,17 @@ int sysinfo_format(struct procinfo *pi, size_t n, struct buffer *b) {
 }
 
 char **sysinfo_help(void) {
-  size_t n = 0, size = 128;
+  size_t n;
   char *ptr, **result, **next;
 
-  for(n = 0; n < NSYSPROPERTIES; ++n)
-    size += max(strlen(sysproperties[n].name), 10)
-      + strlen(sysproperties[n].description)
-      + 10;
-  next = result = xmalloc(sizeof (char *) * (2 + NSYSPROPERTIES) + size);
-  ptr = (char *)(result + 2 + NSYSPROPERTIES);
-  *next++ = strcpy(ptr, "  Property    Description");
-  ptr += strlen(ptr) + 1;
+  next = result = xrecalloc(NULL, 2 + NSYSPROPERTIES, sizeof (char *));
+  *next++ = xstrdup("  Property    Description");
   for(n = 0; n < NSYSPROPERTIES; ++n) {
+    if(asprintf(&ptr, "  %-10s  %s",
+                sysproperties[n].name,
+                sysproperties[n].description) < 0)
+      fatal(errno, "asprintf");
     *next++ = ptr;
-    ptr += 1 + sprintf(ptr, "  %-10s  %s",
-                       sysproperties[n].name,
-                       sysproperties[n].description);
   }
   *next = NULL;
   return result;

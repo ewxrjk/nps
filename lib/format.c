@@ -1096,26 +1096,19 @@ int format_compare(struct procinfo *pi, taskident a, taskident b) {
 }
 
 char **format_help(void) {
-  size_t n = 0, size = 128;
+  size_t n;
   char *ptr, **result, **next;
 
-  for(n = 0; n < NPROPERTIES; ++n)
-    if(properties[n].description && properties[n].description[0] != '=')
-      size += max(strlen(properties[n].name), 9)
-        + max(strlen(properties[n].heading), 7)
-        + strlen(properties[n].description)
-        + 10;
-  next = result = xmalloc(sizeof (char *) * (2 + NPROPERTIES) + size);
-  ptr = (char *)(result + 2 + NPROPERTIES);
-  *next++ = strcpy(ptr, "  Property   Heading  Description");
-  ptr += strlen(ptr) + 1;
+  next = result = xrecalloc(NULL, 2 + NPROPERTIES, sizeof (char *));
+  *next++ = xstrdup("  Property   Heading  Description");
   for(n = 0; n < NPROPERTIES; ++n) {
     if(properties[n].description && properties[n].description[0] != '=') {
+      if(asprintf(&ptr, "  %-9s  %-7s  %s",
+                  properties[n].name,
+                  properties[n].heading,
+                  properties[n].description) < 0)
+        fatal(errno, "asprintf");
       *next++ = ptr;
-      ptr += 1 + sprintf(ptr, "  %-9s  %-7s  %s",
-                         properties[n].name,
-                         properties[n].heading,
-                         properties[n].description);
     }
   }
   *next = NULL;
