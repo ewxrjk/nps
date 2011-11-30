@@ -112,6 +112,20 @@ uid_t proc_get_ruid(struct procinfo *pi, taskident taskid);
  */
 uid_t proc_get_euid(struct procinfo *pi, taskident taskid);
 
+/** @brief Retrieve the saved user ID of a process
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @return User ID or -1
+ */
+uid_t proc_get_suid(struct procinfo *pi, taskident taskid);
+
+/** @brief Retrieve the filesystem user ID of a process
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @return User ID or -1
+ */
+uid_t proc_get_fsuid(struct procinfo *pi, taskident taskid);
+
 /** @brief Retrieve the real group ID of a process
  * @param pi Pointer to process information
  * @param taskid Process or thread ID
@@ -125,6 +139,20 @@ gid_t proc_get_rgid(struct procinfo *pi, taskident taskid);
  * @return Group ID or -1
  */
 gid_t proc_get_egid(struct procinfo *pi, taskident taskid);
+
+/** @brief Retrieve the saved group ID of a process
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @return Group ID or -1
+ */
+gid_t proc_get_sgid(struct procinfo *pi, taskident taskid);
+
+/** @brief Retrieve the filesystem group ID of a process
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @return Group ID or -1
+ */
+gid_t proc_get_fsgid(struct procinfo *pi, taskident taskid);
 
 /** @brief Retrieve the parent process ID of a process
  * @param pi Pointer to process information

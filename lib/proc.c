@@ -117,8 +117,8 @@ struct process {
   char *prop_cmdline;
   int prop_state;
   intmax_t elapsed;
-  uid_t prop_euid, prop_ruid;
-  gid_t prop_egid, prop_rgid;
+  uid_t prop_ruid, prop_euid, prop_suid, prop_fsuid;
+  gid_t prop_rgid, prop_egid, prop_sgid, prop_fsgid;
   intmax_t base_utime, base_stime;
   uintmax_t base_majflt, base_minflt;
   struct timeval base_stat_time, stat_time;
@@ -367,11 +367,11 @@ static void proc_stat(struct process *p) {
 }
 
 static void proc_status(struct process *p) {
-  char buffer[1024], *s;
+  char buffer[1024], *ptr;
   size_t i;
   FILE *fp;
   int c;
-  long e, r;
+  long e, r, s, f;
 
   if(p->status || p->vanished)
     return;
@@ -388,16 +388,22 @@ static void proc_status(struct process *p) {
         buffer[i++] = c;
     } else {
       buffer[i] = 0;
-      if((s = strchr(buffer, ':'))) {
-        *s++ = 0;
-        while(*s && (*s == ' ' || *s == '\t'))
-          ++s;
-        if(!strcmp(buffer, "Uid") && sscanf(s, "%ld %ld", &e, &r) == 2) {
-          p->prop_euid = e;
+      if((ptr = strchr(buffer, ':'))) {
+        *ptr++ = 0;
+        while(*ptr && (*ptr == ' ' || *ptr == '\t'))
+          ++ptr;
+        if(!strcmp(buffer, "Uid")
+           && sscanf(ptr, "%ld %ld %ld %ld", &r, &e, &s, &f) == 4) {
           p->prop_ruid = r;
-        } else if(!strcmp(buffer, "Gid") && sscanf(s, "%ld %ld", &e, &r) == 2){
-          p->prop_egid = e;
+          p->prop_euid = e;
+          p->prop_suid = s;
+          p->prop_fsuid = f;
+        } else if(!strcmp(buffer, "Gid")
+                  && sscanf(ptr, "%ld %ld %ld %ld", &r, &e, &s, &f) == 4) {
           p->prop_rgid = r;
+          p->prop_egid = e;
+          p->prop_sgid = s;
+          p->prop_fsgid = f;
         }
       }
       i = 0;
@@ -573,6 +579,20 @@ uid_t proc_get_euid(struct procinfo *pi, taskident taskid) {
   return p->prop_euid;
 }
 
+uid_t proc_get_suid(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
+
+  proc_status(p);
+  return p->prop_suid;
+}
+
+uid_t proc_get_fsuid(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
+
+  proc_status(p);
+  return p->prop_fsuid;
+}
+
 gid_t proc_get_rgid(struct procinfo *pi, taskident taskid) {
   struct process *p = proc_find(pi, taskid);
 
@@ -585,8 +605,21 @@ gid_t proc_get_egid(struct procinfo *pi, taskident taskid) {
 
   if(!p->eid_set)
     proc_status(p);
-  proc_status(p);
   return p->prop_egid;
+}
+
+gid_t proc_get_sgid(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
+
+  proc_status(p);
+  return p->prop_sgid;
+}
+
+gid_t proc_get_fsgid(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
+
+  proc_status(p);
+  return p->prop_fsgid;
 }
 
 pid_t proc_get_ppid(struct procinfo *pi, taskident taskid) {

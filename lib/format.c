@@ -585,6 +585,22 @@ static const struct propinfo properties[] = {
     property_uoctal, compare_uintmax, { .fetch_uintmax = proc_get_flags }
   },
   {
+    "fsgid", "FSGID", "Filesystem group ID (decimal)",
+    property_gid, compare_gid, { .fetch_gid = proc_get_fsgid }
+  },
+  {
+    "fsgroup", "FSGROUP", "Filesystem group ID (name)",
+    property_group, compare_group, { .fetch_gid = proc_get_fsgid }
+  },
+  {
+    "fsuid", "FSUID", "Filesysem user ID (decimal)",
+    property_uid, compare_uid, { .fetch_uid = proc_get_fsuid }
+  },
+  {
+    "fsuser", "FSUSER", "Filesystem user ID (name)",
+    property_user, compare_user, { .fetch_uid = proc_get_fsuid }
+  },
+  {
     "gid", "GID","Effective group ID (decimal)",
     property_gid, compare_gid, { .fetch_gid = proc_get_egid }
   },
@@ -697,6 +713,14 @@ static const struct propinfo properties[] = {
     "session", NULL, "=sid", NULL, NULL, {},
   },
   {
+    "sgid", "SGID", "Saved group ID (decimal)",
+    property_gid, compare_gid, { .fetch_gid = proc_get_sgid }
+  },
+  {
+    "sgroup", "SGROUP", "Saved group ID (name)",
+    property_group, compare_group, { .fetch_gid = proc_get_sgid }
+  },
+  {
     "sid", "SID", "Session ID",
     property_pid, compare_pid, { .fetch_pid = proc_get_session }
   },
@@ -707,6 +731,14 @@ static const struct propinfo properties[] = {
   {
     "stime", "STIME", "Start time (argument: strftime format string)",
     property_stime, compare_intmax, { .fetch_intmax = proc_get_start_time }
+  },
+  {
+    "suid", "SUID", "Saved user ID (decimal)",
+    property_uid, compare_uid, { .fetch_uid = proc_get_suid }
+  },
+  {
+    "suser", "SUSER", "Saved user ID (name)",
+    property_user, compare_user, { .fetch_uid = proc_get_suid }
   },
   {
     "swap", "SWAP", "Swap usage (argument: K/M/G/T/P/p)",
