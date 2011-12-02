@@ -74,6 +74,18 @@ int select_ppid(struct procinfo *pi, taskident task,
   return 0;
 }
 
+int select_apid(struct procinfo *pi, taskident task,
+               union arg *args, size_t nargs) {
+  size_t n;
+
+  for(n = 0; n < nargs; ++n) {
+    taskident t = { args[n].pid, -1 };
+    if(proc_is_ancestor(pi, t, task))
+      return 1;
+  }
+  return 0;
+}
+
 int select_terminal(struct procinfo *pi, taskident task,
                     union arg *args, size_t nargs) {
   size_t n;

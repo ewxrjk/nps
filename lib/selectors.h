@@ -212,6 +212,17 @@ int select_pid(struct procinfo *pi, taskident task, union arg *args, size_t narg
  */
 int select_ppid(struct procinfo *pi, taskident task, union arg *args, size_t nargs);
 
+/** @brief Select processes by ancestor process ID
+ * @param pi Pointer to process information
+ * @param task Process/thread ID
+ * @param args Selector argument as passed to @ref select_add()
+ * @param nargs Argument cout as passed to @ref select_add()
+ * @return Nonzero to select @p pid
+ *
+ * Parse the argument string with @ref arg_process().
+ */
+int select_apid(struct procinfo *pi, taskident task, union arg *args, size_t nargs);
+
 /** @brief Select processes by controlling terminal
  * @param pi Pointer to process information
  * @param task Process/thread ID

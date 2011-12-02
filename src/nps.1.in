@@ -13,6 +13,8 @@ writes a snapshot of information about processes running on the system.
 Select processes which have a controlling terminal.
 .IP "\fB-A\fR, \fB-e\fR, \fB--all"
 Select all processes.
+.IP "\fB--ancestor \fILIST"
+Select all the processes with an ancestor in \fILIST\fR.
 .IP "\fB-C \fINAME\fR, \fB--command \fINAME"
 Select processes by name.
 .IP

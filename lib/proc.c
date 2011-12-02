@@ -876,6 +876,8 @@ int proc_is_ancestor(struct procinfo *pi, taskident a, taskident b) {
   if(b.pid == a.pid)
     return 1;
   p = proc_find(pi, b);
+  if(!p)
+    return 0;
   proc_stat(p);
   taskident parent = { p->prop_ppid, -1 };
   return proc_is_ancestor(pi, a, parent);

@@ -46,6 +46,7 @@ enum {
   OPT_PPID,
   OPT_SORT,
   OPT_GROUP,
+  OPT_ANCESTOR,
 };
 
 const struct option options[] = {
@@ -64,6 +65,7 @@ const struct option options[] = {
   { "pid", required_argument, 0, 'p' },
   { "tty", required_argument, 0, 't' },
   { "ppid", required_argument, 0, OPT_PPID },
+  { "ancestor", required_argument, 0, OPT_ANCESTOR },
   { "sort", required_argument, 0, OPT_SORT },
   { "threads", no_argument, 0, 'L' },
   { "help", no_argument, 0, OPT_HELP },
@@ -152,6 +154,10 @@ int main(int argc, char **argv) {
       args = split_arg(optarg, arg_process, &nargs);
       select_add(select_ppid, args, nargs);
       break;
+    case OPT_ANCESTOR:
+      args = split_arg(optarg, arg_process, &nargs);
+      select_add(select_apid, args, nargs);
+      break;
     case 't':
       args = split_arg(optarg, arg_tty, &nargs);
       select_add(select_terminal, args, nargs);
@@ -177,6 +183,7 @@ int main(int argc, char **argv) {
              "Options:\n"
              "  -a                      Select process with a terminal\n"
              "  -A, -e, --all           Select all processes\n"
+             "  --ancestor PIDS         Select processes by ancestor process ID\n"
              "  -C, --command NAME      Select by process name\n"
              "  -d                      Select non-session-leaders\n"
              "  -f, --full, -l, --long  Full/long output format\n"
