@@ -26,6 +26,7 @@
 #include "compare.h"
 #include "priv.h"
 #include "buffer.h"
+#include "io.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <errno.h>
@@ -178,7 +179,7 @@ int main(int argc, char **argv) {
       sorting = 1;
       break;
     case OPT_HELP:
-      printf("Usage:\n"
+      xprintf("Usage:\n"
              "  ps [OPTIONS] [MATCH|PIDS...]\n"
              "Options:\n"
              "  -a                      Select process with a terminal\n"
@@ -201,14 +202,14 @@ int main(int argc, char **argv) {
              "  --help                  Display option summary\n"
              "  --version               Display version string\n"
              "See also --help-format, --help-match.\n");
-      return 0;
+      xexit(0);
     case OPT_HELP_FORMAT:
-      printf("The following properties can be used with the -O, -o and --sort options:\n"
+      xprintf("The following properties can be used with the -O, -o and --sort options:\n"
              "\n");
       help = format_help();
       while(*help)
         puts(*help++);
-      printf("\n"
+      xprintf("\n"
              "Multiple properties can be specified in one -o option, separated by\n"
              "commas or spaces. Multiple -o options accumulate rather than overriding\n"
              "one another.\n"
@@ -222,9 +223,9 @@ int main(int argc, char **argv) {
              "Multiple properties can also be specified with --sort.  Later properties are\n"
              "used to order processes that match in earlier properties.  To reverse the\n"
              "sense of an ordering, prefix it with '-'.\n");
-      return 0;
+      xexit(0);
     case OPT_HELP_MATCH:
-      printf("The following match expressions can be used:\n"
+      xprintf("The following match expressions can be used:\n"
              "\n"
              "  PROP=VALUE     Exact match against displayed string\n"
              "  PROP~REGEXP    POSIX extended regular expression match\n"
@@ -236,10 +237,10 @@ int main(int argc, char **argv) {
              "  PROP<>VALUE    Different value\n"
              "\n"
              "Put a ':' after the operator to avoid confusion with first character of VALUE.\n");
-      return 0;             
+      xexit(0);
     case OPT_VERSION:
-      printf("%s\n", PACKAGE_VERSION);
-      return 0;
+      xprintf("%s\n", PACKAGE_VERSION);
+      xexit(0);
     default:
       exit(1);
     }
@@ -307,17 +308,14 @@ int main(int argc, char **argv) {
       width = INT_MAX;            /* don't truncate */
   }
   /* Generate the output */
-  if(b->pos && printf("%.*s\n", (int)min(b->pos, width), b->base) < 0) 
-    fatal(errno, "writing to stdout");
+  if(b->pos)
+    xprintf("%.*s\n", (int)min(b->pos, width), b->base);
   for(i = 0; i < ntasks; ++i) {
     b->pos = 0;
     format_process(global_procinfo, tasks[i], b);
-    if(printf("%.*s\n", (int)min(b->pos, width), b->base) < 0) 
-      fatal(errno, "writing to stdout");
+    xprintf("%.*s\n", (int)min(b->pos, width), b->base);
   }
-  if(fclose(stdout) < 0)
-    fatal(errno, "writing to stdout");
   proc_free(global_procinfo);
   free(b->base);
-  exit(0);
+  xexit(0);
 }

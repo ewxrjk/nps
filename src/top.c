@@ -28,6 +28,7 @@
 #include "compare.h"
 #include "priv.h"
 #include "buffer.h"
+#include "io.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <curses.h>
@@ -266,7 +267,7 @@ int main(int argc, char **argv) {
         fatal(0, "invalid update interval '%s'", optarg);
       break;
     case OPT_HELP:
-      printf("Usage:\n"
+      xprintf("Usage:\n"
              "  top [OPTIONS]\n"
              "Options:\n"
              "  -d, --delay SECONDS        Set update interval\n"
@@ -278,14 +279,14 @@ int main(int argc, char **argv) {
              "  --help                     Display option summary\n"
              "  --version                  Display version string\n"
              "Press 'h' for on-screen help.\n");
-      return 0;
+      xexit(0);
     case OPT_HELP_FORMAT:
-      printf("The following properties can be used with the -O, -o and -s options:\n"
+      xprintf("The following properties can be used with the -O, -o and -s options:\n"
              "\n");
       help = format_help();
       while(*help)
         puts(*help++);
-      printf("\n"
+      xprintf("\n"
              "Multiple properties can be specified in one -o option, separated by\n"
              "commas or spaces. Multiple -o options accumulate rather than overriding\n"
              "one another.\n"
@@ -299,24 +300,24 @@ int main(int argc, char **argv) {
              "Multiple properties can also be specified with -s.  Later properties are\n"
              "used to order processes that match in earlier properties.  To reverse the\n"
              "sense of an ordering, prefix it with '-'.\n");
-      return 0;
+      xexit(0);
     case OPT_HELP_SYSINFO:
-      printf("The following properties can be used with the -j option:\n"
+      xprintf("The following properties can be used with the -j option:\n"
              "\n");
       help = sysinfo_help();
       while(*help)
         puts(*help++);
-      printf("\n"
+      xprintf("\n"
              "Multiple properties can be specified in one -j option, separated by\n"
              "commas or spaces.\n"
              "\n"
              "Use property=heading to override the heading and property/argument to set\n"
              "an argument.  Headings and arguments must be quoted if they contain\n"
              "spaces or commas, and headings must be quoted if an argument follows.\n");
-      return 0;
+      xexit(0);
     case OPT_VERSION:
-      printf("%s\n", PACKAGE_VERSION);
-      return 0;
+      xprintf("%s\n", PACKAGE_VERSION);
+      xexit(0);
     default:
       exit(1);
 
@@ -380,7 +381,7 @@ int main(int argc, char **argv) {
   onfatal = NULL;
   if(endwin() == ERR)
     fatal(0, "endwin failed");
-  return 0;
+  xexit(0);
 }
 
 // ----------------------------------------------------------------------------
