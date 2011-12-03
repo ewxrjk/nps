@@ -473,8 +473,16 @@ static void property_command_brief(const struct column *col,
 static void property_pcpu(const struct column *col, struct buffer *b,
                           size_t attribute((unused)) columnsize,
                           struct procinfo *pi, taskident task,
-                          unsigned attribute((unused)) flags) {
-  format_integer(100 * col->prop->fetch.fetch_double(pi, task), b, 'd');
+                          unsigned flags) {
+  double pcpu = 100 * col->prop->fetch.fetch_double(pi, task);
+  int prec;
+  if(flags & FORMAT_RAW)
+    buffer_printf(b, "%g", pcpu);
+  else if(col->arg && *col->arg) {
+    prec = atoi(col->arg);
+    buffer_printf(b, "%.*f", prec, pcpu);
+  } else
+    format_integer(pcpu, b, 'd');
 }
 
 static void property_mem(const struct column *col, struct buffer *b,
@@ -817,7 +825,7 @@ static const struct propinfo properties[] = {
     property_command, compare_string, { .fetch_string = property_pcomm },
   },
   {
-    "pcpu", "%CPU", "%age CPU used",
+    "pcpu", "%CPU", "%age CPU used (argument: precision)",
     property_pcpu, compare_double, { .fetch_double = proc_get_pcpu }
   },
   {
