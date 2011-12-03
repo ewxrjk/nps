@@ -416,8 +416,22 @@ int proc_get_num_threads(struct procinfo *pi, taskident taskid);
  * The return value points into the internals of @p pi, so it need not
  * be freed by the caller, and is invalidated by proc_free().
  */
- const gid_t *proc_get_supgids(struct procinfo *pi, taskident taskid,
-                               size_t *countp);
+const gid_t *proc_get_supgids(struct procinfo *pi, taskident taskid,
+                              size_t *countp);
+
+/** @brief Retrieve the realtime scheduling priority of the process
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @return Priority
+ */
+uintmax_t proc_get_rtprio(struct procinfo *pi, taskident taskid);
+
+/** @brief Retrieve the scheduling policy of the process
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @return Priority
+ */
+int proc_get_sched_policy(struct procinfo *pi, taskident taskid);
 
 // ----------------------------------------------------------------------------
 

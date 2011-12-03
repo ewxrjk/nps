@@ -902,6 +902,18 @@ const gid_t *proc_get_supgids(struct procinfo *pi, taskident taskid,
   return p->groups;
 }
 
+uintmax_t proc_get_rtprio(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
+  proc_stat(p);
+  return p->prop_rt_priority;
+}
+
+int proc_get_sched_policy(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
+  proc_stat(p);
+  return p->prop_policy;
+}
+
 // ----------------------------------------------------------------------------
 
 int proc_get_depth(struct procinfo *pi, taskident taskid) {

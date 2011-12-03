@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <unistd.h>
+#include <linux/sched.h>        /* we want the kernel's SCHED_... not glibc's */
 
 // ----------------------------------------------------------------------------
 
@@ -94,6 +95,7 @@ static void format_integer(intmax_t im, struct buffer *b, int base) {
   buffer_printf(b, (base == 'o' ? "%jo" :
                     base == 'x' ? "%jx" :
                     base == 'X' ? "%jX" :
+                    base == 'u' ? "%ju" :
                     "%jd"), im);
 }
 
@@ -193,6 +195,13 @@ static void property_decimal(const struct column *col, struct buffer *b,
                              struct procinfo *pi, taskident task,
                              unsigned attribute((unused)) flags) {
   return format_integer(col->prop->fetch.fetch_intmax(pi, task), b, 'd');
+}
+
+static void property_udecimal(const struct column *col, struct buffer *b,
+                             size_t attribute((unused)) columnsize,
+                             struct procinfo *pi, taskident task,
+                             unsigned attribute((unused)) flags) {
+  return format_integer(col->prop->fetch.fetch_intmax(pi, task), b, 'u');
 }
 
 static void property_uoctal(const struct column *col, struct buffer *b,
@@ -436,6 +445,35 @@ static void property_iorate(const struct column *col, struct buffer *b,
                 bytes(col->prop->fetch.fetch_double(pi, task),
                       0, (flags & FORMAT_RAW ? 'b' : col->arg ? *col->arg : 0),
                       buffer, sizeof buffer));
+}
+
+static void property_sched(const struct column *col, struct buffer *b,
+                           size_t columnsize,
+                           struct procinfo *pi, taskident task,
+                           unsigned flags) {
+  unsigned policy = col->prop->fetch.fetch_int(pi, task);
+  const char *name;
+  int reset;
+  
+  if(policy & SCHED_RESET_ON_FORK) {
+    reset = 1;
+    policy ^= SCHED_RESET_ON_FORK;
+  } else
+    reset = 0;
+  switch(policy) {
+  case SCHED_NORMAL: name = "-"; break;
+  case SCHED_BATCH: name = "BATCH"; break;
+  case SCHED_IDLE: name = "IDLE"; break;
+  case SCHED_FIFO: name = "FIFO"; break;
+  case SCHED_RR: name = "RR"; break;
+  default: name = NULL; break;
+  }
+  if(name && strlen(name) <= columnsize && !(flags & FORMAT_RAW))
+    buffer_append(b, name);
+  else
+    format_integer(policy, b, 'd');
+  if(reset)
+    buffer_append(b, "/-");
 }
 
 // ----------------------------------------------------------------------------
@@ -749,12 +787,20 @@ static const struct propinfo properties[] = {
     "rsz", NULL, "=rss", NULL, NULL, {},
   },
   {
+    "rtprio", "RTPRI", "Realtime scheduling priorty",
+    property_udecimal, compare_uintmax, { .fetch_uintmax = proc_get_rtprio }
+  },
+  {
     "ruid", "RUID", "Real user ID (decimal)",
     property_uid, compare_uid, { .fetch_uid = proc_get_ruid }
   },
   {
     "ruser", "RUSER", "Real user ID (name)",
     property_user, compare_user, { .fetch_uid = proc_get_ruid }
+  },
+  {
+    "sched", "SCHED", "Scheduling policy",
+    property_sched, compare_int, { .fetch_int = proc_get_sched_policy }
   },
   {
     "sess", NULL, "=sid", NULL, NULL, {},

@@ -96,12 +96,35 @@ will be used instead.
 .IP \fBrss
 Resident set size.
 This the total amount of RAM used by the process.
+.IP \fBrtprio
+Realtime scheduling priority.
+See \fBsched_setscheduler\fR(2).
 .IP \fBruid
 Real user ID (decimal).
 .IP \fBruser
 Real user ID as a string.
 If the user name will not fit into the requested width, the numeric ID
 will be used instead.
+.IP \fBsched
+Current scheduling policy.
+Possible values corresponds to \fBSCHED_\fR... constants:
+.RS
+.IP \fB-
+Normal scheduling policy (\fBSCHED_NORMAL\fR).
+.IP "\fBFIFO \fR(\fB1\fR)"
+First-in, first-out policy.
+.IP "\fBRR \fR(\fB2\fR)"
+Round-robin policy.
+.IP "\fBBATCH \fR(\fB3\fR)"
+Batch execution.
+.IP "\fBIDLE \fR(\fB5\fR)"
+Low-priority background jobs.
+.RE
+.IP
+A trailing \fB/-\fR means that the priority will be reset to normal
+when the process forks.
+See also \fBsched_setscheduler\fR(2) and
+\fIDocumentation/sched-design-CFS.txt\fR in the kernel source tree.
 .IP \fBsgid
 Saved group ID (decimal)
 .IP \fBsgroup
