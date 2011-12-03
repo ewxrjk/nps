@@ -18,10 +18,10 @@
 bin_PROGRAMS=nps nps-top
 man_MANS=nps.1 nps-top.1
 
-nps_SOURCES=ps.c
+nps_SOURCES=ps.c threads.h
 nps_LDADD=../lib/libps.a
 
-nps_top_SOURCES=top.c input.h input.c
+nps_top_SOURCES=top.c input.h input.c threads.h
 nps_top_LDADD=../lib/libps.a $(LIBCURSES) $(LIBM)
 
 AM_CPPFLAGS=-I${top_srcdir}/lib
