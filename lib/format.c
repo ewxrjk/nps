@@ -59,6 +59,7 @@ struct propinfo {
     pid_t (*fetch_pid)(struct procinfo *, taskident);
     uid_t (*fetch_uid)(struct procinfo *, taskident);
     gid_t (*fetch_gid)(struct procinfo *, taskident);
+    const gid_t *(*fetch_gids)(struct procinfo *, taskident, size_t *);
     double (*fetch_double)(struct procinfo *, taskident);
     const char *(*fetch_string)(struct procinfo *, taskident);
   } fetch;
@@ -248,6 +249,32 @@ static void property_group(const struct column *col, struct buffer *b,
                            size_t columnsize, struct procinfo *pi, taskident task,
                            unsigned attribute((unused)) flags) {
   return format_group(col->prop->fetch.fetch_gid(pi, task), b, columnsize);
+}
+
+static void property_gids(const struct column *col, struct buffer *b,
+                          size_t attribute((unused)) columnsize,
+                          struct procinfo *pi, taskident task,
+                          unsigned attribute((unused)) flags) {
+  size_t ngids, n;
+  const gid_t *gids = col->prop->fetch.fetch_gids(pi, task, &ngids);
+  for(n = 0; n < ngids; ++n) {
+    if(n)
+      buffer_putc(b, ' ');
+    format_integer(gids[n], b, 'd');
+  }
+}
+
+static void property_groups(const struct column *col, struct buffer *b,
+                            size_t attribute((unused)) columnsize,
+                            struct procinfo *pi, taskident task,
+                            unsigned attribute((unused)) flags) {
+  size_t ngids, n;
+  const gid_t *gids = col->prop->fetch.fetch_gids(pi, task, &ngids);
+  for(n = 0; n < ngids; ++n) {
+    if(n)
+      buffer_putc(b, ' ');
+    format_group(gids[n], b, SIZE_MAX);
+  }
 }
 
 static void property_char(const struct column *col, struct buffer *b,
@@ -466,6 +493,29 @@ static int compare_gid(const struct propinfo *prop, struct procinfo *pi,
   gid_t av = prop->fetch.fetch_gid(pi, a);
   gid_t bv = prop->fetch.fetch_gid(pi, b);
   return av < bv ? -1 : av > bv ? 1 : 0;
+}
+
+static int compare_gids(const struct propinfo *prop, struct procinfo *pi,
+                        taskident a, taskident b) {
+  size_t an, bn;
+  const gid_t *av = prop->fetch.fetch_gids(pi, a, &an);
+  const gid_t *bv = prop->fetch.fetch_gids(pi, b, &bn);
+  while(an && bn) {
+    if(*av < *bv)
+      return -1;
+    else if(*av > *bv)
+      return 1;
+    ++av;
+    ++bv;
+    --an;
+    --bn;
+  }
+  if(an)
+    return 1;
+  else if(bn)
+    return -1;
+  else
+    return 0;
 }
 
 static int compare_group(const struct propinfo *prop, struct procinfo *pi,
@@ -735,6 +785,14 @@ static const struct propinfo properties[] = {
   {
     "suid", "SUID", "Saved user ID (decimal)",
     property_uid, compare_uid, { .fetch_uid = proc_get_suid }
+  },
+  {
+    "supgid", "SUPGID", "Supplementary group IDs (decimal)",
+    property_gids, compare_gids, { .fetch_gids = proc_get_supgids }
+  },
+  {
+    "supgrp", "SUPGRP", "Supplementary group IDs (names)",
+    property_groups, compare_gids, { .fetch_gids = proc_get_supgids }
   },
   {
     "suser", "SUSER", "Saved user ID (name)",

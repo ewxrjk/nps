@@ -407,6 +407,18 @@ uintmax_t proc_get_pmem(struct procinfo *pi, taskident taskid);
  */
 int proc_get_num_threads(struct procinfo *pi, taskident taskid);
 
+/** @brief Retrieve the supplementary group IDs of the process
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @param countp Where to store number of groups
+ * @return Pointer to list of group IDs
+ *
+ * The return value points into the internals of @p pi, so it need not
+ * be freed by the caller, and is invalidated by proc_free().
+ */
+ const gid_t *proc_get_supgids(struct procinfo *pi, taskident taskid,
+                               size_t *countp);
+
 // ----------------------------------------------------------------------------
 
 /** @brief Return true if @p a is an ancestor of, or equal to, @p b

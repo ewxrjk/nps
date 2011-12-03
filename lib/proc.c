@@ -125,6 +125,8 @@ struct process {
   struct timeval base_io_time, io_time;
   intmax_t oom_score;
   uintmax_t prop_pss, prop_swap;
+  size_t ngroups;
+  gid_t *groups;
   STAT_PROPS(UMEMBER,SMEMBER)
   IO_PROPS(UMEMBER,SMEMBER)
   IO_PROPS(BASE_SMEMBER,BASE_UMEMBER)
@@ -165,6 +167,7 @@ void proc_free(struct procinfo *pi) {
     for(n = 0; n < pi->nprocs; ++n) {
       free(pi->procs[n].prop_comm);
       free(pi->procs[n].prop_cmdline);
+      free(pi->procs[n].groups);
     }
     free(pi->procs);
     free(pi);
@@ -366,6 +369,27 @@ static void proc_stat(struct process *p) {
     fatal(errno, "gettimeofday");
 }
 
+static size_t parse_groups(const char *ptr,
+                           gid_t *groups,
+                           size_t max) {
+  size_t ngroups = 0;
+  gid_t gid;
+  char *end;
+
+  while(*ptr) {
+    if(*ptr == ' ' || *ptr == '\n') {
+      ++ptr;
+      continue;
+    }
+    gid = strtol(ptr, &end, 10);
+    ptr = end;
+    if(groups && ngroups < max)
+      groups[ngroups] = gid;
+    ++ngroups;
+  }
+  return ngroups;
+}
+
 static void proc_status(struct process *p) {
   char buffer[1024], *ptr;
   size_t i;
@@ -404,6 +428,12 @@ static void proc_status(struct process *p) {
           p->prop_egid = e;
           p->prop_sgid = s;
           p->prop_fsgid = f;
+        } else if(!strcmp(buffer, "Groups")) {
+          if(p->groups)
+            free(p->groups);
+          p->ngroups = parse_groups(ptr, NULL, 0);
+          p->groups = xrecalloc(NULL, p->ngroups, sizeof *p->groups);
+          parse_groups(ptr, p->groups, p->ngroups);
         }
       }
       i = 0;
@@ -861,6 +891,15 @@ int proc_get_num_threads(struct procinfo *pi, taskident taskid) {
     return p->prop_num_threads;
   } else
     return -1;
+}
+
+const gid_t *proc_get_supgids(struct procinfo *pi, taskident taskid,
+                              size_t *countp) {
+  struct process *p = proc_find(pi, taskid);
+  proc_status(p);
+  if(countp)
+    *countp = p->ngroups;
+  return p->groups;
 }
 
 // ----------------------------------------------------------------------------
