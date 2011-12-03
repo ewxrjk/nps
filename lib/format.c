@@ -35,6 +35,12 @@
 #include <linux/sched.h>        /* we want the kernel's SCHED_... not glibc's */
 #include <signal.h>
 
+#ifndef SCHED_RESET_ON_FORK
+/* Not in older kernels, but we'd like binaries built on old systems
+ * to work on newer ones */
+# define SCHED_RESET_ON_FORK     0x40000000
+#endif
+
 // ----------------------------------------------------------------------------
 
 struct propinfo;
