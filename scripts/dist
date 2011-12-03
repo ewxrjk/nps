@@ -1,3 +1,4 @@
+#! /bin/bash
 # This file is part of nps.
 # Copyright (C) 2011 Richard Kettlewell
 # 
@@ -15,6 +16,32 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-SUBDIRS=lib src
-EXTRA_DIST=debian/changelog debian/compat debian/control	\
-debian/copyright debian/rules debian/source/format scripts/dist
+set -e
+set -x
+
+build() {
+    local arch=$1
+    local chroot=$2
+
+    tar xf ${archive}
+    cd ${dir}
+    schroot -pc${chroot} fakeroot debian/rules build binary
+    cd ..
+    mv ${package}_${version}_${arch}.deb products/.
+    rm -rf ${dir}
+}
+
+make distcheck
+
+package=$(awk '/^PACKAGE_NAME =/ { print $3 }' < Makefile)
+version=$(awk '/^PACKAGE_VERSION =/ { print $3 }' < Makefile)
+dir=${package}-${version}
+archive=${package}-${version}.tar.gz
+
+rm -rf products ${dir}
+mkdir products
+cp ${archive} products/.
+
+build i386 lenny32
+build amd64 lenny64
+ls -l products
