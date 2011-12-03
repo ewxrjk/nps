@@ -343,7 +343,21 @@ int main(int argc, char **argv) {
       format_set("tty=TTY,argsbrief=CMD", FORMAT_QUOTED|FORMAT_ADD);
     }
   }
-  /* Set up SIGWINCH detection */
+  /* Set up SIGWINCH detection
+   *
+   * We run with the signal blocked almost all the time - it is only
+   * released while waiting in select().  This has two implications:
+   *
+   * - we don't have to worry about the signal handler interrupting
+   *   any system calls
+   * - the signal handler will never run while the process is
+   *   privileged (if we happen to have been installed setuid).
+   *
+   * The signal handler indicates to the non-handler code that it has
+   * been invoked by writing a byte (whose value is the signal number
+   * mod 256) to a pipe.  We select on this pipe as well as standard
+   * input.
+   */
   if(pipe(sigpipe) < 0)
     fatal(errno, "pipe");
   if((n = fcntl(sigpipe[1], F_GETFL)) < 0)
@@ -352,11 +366,14 @@ int main(int argc, char **argv) {
     fatal(errno, "fcntl");
   sa.sa_handler = sighandler;
   sa.sa_flags = 0;
-  sigemptyset(&sa.sa_mask);
+  if(sigemptyset(&sa.sa_mask) < 0)
+    fatal(errno, "sigemptyset");
   if(sigaction(SIGWINCH, &sa, NULL) < 0)
     fatal(errno, "sigaction");
-  sigemptyset(&sighandled);
-  sigaddset(&sighandled, SIGWINCH);
+  if(sigemptyset(&sighandled) < 0)
+    fatal(errno, "sigemptyset");
+  if(sigaddset(&sighandled, SIGWINCH) < 0)
+    fatal(errno, "sigaddset");
   if(sigprocmask(SIG_BLOCK, &sighandled, NULL) <0)
     fatal(errno, "sigprocmask");
   /* Initialize curses */
