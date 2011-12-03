@@ -171,6 +171,20 @@ Saved group ID (decimal)
 Saved group ID as a string.
 .IP \fBsid
 Session ID.
+.IP \fBsigblocked
+Blocked signals.
+.IP
+By default signals are listed by name.
+If there are many signals this can make a very wide column.
+If this a problem, request a maximum column size (see \fBColumn
+Width\fR below); a numeric format will be used, were necessary,
+instead.
+.IP \fBsigcaught
+Caught signals.
+.IP \fBsigignored
+Ignored signals.
+.IP \fBsigpending
+Pending signals.
 .IP \fBstate
 Process state.
 The possible states are:

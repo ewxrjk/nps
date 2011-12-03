@@ -433,6 +433,38 @@ uintmax_t proc_get_rtprio(struct procinfo *pi, taskident taskid);
  */
 int proc_get_sched_policy(struct procinfo *pi, taskident taskid);
 
+/** @brief Retrieve the set of pending signals
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @param signals Where to store signal set
+ */
+void proc_get_sig_pending(struct procinfo *pi, taskident taskid,
+                          sigset_t *signals);
+
+/** @brief Retrieve the set of blocked signals
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @param signals Where to store signal set
+ */
+void proc_get_sig_blocked(struct procinfo *pi, taskident taskid,
+                          sigset_t *signals);
+
+/** @brief Retrieve the set of ignored signals
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @param signals Where to store signal set
+ */
+void proc_get_sig_ignored(struct procinfo *pi, taskident taskid,
+                          sigset_t *signals);
+
+/** @brief Retrieve the set of caught signals
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @param signals Where to store signal set
+ */
+void proc_get_sig_caught(struct procinfo *pi, taskident taskid,
+                         sigset_t *signals);
+
 // ----------------------------------------------------------------------------
 
 /** @brief Return true if @p a is an ancestor of, or equal to, @p b

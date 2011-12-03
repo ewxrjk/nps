@@ -34,6 +34,7 @@
 #include <stddef.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <signal.h>
 
 #if HAVE_GETC_UNLOCKED
 # define GETC getc_unlocked
@@ -127,6 +128,7 @@ struct process {
   uintmax_t prop_pss, prop_swap;
   size_t ngroups;
   gid_t *groups;
+  sigset_t sigpending, sigblocked, sigignored, sigcaught;
   STAT_PROPS(UMEMBER,SMEMBER)
   IO_PROPS(UMEMBER,SMEMBER)
   IO_PROPS(BASE_SMEMBER,BASE_UMEMBER)
@@ -390,6 +392,30 @@ static size_t parse_groups(const char *ptr,
   return ngroups;
 }
 
+static void parse_sigset(sigset_t *ss, const char *ptr) {
+  int ch, sig, d, bit;
+  if(sigemptyset(ss) < 0)
+    fatal(errno, "sigemptyset");
+  ptr += strspn(ptr, " \t");
+  /* The inverse of render_sigset_t in the kernel */
+  sig = 4 * strspn(ptr, "0123456789abcdefABCDEF");
+  while(sig > 0) {
+    ch = *ptr++;
+    if(ch <= '9')
+      d = ch - '0';
+    else if(ch <= 'F')
+      d = ch - ('A' - 10);
+    else
+      d = ch - ('a' - 10);
+    for(bit = 8; bit >= 1; bit /= 2) {
+      if(d & bit)
+        if(sigaddset(ss, sig) < 0)
+          fatal(errno, "sigaddset");
+      --sig;
+    }
+  }
+}
+
 static void proc_status(struct process *p) {
   char buffer[1024], *ptr;
   size_t i;
@@ -434,7 +460,14 @@ static void proc_status(struct process *p) {
           p->ngroups = parse_groups(ptr, NULL, 0);
           p->groups = xrecalloc(NULL, p->ngroups, sizeof *p->groups);
           parse_groups(ptr, p->groups, p->ngroups);
-        }
+        } else if(!strcmp(buffer, "SigPnd"))
+          parse_sigset(&p->sigpending, ptr);
+        else if(!strcmp(buffer, "SigBlk"))
+          parse_sigset(&p->sigblocked, ptr);
+        else if(!strcmp(buffer, "SigIgn"))
+          parse_sigset(&p->sigignored, ptr);
+        else if(!strcmp(buffer, "SigCgt"))
+          parse_sigset(&p->sigcaught, ptr);
       }
       i = 0;
     }
@@ -912,6 +945,34 @@ int proc_get_sched_policy(struct procinfo *pi, taskident taskid) {
   struct process *p = proc_find(pi, taskid);
   proc_stat(p);
   return p->prop_policy;
+}
+
+void proc_get_sig_pending(struct procinfo *pi, taskident taskid,
+                          sigset_t *signals) {
+  struct process *p = proc_find(pi, taskid);
+  proc_status(p);
+  *signals = p->sigpending;
+}
+
+void proc_get_sig_blocked(struct procinfo *pi, taskident taskid,
+                          sigset_t *signals) {
+  struct process *p = proc_find(pi, taskid);
+  proc_status(p);
+  *signals = p->sigblocked;
+}
+
+void proc_get_sig_ignored(struct procinfo *pi, taskident taskid,
+                          sigset_t *signals) {
+  struct process *p = proc_find(pi, taskid);
+  proc_status(p);
+  *signals = p->sigignored;
+}
+
+void proc_get_sig_caught(struct procinfo *pi, taskident taskid,
+                          sigset_t *signals) {
+  struct process *p = proc_find(pi, taskid);
+  proc_status(p);
+  *signals = p->sigcaught;
 }
 
 // ----------------------------------------------------------------------------

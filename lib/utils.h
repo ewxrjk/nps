@@ -189,5 +189,18 @@ void free_strings(char **strings);
 
 // ----------------------------------------------------------------------------
 
-#endif /* MEMORY_H */
+/** @brief Return the name of a signal
+ * @param sig Signal number
+ * @param buffer Buffer for signal name
+ * @param bufsize Size of @p buffer
+ * @return Pointer to signal name
+ *
+ * The return value need not be @p buffer - it may be a pointer to a
+ * string literal instead.
+ */
+const char *signame(int sig, char buffer[], size_t bufsize);
+
+// ----------------------------------------------------------------------------
+
+#endif /* UTILS_H */
 

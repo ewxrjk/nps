@@ -33,6 +33,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <linux/sched.h>        /* we want the kernel's SCHED_... not glibc's */
+#include <signal.h>
 
 // ----------------------------------------------------------------------------
 
@@ -63,6 +64,7 @@ struct propinfo {
     const gid_t *(*fetch_gids)(struct procinfo *, taskident, size_t *);
     double (*fetch_double)(struct procinfo *, taskident);
     const char *(*fetch_string)(struct procinfo *, taskident);
+    void (*fetch_sigset)(struct procinfo *, taskident, sigset_t *);
   } fetch;
 };
 
@@ -291,6 +293,63 @@ static void property_char(const struct column *col, struct buffer *b,
                           struct procinfo *pi, taskident task,
                           unsigned attribute((unused)) flags) {
   buffer_putc(b, col->prop->fetch.fetch_int(pi, task));
+}
+
+static void property_sigset(const struct column *col, struct buffer *b,
+                            size_t columnsize,
+                            struct procinfo *pi, taskident task,
+                            unsigned flags) {
+  int sig = 1, first = 1;
+  size_t start;
+  char namebuf[64];
+  sigset_t ss;
+  if(!(flags & FORMAT_RAW)) {
+    start = b->pos;
+    sig = first = 1;
+    col->prop->fetch.fetch_sigset(pi, task, &ss);
+    while(!sigisemptyset(&ss)) {
+      if(sigismember(&ss, sig)) {
+        if(!first)
+          buffer_putc(b, ',');
+        else
+          first = 0;
+        buffer_append(b, signame(sig, namebuf, sizeof namebuf));
+        sigdelset(&ss, sig);
+      }
+      ++sig;
+    }
+    if(first)
+      buffer_putc(b, '-');
+    if(b->pos - start <= columnsize)
+      return;
+    b->pos = start;
+  }
+  sig = first = 1;
+  col->prop->fetch.fetch_sigset(pi, task, &ss);
+  while(!sigisemptyset(&ss)) {
+    if(sigismember(&ss, sig)) {
+      if(!first)
+        buffer_putc(b, ',');
+      else
+        first = 0;
+      format_integer(sig, b, 'd');
+      sigdelset(&ss, sig);
+      if(!(flags & FORMAT_RAW)) {
+        if(sigismember(&ss, sig + 1)
+           && sigismember(&ss, sig + 2)) {
+          while(sigismember(&ss, sig + 1)) {
+            ++sig;
+            sigdelset(&ss, sig);
+          }
+          buffer_putc(b, '-');
+          format_integer(sig, b, 'd');
+        }
+      }
+    }
+    ++sig;
+  }
+  if(first)
+    buffer_putc(b, '-');
 }
 
 /* time properties */
@@ -611,6 +670,24 @@ static int compare_hier(const struct propinfo *prop, struct procinfo *pi,
   return compare_hier(prop, pi, a, bptask);
 }
 
+static int compare_sigset(const struct propinfo *prop, struct procinfo *pi,
+                          taskident a, taskident b) {
+  sigset_t sa, sb;
+  int sig, d;
+
+  prop->fetch.fetch_sigset(pi, a, &sa);
+  prop->fetch.fetch_sigset(pi, b, &sb);
+  sig = 1;
+  while(!sigisemptyset(&sa) && !sigisemptyset(&sb)) {
+    if((d = sigismember(&sa, sig) - sigismember(&sb, sig)))
+      return d;
+    sigdelset(&sa, sig);
+    sigdelset(&sb, sig);
+    ++sig;
+  }
+  return sigismember(&sa, sig) - sigismember(&sb, sig);
+}
+
 // ----------------------------------------------------------------------------
 
 static const struct propinfo properties[] = {
@@ -819,6 +896,22 @@ static const struct propinfo properties[] = {
   {
     "sid", "SID", "Session ID",
     property_pid, compare_pid, { .fetch_pid = proc_get_session }
+  },
+  {
+    "sigblocked", "BLOCKED", "Blocked signals",
+    property_sigset, compare_sigset, { .fetch_sigset = proc_get_sig_blocked },
+  },
+  {
+    "sigcaught", "CAUGHT", "Caught signals",
+    property_sigset, compare_sigset, { .fetch_sigset = proc_get_sig_caught },
+  },
+  {
+    "sigignored", "IGNORED", "Ignored signals",
+    property_sigset, compare_sigset, { .fetch_sigset = proc_get_sig_ignored },
+  },
+  {
+    "sigpending", "PENDING", "Pending signals",
+    property_sigset, compare_sigset, { .fetch_sigset = proc_get_sig_pending },
   },
   {
     "state", "S", "Process state",
