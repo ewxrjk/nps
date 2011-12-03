@@ -67,7 +67,7 @@ This is the same as \fBcomm\fR but for the parent process.
 .IP \fBpcpu
 CPU usage, as a percentage.
 (See \fBBUGS\fR below.)
-.IP \fBpgid
+.IP \fBpgrp
 Process group ID.
 .IP \fBpid
 Process ID.
@@ -141,6 +141,8 @@ The number of threads, or \fB-\fR a thread.
 The thread ID, or \fB-\fR for a process.
 .IP \fBtime
 The cumulative CPU time used over the process's lifetime (user and kernel).
+.IP \fBtpgid
+Foreground process group ID on controlling terminal.
 .IP \fBtty
 Controlling terminal.
 The leading \fI/dev/tty\fR or \fI/dev\fR is stripped for compactness.
