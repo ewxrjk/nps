@@ -1397,4 +1397,30 @@ void format_get_arg(struct buffer *b, const char *arg, int quote) {
     buffer_append(b, arg);
 }
 
+int format_rate(struct procinfo *pi, unsigned procflags) {
+  size_t n, i;
+  int rate = 1;
+  taskident *tasks = NULL;
+  size_t ntasks;
+  struct buffer b[1];
+  
+  buffer_init(b);
+  for(n = 0; n < ncolumns; ++n) {
+    if(columns[n].prop->format == property_pcpu
+       || columns[n].prop->format == property_iorate) {
+      rate = 1;
+      if(!tasks)
+        tasks = proc_get_all(pi, &ntasks, procflags);
+      for(i = 0; i < ntasks; ++i) {
+        b->pos = 0;
+        columns[n].prop->format(&columns[n], b, SIZE_MAX, pi, tasks[i], 
+                                FORMAT_RAW);
+      }
+    }
+  }
+  free(b->base);
+  free(tasks);
+  return rate;
+}
+
 int format_hierarchy;

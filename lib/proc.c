@@ -1030,3 +1030,29 @@ taskident *proc_get_selected(struct procinfo *pi, size_t *ntasks,
   return tasks; 
 }
 
+static int selected_all(const struct process *p, unsigned flags) {
+  if(!p->vanished) {
+    if((flags & PROC_PROCESSES) && p->taskid.tid == -1)
+      return 1;
+    if((flags & PROC_THREADS) && p->taskid.tid != -1)
+      return 1;
+  }
+  return 0;
+}
+
+taskident *proc_get_all(struct procinfo *pi, size_t *ntasks,
+                        unsigned flags) {
+  size_t n, count = 0;
+  taskident *tasks;
+  for(n = 0; n < pi->nprocs; ++n)
+    if(selected_all(&pi->procs[n], flags))
+      ++count;
+  tasks = xrecalloc(NULL, count, sizeof *tasks);
+  count = 0;
+  for(n = 0; n < pi->nprocs; ++n)
+    if(selected_all(&pi->procs[n], flags))
+      tasks[count++] = pi->procs[n].taskid;
+  *ntasks = count;
+  return tasks; 
+}
+

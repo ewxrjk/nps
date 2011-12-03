@@ -483,8 +483,6 @@ int proc_is_ancestor(struct procinfo *pi, taskident a, taskident b);
  * @param flags Flags
  * @return Pointer to first task; owned by caller.
  *
- * Processes are sorted by ascending process ID.
- *
  * @p flags should be a combination of:
  * - @ref PROC_PROCESSES to include processes
  * - @ref PROC_THREADS to include threads
@@ -492,4 +490,16 @@ int proc_is_ancestor(struct procinfo *pi, taskident a, taskident b);
 taskident *proc_get_selected(struct procinfo *pi, size_t *ntasks,
                              unsigned flags);
 
+/** @brief Retrieve list of all tasks
+ * @param pi Pointer to task information
+ * @param ntasks Where to store number of tasks
+ * @param flags Flags
+ * @return Pointer to first task; owned by caller.
+ *
+ * @p flags should be a combination of:
+ * - @ref PROC_PROCESSES to include processes
+ * - @ref PROC_THREADS to include threads
+ */
+taskident *proc_get_all(struct procinfo *pi, size_t *ntasks,
+                        unsigned flags);
 #endif

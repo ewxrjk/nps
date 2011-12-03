@@ -176,6 +176,7 @@ int select_string_match(struct procinfo *pi, taskident task, union arg *args,
   struct buffer b[1];
   int rc;
   assert(nargs == 2);
+  buffer_init(b);
   format_value(pi, task, args[0].string, b, 0);
   rc = !strcmp(b->base, args[1].string);
   free(b->base);
@@ -187,6 +188,7 @@ int select_compare(struct procinfo *pi, taskident task, union arg *args,
   struct buffer b[1];
   int c;
   assert(nargs == 3);
+  buffer_init(b);
   format_value(pi, task, args[0].string, b, FORMAT_RAW);
   c = qlcompare(b->base, args[2].string);
   free(b->base);
@@ -208,6 +210,7 @@ int select_regex_match(struct procinfo *pi, taskident task, union arg *args,
   struct buffer b[1];
   int rc;
   assert(nargs == 2);
+  buffer_init(b);
   format_value(pi, task, args[0].string, b, 0);
   rc = regexec(&args[1].regex, b->base, 0, 0, 0);
   free(b->base);

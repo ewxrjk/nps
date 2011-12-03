@@ -431,6 +431,12 @@ static void loop(void) {
       last = global_procinfo;
       update_last = clock_now();
       global_procinfo = proc_enumerate(last, PROC_PROCESSES|PROC_THREADS);
+      if(last == NULL
+         && format_rate(global_procinfo, PROC_PROCESSES|PROC_THREADS)) {
+        usleep(100 * 1000);
+        last = global_procinfo;
+        global_procinfo = proc_enumerate(last, PROC_PROCESSES|PROC_THREADS);
+      }
       sysinfo_reset();
       free(tasks);
       tasks = proc_get_selected(global_procinfo, &ntasks, 

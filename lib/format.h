@@ -223,6 +223,23 @@ const char *format_parse_arg(const char *ptr,
  */
 void format_get_arg(struct buffer *b, const char *arg, int quote);
 
+/** @brief Return true if there are any rate properties
+ * @param pi Process information
+ * @param procflags Flags
+ * @return Nonzero iff there are any rate properties
+ *
+ * This function not only checks whether there are any rate properties
+ * but also ensures that their baseline values have been fetched.  It
+ * is used in conjunction with a brief sleep and a second sample to
+ * ensure that rate properties represent recent information rather
+ * than lifetime values.
+ *
+ * @p flags should be a combination of:
+ * - @ref PROC_PROCESSES to include processes
+ * - @ref PROC_THREADS to include threads
+ */
+int format_rate(struct procinfo *pi, unsigned procflags);
+
 /** @brief Include hierarchy spacing in comm/args */
 extern int format_hierarchy;
 

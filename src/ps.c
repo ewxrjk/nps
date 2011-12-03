@@ -88,6 +88,8 @@ int main(int argc, char **argv) {
   struct buffer b[1];
   unsigned procflags;
   int format = 0;
+  struct procinfo *p;
+  int sample_interval = 100000/*μs*/;
 
   /* Initialize privilege support (this must stay first) */
   priv_init(argc, argv);
@@ -288,6 +290,12 @@ int main(int argc, char **argv) {
   select_default(select_uid_tty, NULL, 0);
   /* Get the list of processes */
   global_procinfo = proc_enumerate(NULL, procflags);
+  if(format_rate(global_procinfo, procflags)) {
+    usleep(sample_interval);
+    p = global_procinfo;
+    global_procinfo = proc_enumerate(p, procflags);
+    proc_free(p);
+  }
   tasks = proc_get_selected(global_procinfo, &ntasks, procflags);
   /* Put them into order */
   if(sorting)
