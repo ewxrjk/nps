@@ -1,3 +1,98 @@
 #!/usr/bin/make -f
-%:
-	dh $@
+# This file is part of nps.
+# Copyright (C) 2011 Richard Kettlewell
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+
+# Options to configure.  This can be overridden by the caller if necessary.
+CONFIGURE=--prefix=/usr --sysconfdir=/etc --mandir=/usr/share/man
+# ...you can also set CONFIGURE_EXTRA.
+
+# Set DEB_BUILD_OPTIONS=noopt to produce a non-optimized build.
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+CFLAGS=-O0 -g
+else
+CFLAGS=-O2 -g
+endif
+export CFLAGS
+
+# Set DEB_BUILD_OPTIONS=nostrip to install debuggable executables.
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+INSTALL_PROGRAM += -s
+endif
+
+# Set DEB_BUILD_OPTIONS=parallel=N to do make -jN
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+PARALLEL = -j$(NUMJOBS)
+endif
+
+# Install commands.  You wouldn't normally override these.
+INSTALL=install
+INSTALL_DATA=$(INSTALL) -p -o root -g root -m 644
+INSTALL_PROGRAM=$(INSTALL) -p -o root -g root -m 755
+INSTALL_SCRIPT=$(INSTALL) -p -o root -g root -m 755
+MKDIR=mkdir -p -m 755
+
+export INSTALL_DATA
+export INSTALL_SCRIPT
+export INSTALL_PROGRAM
+
+SHELL=bash
+
+# ./autogen.sh is the script that generates configure etc.  It only needs to be
+# run if building from a checkout rather than a tarball.
+build:
+	test -f configure || ./autogen.sh
+	./configure ${CONFIGURE} ${CONFIGURE_EXTRA}
+	$(MAKE)
+
+pkg-nps: build
+	rm -rf debian/nps
+	$(MKDIR) debian/nps/DEBIAN
+	$(MKDIR) debian/nps/usr/share/doc/nps
+	$(INSTALL_DATA) debian/copyright \
+		debian/nps/usr/share/doc/nps/copyright
+	$(INSTALL_DATA) debian/changelog \
+		debian/nps/usr/share/doc/nps/changelog
+	$(MAKE) installdirs install DESTDIR=$(shell pwd)/debian/nps
+	strip --remove-section=.comment debian/nps/usr/bin/nps
+	strip --remove-section=.comment debian/nps/usr/bin/nps-top
+	gzip -9f debian/nps/usr/share/doc/nps/changelog*
+	gzip -9f debian/nps/usr/share/man/man*/*
+	dpkg-shlibdeps -Tdebian/substvars.nps \
+		debian/nps/usr/bin/*
+	cd debian/nps && \
+		find -name DEBIAN -prune -o -type f -print \
+			| sed 's/^\.\///' \
+			| xargs md5sum > DEBIAN/md5sums
+	dpkg-gencontrol -isp -pnps -Pdebian/nps -Tdebian/substvars.nps
+	chown -R root:root debian/nps
+	chmod -R g-ws debian/nps
+	dpkg --build debian/nps ..
+
+binary: binary-arch binary-indep
+binary-arch: pkg-nps
+binary-indep: 
+
+clean:
+	if test -f Makefile; then $(MAKE) distclean; fi
+	rm -f config.cache
+	rm -f debian/files
+	rm -f debian/substvars.*
+	rm -rf debian/nps
+
+.PHONY: clean build pkg-nps binary binary-arch binary-indep

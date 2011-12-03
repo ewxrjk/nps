@@ -3,7 +3,7 @@ Maintainer: Richard Kettlewell <rjk@terraraq.org.uk>
 Section: admin
 Priority: extra
 Standards-Version: 3.9.1.0
-Build-Depends: debhelper (>=8),libncurses5-dev
+Build-Depends: libncurses5-dev
 
 Package: nps
 Architecture: any
