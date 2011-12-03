@@ -870,7 +870,7 @@ static const struct propinfo properties[] = {
     "rsz", NULL, "=rss", NULL, NULL, {},
   },
   {
-    "rtprio", "RTPRI", "Realtime scheduling priorty",
+    "rtprio", "RTPRI", "Realtime scheduling priority",
     property_udecimal, compare_uintmax, { .fetch_uintmax = proc_get_rtprio }
   },
   {
