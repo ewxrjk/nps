@@ -166,7 +166,14 @@ pid_t proc_get_ppid(struct procinfo *pi, taskident taskid);
  * @param taskid Process or thread ID
  * @return Process group ID
  */
-pid_t proc_get_pgid(struct procinfo *pi, taskident taskid);
+pid_t proc_get_pgrp(struct procinfo *pi, taskident taskid);
+
+/** @brief Retrieve foreground process group ID on controllering terminal
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @return Process group ID
+ */
+pid_t proc_get_tpgid(struct procinfo *pi, taskident taskid);
 
 /** @brief Retrieve the terminal number of a process
  * @param pi Pointer to process information

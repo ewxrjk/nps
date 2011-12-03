@@ -207,7 +207,7 @@ static void property_pid(const struct column *col, struct buffer *b,
                          struct procinfo *pi, taskident task,
                          unsigned attribute((unused)) flags) {
   pid_t pid = col->prop->fetch.fetch_pid(pi, task);
-  if(pid >= 0)
+  if(pid > 0)
     format_integer(pid, b, 'd');
   else
     buffer_putc(b, '-');
@@ -650,8 +650,8 @@ static const struct propinfo properties[] = {
     property_pcpu, compare_double, { .fetch_double = proc_get_pcpu }
   },
   {
-    "pgid", "PGID", "Process group ID",
-    property_pid, compare_pid, { .fetch_pid = proc_get_pgid }
+    "pgrp", "PGRP", "Process group ID",
+    property_pid, compare_pid, { .fetch_pid = proc_get_pgrp }
   },
   {
     "pgrp", NULL, "=pgid", NULL, NULL, {}
@@ -761,6 +761,10 @@ static const struct propinfo properties[] = {
   },
   {
     "tname", NULL, "=tty", NULL, NULL, {}
+  },
+  {
+    "tpgid", "TPGID", "Foreground progress group on controlling terminal",
+    property_pid, compare_pid, { .fetch_pid = proc_get_tpgid }
   },
   {
     "tt", NULL, "=tty", NULL, NULL, {}

@@ -629,7 +629,14 @@ pid_t proc_get_ppid(struct procinfo *pi, taskident taskid) {
   return p->prop_ppid;
 }
 
-pid_t proc_get_pgid(struct procinfo *pi, taskident taskid) {
+pid_t proc_get_pgrp(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
+
+  proc_stat(p);
+  return p->prop_pgrp;
+}
+
+pid_t proc_get_tpgid(struct procinfo *pi, taskident taskid) {
   struct process *p = proc_find(pi, taskid);
 
   proc_stat(p);
