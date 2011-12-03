@@ -135,7 +135,7 @@ For example, to list processes with an RSS of at least one megabyte,
 you might use:
 .PP
 .RS
-\fBnps -o user,pid,rss,tty,comm 'rss>=1M'
+\fBnps \-o user,pid,rss,tty,comm 'rss>=1M'
 .RE
 .SS "Quoting"
 Since value match expressions include shell metacharacters, some
@@ -148,7 +148,7 @@ When the value is a shell variable it is advisable to always include
 the colon, for example:
 .PP
 .RS
-\fBnps -o user,pid,rss,tty,comm "comm=:${COMMAND}"
+\fBnps \-o user,pid,rss,tty,comm "comm=:${COMMAND}"
 .RE
 .SH FORMATTING
 The \fB-o\fR, \fB-O\fR and \fB--format\fR options specify a list of
