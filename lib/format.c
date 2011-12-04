@@ -22,6 +22,7 @@
 #include "buffer.h"
 #include "process.h"
 #include "utils.h"
+#include "parse.h"
 #include <string.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -1033,126 +1034,39 @@ static const struct propinfo *find_property(const char *name, unsigned flags) {
 }
 
 int format_set(const char *f, unsigned flags) {
-  char buffer[128], heading_buffer[128], *heading, arg_buffer[128], *arg, *e;
-  size_t i;
+  char *name, *heading, *arg;
   const struct propinfo *prop;
   size_t reqwidth;
+  enum parse_status ps;
   if(!(flags & (FORMAT_CHECK|FORMAT_ADD)))
     format_clear();
-  while(*f) {
-    if(*f == ' ' || *f == ',') {
-      ++f;
-      continue;
-    }
-    i = 0;
-    while(*f && (*f != ' ' && *f != ',' && *f != '=' && *f != ':' && *f != '/')) {
-      if(i < sizeof buffer - 1)
-        buffer[i++] = *f;
-      ++f;
-    }
-    buffer[i] = 0;
-    if(*f == ':') {
-      ++f;
-      errno = 0;
-      reqwidth = strtoul(f, &e, 10);
-      if(errno || e == f) {
-        if(flags & FORMAT_CHECK)
-          return 0;
-        else
-          fatal(errno, "invalid column size");
-      }
-      f = e;
-    } else
-      reqwidth = SIZE_MAX;
-    if(*f == '=') {
-      if(!(f = format_parse_arg(f + 1, heading_buffer, sizeof heading_buffer, flags)))
-        return 0;
-      heading = heading_buffer;
-    } else
-      heading = NULL;
-    if(*f == '/') {
-      if(!(f = format_parse_arg(f + 1, arg_buffer, sizeof arg_buffer,
-                                flags|FORMAT_QUOTED)))
-        return 0;
-      arg = arg_buffer;
-    } else
-      arg = NULL;
-    prop = find_property(buffer, flags);
+  while((reqwidth = SIZE_MAX),
+        !(ps = parse_element(&f, NULL, &name, &reqwidth, &heading, &arg,
+                             flags|FORMAT_SIZE|FORMAT_HEADING|FORMAT_ARG))) {
+    prop = find_property(name, flags);
     if(flags & FORMAT_CHECK) {
+      free(name);
+      free(heading);
+      free(arg);
       if(!prop)
         return 0;
     } else {
       if(!prop)
-        fatal(0, "unknown process property '%s'", buffer);
+        fatal(0, "unknown process property '%s'", name);
       if((ssize_t)(ncolumns + 1) < 0)
         fatal(0, "too many columns");
       columns = xrecalloc(columns, ncolumns + 1, sizeof *columns);
       memset(&columns[ncolumns], 0, sizeof *columns);
       columns[ncolumns].prop = prop;
-      columns[ncolumns].heading = xstrdup(heading ? heading 
-                                          : columns[ncolumns].prop->heading);
-      columns[ncolumns].arg = arg ? xstrdup(arg) : NULL;
+      columns[ncolumns].heading = heading ? heading 
+                                     : xstrdup(columns[ncolumns].prop->heading);
+      columns[ncolumns].arg = arg ? arg : NULL;
       columns[ncolumns].reqwidth = reqwidth;
       ++ncolumns;
+      free(name);
     }
   }
-  return 1;
-}
-
-const char *format_parse_arg(const char *ptr,
-                             char buffer[],
-                             size_t bufsize,
-                             unsigned flags) {
-  size_t i = 0;
-  int q;
-
-  if(flags & FORMAT_QUOTED) {
-    /* property=heading extends until we hit a separator
-     * property="heading" extends to the close quote; ' is allowed too
-     */
-    if(*ptr == '"' || *ptr == '\'') {
-      q = *ptr++;
-      while(*ptr && *ptr != q) {
-        /* \ escapes the next character (there must be one) */
-        if(*ptr == '\\') {
-          if(ptr[1] != 0)
-            ++ptr;
-          else if(flags & FORMAT_CHECK)
-            return 0;
-        }
-        if(i < bufsize - 1)
-          buffer[i++] = *ptr;
-        ++ptr;
-      }
-      /* The close quotes must exist */
-      if(*ptr == q)
-        ++ptr;
-      else
-        if(flags & FORMAT_CHECK)
-          return 0;
-    } else {
-      /* unquoted heading */
-      while(*ptr && (*ptr != ' ' && *ptr != ',')) {
-        if(i < bufsize - 1)
-          buffer[i++] = *ptr;
-        ++ptr;
-      }
-    }
-    buffer[i] = 0;
-  } else {
-    /* property=heading extends to the end of the argument, not until
-     * the next comma; "The default header can be overridden by
-     * appending an <equals-sign> and the new text of the
-     * header. The rest of the characters in the argument shall be
-     * used as the header text." */
-    while(*ptr) {
-      if(i < bufsize - 1)
-        buffer[i++] = *ptr;
-      ++ptr;
-    }
-  }
-  buffer[i] = 0;
-  return ptr;
+  return ps == parse_eof;
 }
 
 void format_clear(void) {
@@ -1255,57 +1169,40 @@ void format_value(struct procinfo *pi, taskident task,
 }
 
 int format_ordering(const char *ordering, unsigned flags) {
-  char buffer[128], *b;
-  size_t i;
+  char *name;
   const struct propinfo *prop;
   int sign;
+  enum parse_status ps;
   if(!(flags & (FORMAT_CHECK|FORMAT_ADD))) {
     free(orders);
     orders = NULL;
     norders = 0;
   }
-  while(*ordering) {
-    if(*ordering == ' ' || *ordering == ',') {
-      ++ordering;
-      continue;
+  while(!(ps = parse_element(&ordering, &sign, &name, NULL, NULL, NULL,
+                             flags|FORMAT_QUOTED|FORMAT_SIGN))) {
+    switch(sign) {
+    case '+': sign = -1; break;
+    case '-': sign = 1; break;
+    case 0: sign = -1; break;
     }
-    i = 0;
-    while(*ordering && *ordering != ' ' && *ordering != ',') {
-      if(i < sizeof buffer - 1)
-        buffer[i++] = *ordering;
-      ++ordering;
-    }
-    buffer[i] = 0;
-    b = buffer;
-    switch(*b) {
-    case '+':
-      ++b;
-      sign = -1;
-      break;
-    case '-':
-      ++b;
-      sign = 1;
-      break;
-    default:
-      sign = -1;
-      break;
-    }
-    prop = find_property(b, flags);
+    prop = find_property(name, flags);
     if(flags & FORMAT_CHECK) {
+      free(name);
       if(!prop)
         return 0;
     } else {
       if(!prop)
-        fatal(0, "unknown process property '%s'", buffer);
+        fatal(0, "unknown process property '%s'", name);
       if((ssize_t)(norders + 1) < 0)
         fatal(0, "too many columns");
       orders = xrecalloc(orders, norders + 1, sizeof *orders);
       orders[norders].prop = prop;
       orders[norders].sign = sign;
       ++norders;
+      free(name);
     }
   }
-  return 1;
+  return ps == parse_eof;
 }
 
 char *format_get_ordering(void) {

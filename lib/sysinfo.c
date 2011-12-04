@@ -24,6 +24,7 @@
 #include "utils.h"
 #include "general.h"
 #include "buffer.h"
+#include "parse.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -453,61 +454,43 @@ static const struct sysprop *sysinfo_find(const char *name) {
 }
 
 int sysinfo_set(const char *format, unsigned flags) {
-  char buffer[128], heading_buffer[128], *heading, arg_buffer[128], *arg;
+  char *name, *heading, *arg;
   size_t i;
   const struct sysprop *prop;
+  enum parse_status ps;
 
   if(!(flags & (FORMAT_CHECK|FORMAT_ADD))) {
-    for(i = 0; i < nsysinfos; ++i)
+    for(i = 0; i < nsysinfos; ++i) {
+      free(sysinfos[i].heading);
       free(sysinfos[i].arg);
+    }
     free(sysinfos);
     sysinfos = NULL;
     nsysinfos = 0;
   }
-  while(*format) {
-    if(*format == ' ' || *format == ',') {
-      ++format;
-      continue;
-    }
-    i = 0;
-    while(*format && *format != ' ' && *format != ','
-          && *format != '/' && *format != '=') {
-      if(i < sizeof buffer - 1)
-        buffer[i++] = *format;
-      ++format;
-    }
-    buffer[i] = 0;
-    if(*format == '=') {
-      if(!(format = format_parse_arg(format + 1, heading_buffer, sizeof heading_buffer,
-                                     flags|FORMAT_QUOTED)))
-        return 0;
-      heading = heading_buffer;
-    } else
-      heading = NULL;
-    if(*format == '/') {
-      if(!(format = format_parse_arg(format + 1, arg_buffer, sizeof arg_buffer,
-                                     flags|FORMAT_QUOTED)))
-        return 0;
-      arg = arg_buffer;
-    } else
-      arg = NULL;
-    prop = sysinfo_find(buffer);
+  while(!(ps = parse_element(&format, NULL, &name, NULL, &heading, &arg,
+                             flags|FORMAT_QUOTED|FORMAT_HEADING|FORMAT_ARG))) {
+    prop = sysinfo_find(name);
     if(flags & FORMAT_CHECK) {
+      free(name);
+      free(heading);
+      free(arg);
       if(!prop)
         return 0;
     } else {
       if(!prop)
-        fatal(0, "unknown system property '%s'", buffer);
+        fatal(0, "unknown system property '%s'", name);
       if((ssize_t)(nsysinfos + 1) < 0)
         fatal(0, "too many columns");
       sysinfos = xrecalloc(sysinfos, nsysinfos + 1, sizeof *sysinfos);
       sysinfos[nsysinfos].prop = prop;
-      sysinfos[nsysinfos].heading = heading ? xstrdup(heading) : NULL;
-      sysinfos[nsysinfos].arg = arg ? xstrdup(arg) : NULL;
+      sysinfos[nsysinfos].heading = heading;
+      sysinfos[nsysinfos].arg = arg;
       ++nsysinfos;
+      free(name);
     }
   }
-  return 1;
+  return ps == parse_eof;
 }
 
 size_t sysinfo_reset(void) {

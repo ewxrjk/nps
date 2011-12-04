@@ -58,6 +58,18 @@ struct buffer;
 /** @brief Suppress K, M, etc */
 #define FORMAT_RAW 0x0010
 
+/** @brief Parse a size specification */
+#define FORMAT_SIZE 0x0020
+
+/** @brief Parse a heading */
+#define FORMAT_HEADING 0x0040
+
+/** @brief Parse an argument */
+#define FORMAT_ARG 0x0080
+
+/** @brief Parse a sign specification */
+#define FORMAT_SIGN 0x0100
+
 /** @brief Add to the format list
  * @param f Format string
  * @param flags Flags
@@ -195,26 +207,6 @@ char *bytes(uintmax_t n,
             int ch,
             char buffer[],
             size_t bufsize);
-
-/** @brief Parse an argument string
- * @param ptr Pointer to input string
- * @param buffer Buffer for argument value
- * @param bufsize Size of buffer
- * @param flags Flags
- * @return Pointer after parsed argument
- *
- * @p flags should be a combination of the following values:
- * - @ref FORMAT_ARGUMENT if @p f is in argument syntax
- * - @ref FORMAT_QUOTED if @p f is in quoted syntax
- * - @ref FORMAT_CHECK to check @p f rather than act on it
- *
- * If @ref FORMAT_CHECK is specified then any errors cause a 0 return.
- * If it is not specified then errors are ignored.
- */
-const char *format_parse_arg(const char *ptr,
-                             char buffer[],
-                             size_t bufsize,
-                             unsigned flags);
 
 /** @brief Format an argument string
  * @param b String buffer for output
