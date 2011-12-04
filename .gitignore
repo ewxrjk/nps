@@ -22,3 +22,8 @@ TAGS
 debian/files
 debian/nps
 debian/substvars.*
+lib/t-buffer
+lib/t-bytes
+lib/t-device
+lib/t-error
+lib/t-parse

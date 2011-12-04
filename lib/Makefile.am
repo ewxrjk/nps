@@ -16,8 +16,14 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 noinst_LIBRARIES=libps.a
+noinst_PROGRAMS=$(TESTS)
+LDADD=libps.a
 
 libps_a_SOURCES=buffer.h compare.h format.h general.h io.h parse.h	\
 priv.h process.h rc.h selectors.h sysinfo.h utils.h buffer.c bytes.c	\
 compare.c device.c error.c format.c io.c memory.c parse.c priv.c	\
 proc.c rc.c select.c selectors.c signal.c split.c sysinfo.c time.c
+
+TESTS=t-buffer t-bytes t-device t-error t-parse
+
+

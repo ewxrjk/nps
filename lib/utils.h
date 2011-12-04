@@ -157,8 +157,17 @@ void fatal(int errno_value, const char *fmt, ...)
   attribute((noreturn))
   attribute((format (printf, 2, 3)));
 
-/** @brief Function to call before issuing error message */
+/** @brief Function to call before issuing error message
+ * @return Ignored
+ */
 extern int (*onfatal)(void);
+
+/** @brief Function to call to exit
+ * @param status Exit status
+ */
+extern void (*terminate)(int status)
+  attribute((noreturn))
+;
 
 /** @brief Free a list of strings
  * @param strings NULL-terminated list of strings

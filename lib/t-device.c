@@ -19,26 +19,17 @@
  */
 #include <config.h>
 #include "utils.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include <errno.h>
 #include <string.h>
-#include <stdarg.h>
+#include <assert.h>
+#include <sys/stat.h>
 
-int (*onfatal)(void);
-void (*terminate)(int) attribute((noreturn)) = exit;
-
-void fatal(int errno_value, const char *fmt, ...) {
-  va_list ap;
-
-  if(onfatal)
-    onfatal();
-  va_start(ap, fmt);
-  fprintf(stderr, "ERROR: ");
-  vfprintf(stderr, fmt, ap);
-  va_end(ap);
-  if(errno_value)
-    fprintf(stderr, ": %s\n", strerror(errno_value));
-  else
-    fprintf(stderr, "\n");
-  terminate(1);
+int main() {
+  struct stat s;
+  const char *p;
+  if(stat("/dev/null", &s) < 0)
+    fatal(errno, "stat /dev/null");
+  p = device_path(0, s.st_rdev);
+  assert(!strcmp(p, "/dev/null"));
+  return 0;
 }
