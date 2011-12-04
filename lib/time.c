@@ -108,6 +108,7 @@ size_t strfelapsed(struct buffer *b, const char *format, intmax_t seconds) {
         break;
       case 'm':
         value = seconds / 60;
+        break;
       case 'M':
         value = (seconds % 3600) / 60;
         break;
