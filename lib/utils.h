@@ -97,7 +97,7 @@ size_t strfelapsed(struct buffer *b, const char *format, intmax_t seconds);
  *
  * Don't free the return value.
  */
-char *device_path(int type, dev_t dev);
+const char *device_path(int type, dev_t dev);
 
 // ----------------------------------------------------------------------------
 

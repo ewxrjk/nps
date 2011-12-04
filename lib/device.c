@@ -101,7 +101,7 @@ static void device_map(const char *dir) {
   closedir(dp);
 }
 
-char *device_path(int type, dev_t device) {
+const char *device_path(int type, dev_t device) {
   ssize_t l, r, m;
   int i;
   for(i = 0; i < 2; ++i) {
