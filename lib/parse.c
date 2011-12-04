@@ -29,6 +29,22 @@ static const char *parse_arg(const char *ptr,
                              char **resultp,
                              unsigned flags);
 
+static unsigned separator(int c, unsigned flags) {
+  switch(c) {
+  case ' ':
+  case ',':
+    return 1;
+  case ':':
+    return flags & FORMAT_SIZE;
+  case '=':
+    return flags & FORMAT_HEADING;
+  case '/':
+    return flags & FORMAT_ARG;
+  default:
+    return 0;
+  }
+}
+
 enum parse_status parse_element(const char **ptrp,
                                 int *signp,
                                 char **namep,
@@ -36,26 +52,6 @@ enum parse_status parse_element(const char **ptrp,
                                 char **headingp,
                                 char **argp,
                                 unsigned flags) {
-  /* Hack to get around broken GCC warning.  See
-   * http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36774 */
-  auto unsigned separator(int);
-
-  unsigned separator(int c) {
-    switch(c) {
-    case ' ':
-    case ',':
-      return 1;
-    case ':':
-      return flags & FORMAT_SIZE;
-    case '=':
-      return flags & FORMAT_HEADING;
-    case '/':
-      return flags & FORMAT_ARG;
-    default:
-      return 0;
-    }
-  }
-
   int sign;
   size_t size;
   char *end;
@@ -77,7 +73,7 @@ enum parse_status parse_element(const char **ptrp,
     if(signp)
       *signp = sign;
   }
-  while(*ptr && !separator(*ptr)) {
+  while(*ptr && !separator(*ptr, flags)) {
     if(namep)
       buffer_putc(b, *ptr);
     ++ptr;
