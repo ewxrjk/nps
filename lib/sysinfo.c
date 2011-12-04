@@ -229,6 +229,8 @@ static void get_stat(void) {
             ncpu = strtoul(input + 3, NULL, 10) + 1;
           /* Make sure we have space */
           if(ncpu >= maxcpuinfos) {
+            if(!(1 + ncpu))
+              fatal(0, "too many CPUs");
             cpuinfos = xrecalloc(cpuinfos, 1 + ncpu, sizeof *cpuinfos);
             memset(&cpuinfos[maxcpuinfos], 0, (1 + ncpu - maxcpuinfos) * sizeof *cpuinfos);
             maxcpuinfos = 1 + ncpu;

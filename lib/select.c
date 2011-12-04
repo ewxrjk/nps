@@ -39,6 +39,8 @@ void select_clear(void) {
 }
 
 void select_add(select_function *sfn, union arg *args, size_t nargs) {
+  if(!(nselectors + 1))
+    fatal(0, "too many selectors");
   selectors = xrecalloc(selectors, nselectors + 1,  sizeof *selectors);
   selectors[nselectors].sfn = sfn;
   selectors[nselectors].args = args;
