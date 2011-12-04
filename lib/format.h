@@ -136,7 +136,7 @@ void format_process(struct procinfo *pi, taskident task, struct buffer *b);
  * Any existing contents of @p b will be overwritten.  It will be
  * 0-terminated.
  */
-void format_value(struct procinfo *pi, taskident pid,
+void format_value(struct procinfo *pi, taskident task,
                   const char *property,
                   struct buffer *b,
                   unsigned flags);

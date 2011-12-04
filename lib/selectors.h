@@ -352,13 +352,31 @@ int select_regex_match(struct procinfo *pi, taskident task, union arg *args,
  * @p nargs must be 3.  The first argument should be a property name;
  * the second a comparison operator; and the third a value to compare
  * against.
+ *
+ * The possible comparions operators are:
+ * - '<'
+ * - '='
+ * - @ref NE
+ * - '>'
+ * - @ref LE
+ * - @ref GE
+ *
+ * For @ref IDENTICAL, use select_string_match() instead.  (Perhaps
+ * this should be made more uniform?)
  */
 int select_compare(struct procinfo *pi, taskident task, union arg *args,
                    size_t nargs);
 
+/** @brief String identity comparison operator */
 #define IDENTICAL 0x2261
+
+/** @brief Inequality comparison operator */
 #define NE 0x2260
+
+/** @brief "Less than or equal to" comparison operator */
 #define LE 0x2264
+
+/** @brief "Greater than or equal to" comparison operator */
 #define GE 0x2265
 
 #endif /* SELECTORS_H */

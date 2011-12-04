@@ -24,10 +24,19 @@
  * @brief General definitions
  */
 
+/** @brief One kilobyte */
 #define KILOBYTE 1024
+
+/** @brief One megabyte */
 #define MEGABYTE (1024 * KILOBYTE)
+
+/** @brief One gigabyte */
 #define GIGABYTE (1024 * MEGABYTE)
+
+/** @brief One terabyte */
 #define TERABYTE ((uintmax_t)1024 * GIGABYTE)
+
+/** @brief One petabyte */
 #define PETABYTE ((uintmax_t)1024 * TERABYTE)
 
 #endif /* GENERAL_H */

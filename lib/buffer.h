@@ -39,7 +39,7 @@ struct buffer {
 };
 
 /** @brief Initialize a string buffer
- * @param Pointer to string buffer
+ * @param b Pointer to string buffer
  */
 static inline void buffer_init(struct buffer *b) {
   b->base = 0;
@@ -90,7 +90,7 @@ int buffer_printf(struct buffer *b, const char *fmt, ...)
 
 /** @brief Append a formatted time to a strinf buffer
  * @param b Pointer to string buffer
- * @param fmt Format string
+ * @param format Format string
  * @param tm Time to format
  */
 void buffer_strftime(struct buffer *b, const char *format, const struct tm *tm);
