@@ -106,7 +106,8 @@ int main(int argc, char **argv) {
       select_add(select_all, NULL, 0);
       break;
     case 'C':
-      asprintf(&t, "comm=:%s", optarg);
+      if(asprintf(&t, "comm=:%s", optarg) < 0)
+	fatal(errno, "asprintf");
       select_match(t);
       break;
     case 'd':

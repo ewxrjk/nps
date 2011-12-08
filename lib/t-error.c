@@ -28,14 +28,14 @@
 #include <assert.h>
 
 static int before(void) {
-  write(2, "X", 1);
+  assert(write(2, "X", 1) == 1);
   return 0;
 }
 
 static void launder_exit(int) attribute((noreturn));
 
 static void launder_exit(int rc) {
-  write(2, "Y", 1);
+  assert(write(2, "Y", 1) == 1);
   _exit(rc);
 }
 

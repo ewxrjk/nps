@@ -564,7 +564,8 @@ static void proc_oom_score(struct process *p) {
     p->vanished = 1;
     return;
   }
-  fscanf(fp, "%jd", &p->oom_score);
+  if(fscanf(fp, "%jd", &p->oom_score) < 0)
+    p->vanished = 1;
   fclose(fp);
 }
 
