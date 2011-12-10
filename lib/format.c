@@ -306,7 +306,7 @@ static void property_sigset(const struct column *col, struct buffer *b,
                             size_t columnsize,
                             struct procinfo *pi, taskident task,
                             unsigned flags) {
-  int sig = 1, first = 1;
+  int sig, first;
   size_t start;
   char namebuf[64];
   sigset_t ss;
