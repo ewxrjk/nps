@@ -403,11 +403,14 @@ int main(int argc, char **argv) {
 
 // ----------------------------------------------------------------------------
 
+/* Suppress redundant warning in a way that both GCC and Clang can
+ * tolerate */
+static void discard(int attribute((unused)) whatever) { }
+
 static void sighandler(int sig) {
   unsigned char sigc = sig;
   int save_errno = errno;
-  int shut_up_gcc = write(sigpipe[1], &sigc, 1);
-  shut_up_gcc = 0;
+  discard(write(sigpipe[1], &sigc, 1));
   errno = save_errno;
 }
 
