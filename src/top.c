@@ -29,6 +29,7 @@
 #include "priv.h"
 #include "buffer.h"
 #include "io.h"
+#include "opts.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <curses.h>
@@ -257,14 +258,7 @@ int main(int argc, char **argv) {
       have_set_sysinfo = 1;
       break;
     case 'd':
-      errno = 0;
-      update_interval = strtod(optarg, &e);
-      if(errno)
-        fatal(errno, "invalid update interval '%s'", optarg);
-      if(e == optarg || *e
-         || isnan(update_interval) || isinf(update_interval)
-         || update_interval <= 0)
-        fatal(0, "invalid update interval '%s'", optarg);
+      update_interval = parse_interval(optarg);
       break;
     case OPT_HELP:
       xprintf("Usage:\n"

@@ -27,6 +27,7 @@
 #include "priv.h"
 #include "buffer.h"
 #include "io.h"
+#include "opts.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <errno.h>
@@ -36,6 +37,8 @@
 #include <sys/ioctl.h>
 #include <limits.h>
 #include <ctype.h>
+#include <math.h>
+#include <time.h>
 
 #include "threads.h"
 
@@ -48,6 +51,7 @@ enum {
   OPT_SORT,
   OPT_GROUP,
   OPT_ANCESTOR,
+  OPT_POLL,
 };
 
 const struct option options[] = {
@@ -71,25 +75,28 @@ const struct option options[] = {
   { "threads", no_argument, 0, 'L' },
   { "help", no_argument, 0, OPT_HELP },
   { "help-format", no_argument, 0, OPT_HELP_FORMAT },
+  { "poll", required_argument, 0, OPT_POLL },
   { "help-match", no_argument, 0, OPT_HELP_MATCH },
   { "version", no_argument, 0, OPT_VERSION },
   { 0, 0, 0, 0 },
 };
 
+static void report(void);
+
+static unsigned procflags;
+static int sorting;
+static size_t width;
+
 int main(int argc, char **argv) {
-  int n, sorting = 0;
+  int n;
   union arg *args;
-  size_t nargs, ntasks;
-  taskident *tasks;
-  size_t i, width = 0;
-  struct winsize ws;
-  const char *s;
+  size_t nargs;
   char **help, *t;
-  struct buffer b[1];
-  unsigned procflags;
   int format = 0;
   struct procinfo *p;
   int sample_interval = 100000/*μs*/;
+  double update_interval = 0;
+  int polling = 0;
 
   /* Initialize privilege support (this must stay first) */
   priv_init(argc, argv);
@@ -181,6 +188,10 @@ int main(int argc, char **argv) {
       format_ordering(optarg, 0);
       sorting = 1;
       break;
+    case OPT_POLL:
+      update_interval = parse_interval(optarg);
+      polling = 1;
+      break;
     case OPT_HELP:
       xprintf("Usage:\n"
              "  ps [OPTIONS] [MATCH|PIDS...]\n"
@@ -197,6 +208,7 @@ int main(int argc, char **argv) {
              "  -L, --threads           Display threads\n"
              "  -o, -O, --format PROPS  Set output format; see --help-format\n"
              "  -p, --pids PIDS         Select processes by process ID\n"
+             "  --poll SECONDS          Repeat output\n"
              "  --ppid PIDS             Select processes by parent process ID\n"
              "  --sort [+/-]PROPS...    Set ordering; see --help-format\n"
              "  -t, --tty TERMS         Select processes by terminal\n"
@@ -297,6 +309,36 @@ int main(int argc, char **argv) {
     global_procinfo = proc_enumerate(p, procflags);
     proc_free(p);
   }
+  if(update_interval) {
+    for(;;) {
+      struct timespec ts;
+      int rc;
+      report();
+      ts.tv_sec = update_interval;
+      ts.tv_nsec = 1000000000 * (update_interval - update_interval);
+      do
+        rc = nanosleep(&ts, &ts);
+      while(rc < 0 && errno == EINTR);
+      if(rc < 0)
+        fatal(errno, "nanosleep");
+      p = global_procinfo;
+      global_procinfo = proc_enumerate(p, procflags);
+      proc_free(p);
+    }
+  } else
+    report();
+  proc_free(global_procinfo);
+  xexit(0);
+}
+
+static void report(void) {
+  struct buffer b[1];
+  size_t ntasks, chosen_width, i;
+  taskident *tasks;
+  struct winsize ws;
+  const char *s;
+  int n;
+
   tasks = proc_get_selected(global_procinfo, &ntasks, procflags);
   /* Put them into order */
   if(sorting)
@@ -308,23 +350,22 @@ int main(int argc, char **argv) {
   /* Figure out the display width */
   if(!width) {
     if((s = getenv("COLUMNS")) && (n = atoi(s)))
-      width = n;
+      chosen_width = n;
     else if(isatty(1)
             && ioctl(1, TIOCGWINSZ, &ws) >= 0 
             && ws.ws_col > 0)
-      width = ws.ws_col;
+      chosen_width = ws.ws_col;
     else
-      width = INT_MAX;            /* don't truncate */
-  }
+      chosen_width = INT_MAX;   /* don't truncate */
+  } else
+    chosen_width = width;
   /* Generate the output */
   if(b->pos)
-    xprintf("%.*s\n", (int)min(b->pos, width), b->base);
+    xprintf("%.*s\n", (int)min(b->pos, chosen_width), b->base);
   for(i = 0; i < ntasks; ++i) {
     b->pos = 0;
     format_process(global_procinfo, tasks[i], b);
-    xprintf("%.*s\n", (int)min(b->pos, width), b->base);
+    xprintf("%.*s\n", (int)min(b->pos, chosen_width), b->base);
   }
-  proc_free(global_procinfo);
   free(b->base);
-  xexit(0);
 }
