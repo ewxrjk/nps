@@ -96,7 +96,6 @@ int main(int argc, char **argv) {
   struct procinfo *p;
   int sample_interval = 100000/*μs*/;
   double update_interval = 0;
-  int polling = 0;
 
   /* Initialize privilege support (this must stay first) */
   priv_init(argc, argv);
@@ -190,7 +189,6 @@ int main(int argc, char **argv) {
       break;
     case OPT_POLL:
       update_interval = parse_interval(optarg);
-      polling = 1;
       break;
     case OPT_HELP:
       xprintf("Usage:\n"
