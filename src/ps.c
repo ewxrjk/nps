@@ -52,6 +52,7 @@ enum {
   OPT_GROUP,
   OPT_ANCESTOR,
   OPT_POLL,
+  OPT_CSV,
 };
 
 const struct option options[] = {
@@ -76,6 +77,7 @@ const struct option options[] = {
   { "help", no_argument, 0, OPT_HELP },
   { "help-format", no_argument, 0, OPT_HELP_FORMAT },
   { "poll", required_argument, 0, OPT_POLL },
+  { "csv", no_argument, 0, OPT_CSV },
   { "help-match", no_argument, 0, OPT_HELP_MATCH },
   { "version", no_argument, 0, OPT_VERSION },
   { 0, 0, 0, 0 },
@@ -190,6 +192,10 @@ int main(int argc, char **argv) {
     case OPT_POLL:
       update_interval = parse_interval(optarg);
       break;
+    case OPT_CSV:
+      format_syntax(syntax_csv);
+      width = INT_MAX;
+      break;
     case OPT_HELP:
       xprintf("Usage:\n"
              "  ps [OPTIONS] [MATCH|PIDS...]\n"
@@ -198,6 +204,7 @@ int main(int argc, char **argv) {
              "  -A, -e, --all           Select all processes\n"
              "  --ancestor PIDS         Select processes by ancestor process ID\n"
              "  -C, --command NAME      Select by process name\n"
+             "  --csv                   CSV-format output\n"
              "  -d                      Select non-session-leaders\n"
              "  -f, --full, -l, --long  Full/long output format\n"
              "  -g SIDS                 Select processes by session ID\n"

@@ -100,6 +100,14 @@ static struct order *orders;
 
 // ----------------------------------------------------------------------------
 
+static enum format_syntax syntax;
+
+void format_syntax(enum format_syntax s) {
+  syntax = s;
+}
+
+// ----------------------------------------------------------------------------
+
 static void format_integer(intmax_t im, struct buffer *b, int base) {
   buffer_printf(b, (base == 'o' ? "%jo" :
                     base == 'x' ? "%jx" :
@@ -1129,22 +1137,54 @@ void format_heading(struct procinfo *pi, struct buffer *b) {
 }
 
 void format_process(struct procinfo *pi, taskident task, struct buffer *b) {
-  size_t w, left, c, start;
+  struct buffer bb[1];
+  size_t i, left, c;
+  int quoted, ch;
   b->pos = 0;
+  buffer_init(bb);
   for(c = 0; c < ncolumns; ++c) {
-    start = b->pos;
+    /* Render the value or heading */
+    bb->pos = 0;
     if(task.pid == -1)
-      buffer_append(b, columns[c].heading);
+      buffer_append(bb, columns[c].heading);
     else
-      columns[c].prop->format(&columns[c], b, columns[c].width, pi, task, 0);
-    /* Figure out how much we wrote */
-    w = b->pos - start;
-    /* For non-final columns, pad to the column width and one more for
-     * the column separator */
-    if(c + 1 < ncolumns) {
-      left = 1 + columns[c].width - w;
-      while(left-- > 0)
-        buffer_putc(b, ' ');
+      columns[c].prop->format(&columns[c], bb, columns[c].width, pi, task, 0);
+    /* Emit it in the chosen syntax */
+    switch(syntax) {
+    case syntax_normal:
+      buffer_append_n(b, bb->base, bb->pos);
+      /* For non-final columns, pad to the column width and one more for
+       * the column separator */
+      if(c + 1 < ncolumns) {
+        left = 1 + columns[c].width - bb->pos;
+        while(left-- > 0)
+          buffer_putc(b, ' ');
+      }
+      break;
+    case syntax_csv:
+      if(c > 0)
+        buffer_putc(b, ',');
+      quoted = 0;
+      for(i = 0; i < bb->pos; ++i) {
+        ch = bb->base[i];
+        if(ch == '"' || ch == ',' || ch == '\n') {
+          quoted = 1;
+          break;
+        }
+      }
+      if(quoted) {
+        buffer_putc(b, '"');
+        for(i = 0; i < bb->pos; ++i) {
+          ch = bb->base[i];
+          if(ch == '"')
+            buffer_putc(b, '"');
+          buffer_putc(b, ch);
+        }
+        buffer_putc(b, '"');
+      } else {
+        buffer_append_n(b, bb->base, bb->pos);
+      }
+      break;
     }
   }
   buffer_terminate(b);

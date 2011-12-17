@@ -70,6 +70,19 @@ struct buffer;
 /** @brief Parse a sign specification */
 #define FORMAT_SIGN 0x0100
 
+enum format_syntax {
+  syntax_normal,
+  syntax_csv
+};
+
+/** @brief Set the high-level syntax
+ * @param syntax Chosen syntax
+ *
+ * Possible syntax values are @ref syntax_normal (which is the
+ * default) and @ref syntax_csv.
+ */
+void format_syntax(enum format_syntax syntax);
+
 /** @brief Add to the format list
  * @param f Format string
  * @param flags Flags
