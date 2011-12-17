@@ -85,6 +85,12 @@ will be used instead.
 .IP \fBio
 IO rate.
 This is the sum of \fBread\fR and \fBwrite\fR.
+.IP \fBlocaltime
+The time at which process information was gathered.
+This is independent of the process; it is intended for use with
+\fB--poll\fR.
+If an argument is supplied, it is passed to \fBstrftime\fR(3) to
+format the time.
 .IP \fBmajflt
 Major fault rate.
 Major faults are page faults that require a page to be read from disk.

@@ -425,7 +425,7 @@ static void property_tty(const struct column *col, struct buffer *b,
   buffer_append(b, path);
 }
 
-static const char *property_pcomm(struct procinfo *pi, taskident task) {
+static const char *shim_get_pcomm(struct procinfo *pi, taskident task) {
   pid_t parent = proc_get_ppid(pi, task);
   if(parent) {
     taskident parent_task = { parent, -1 };
@@ -556,6 +556,13 @@ static void property_sched(const struct column *col, struct buffer *b,
     format_integer(policy, b, 'd');
   if(reset)
     buffer_append(b, "/-");
+}
+
+static intmax_t shim_get_time(struct procinfo *pi,
+                              taskident attribute((unused)) task) {
+  struct timespec ts;
+  proc_time(pi, &ts);
+  return ts.tv_sec;
 }
 
 // ----------------------------------------------------------------------------
@@ -801,6 +808,10 @@ static const struct propinfo properties[] = {
     property_iorate, compare_double, { .fetch_double = proc_get_rw_bytes }
   },
   {
+    "localtime", "LTIME", "Timestamp (argument: strftime format string)",
+    property_stime, compare_intmax, { .fetch_intmax = shim_get_time },
+  },
+  {
     "lwp", NULL, "=tid", NULL, NULL, {}
   },
   {
@@ -831,7 +842,7 @@ static const struct propinfo properties[] = {
   },
   {
     "pcomm", "PCMD", "Parent command name",
-    property_command, compare_string, { .fetch_string = property_pcomm },
+    property_command, compare_string, { .fetch_string = shim_get_pcomm },
   },
   {
     "pcpu", "%CPU", "%age CPU used (argument: precision)",

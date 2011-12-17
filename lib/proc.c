@@ -35,6 +35,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <signal.h>
+#include <time.h>
 
 #if HAVE_GETC_UNLOCKED
 # define GETC getc_unlocked
@@ -149,6 +150,7 @@ static const size_t propinfo_io[] = {
 struct procinfo {
   size_t nprocs, nslots;
   struct process *procs;
+  struct timespec time;
   unsigned flags;
   size_t lookup[HASH_SIZE];
 };
@@ -239,6 +241,8 @@ struct procinfo *proc_enumerate(struct procinfo *last,
 
   pi = xmalloc(sizeof *pi);
   memset(pi, 0, sizeof *pi);
+  if(clock_gettime(CLOCK_REALTIME, &pi->time) < 0)
+    fatal(errno, "clock_gettime");
   /* Look through /proc for process information */
   if(!(dp = opendir("/proc")))
     fatal(errno, "opening /proc");
@@ -270,6 +274,10 @@ struct procinfo *proc_enumerate(struct procinfo *last,
 
 int proc_count(struct procinfo *pi) {
   return pi->nprocs;
+}
+
+void proc_time(struct procinfo *pi, struct timespec *ts) {
+  *ts = pi->time;
 }
 
 void proc_reselect(struct procinfo *pi) {

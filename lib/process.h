@@ -77,6 +77,12 @@ void proc_free(struct procinfo *pi);
  */
 int proc_count(struct procinfo *pi);
 
+/** @brief Retrieve the time that process information was gathered
+ * @param pi Pointer to process information
+ * @param ts Timestamp of last proc_enumerate() call
+ */
+void proc_time(struct procinfo *pi, struct timespec *ts);
+
 /** @brief Retrieve the ID of a process
  * @param pi Pointer to process information
  * @param taskid Process or thread ID

@@ -29,6 +29,7 @@ AC_SET_MAKE
 AC_C_BIGENDIAN
 AC_CHECK_FUNCS([getc_unlocked])
 AC_CHECK_LIB([ncurses],[initscr],[LIBCURSES=-lncurses])
+AC_CHECK_LIB([rt],[clock_gettime])
 AC_SUBST([LIBCURSES])
 AC_CHECK_LIB([m],[floor],[LIBM=-lm])
 AC_SUBST([LIBM])
