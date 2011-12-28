@@ -35,7 +35,14 @@ AC_CHECK_LIB([m],[floor],[LIBM=-lm])
 AC_SUBST([LIBM])
 AC_DEFINE([_GNU_SOURCE], [1], [use GNU extensions])
 if test "x$GCC" = xyes; then
-  CC="$CC -Wall -W -Werror -Wpointer-arith -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wshadow"
+  werror="-Werror"
+  CC="$CC -Wall -W -Wpointer-arith -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wshadow"
+fi
+
+AC_ARG_ENABLE([werror],[AS_HELP_STRING([--disable-werror],[don't use -Werror])],
+              [],[enable_werror=yes])
+if test "$enable_werror" = yes; then
+  CC="$CC $werror"
 fi
 
 AH_BOTTOM([#ifdef __GNUC__
