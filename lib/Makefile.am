@@ -27,4 +27,5 @@ proc.c rc.c select.c selectors.c signal.c split.c sysinfo.c time.c
 TESTS=t-buffer t-bytes t-device t-error t-parse
 
 clean-local:
-	rm -f *.gcno *.gcda
+	rm -f *.gcno *.gcda *.gcov
+

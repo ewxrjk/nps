@@ -3,6 +3,7 @@
 *.a
 *.gcno
 *.gcda
+*.gcov
 .deps
 Makefile
 Makefile.in

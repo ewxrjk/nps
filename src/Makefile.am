@@ -45,4 +45,5 @@ maintainer-clean-local:
 	rm -f ${srcdir}/nps.1 ${srcdir}/nps-top.1
 
 clean-local:
-	rm -f *.gcno *.gcda
+	rm -f *.gcno *.gcda *.gcov
+
