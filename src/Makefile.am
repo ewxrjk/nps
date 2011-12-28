@@ -43,3 +43,6 @@ sysinfo.1 mkmanpage
 
 maintainer-clean-local:
 	rm -f ${srcdir}/nps.1 ${srcdir}/nps-top.1
+
+clean-local:
+	rm -f *.gcno *.gcda

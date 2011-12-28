@@ -36,6 +36,7 @@ AC_SUBST([LIBM])
 AC_DEFINE([_GNU_SOURCE], [1], [use GNU extensions])
 if test "x$GCC" = xyes; then
   werror="-Werror"
+  coverage="-fprofile-arcs -ftest-coverage"
   CC="$CC -Wall -W -Wpointer-arith -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wshadow"
 fi
 
@@ -43,6 +44,12 @@ AC_ARG_ENABLE([werror],[AS_HELP_STRING([--disable-werror],[don't use -Werror])],
               [],[enable_werror=yes])
 if test "$enable_werror" = yes; then
   CC="$CC $werror"
+fi
+
+AC_ARG_ENABLE([coverage],[AS_HELP_STRING([--enable-coverage],
+                                         [compile with coverage information])])
+if test "$enable_coverage" = yes; then
+  CC="${CC} ${coverage}"
 fi
 
 AH_BOTTOM([#ifdef __GNUC__
