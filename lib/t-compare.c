@@ -18,32 +18,22 @@
  * USA
  */
 #include <config.h>
-#include "utils.h"
-#include <errno.h>
-#include <string.h>
+#include "compare.h"
 #include <assert.h>
-#include <sys/stat.h>
-
-static void check(const char *path) {
-  struct stat s;
-  const char *p;
-  if(stat(path, &s) < 0)
-    fatal(errno, "stat %s", path);
-  p = device_path(S_ISBLK(s.st_mode), s.st_rdev);
-  assert(!strcmp(p, path));
-}
 
 int main() {
-  /* A bunch of character devices which are reasonably likely to be
-   * present */
-  check("/dev/null");
-  check("/dev/tty");
-  check("/dev/zero");
-  check("/dev/full");
-  check("/dev/random");
-  check("/dev/urandom");
-  /* loop0 seems to be there even if you're not using any loop
-   * devices, so let's use that */
-  check("/dev/loop0");
+  assert(qlcompare("", "") == 0);
+  assert(qlcompare("a", "") == 1);
+  assert(qlcompare("0", "") == 1);
+  assert(qlcompare("", "A") == -1);
+  assert(qlcompare("", "99") == -1);
+  assert(qlcompare("a", "b") == -1);
+  assert(qlcompare("B", "A") == 1);
+  assert(qlcompare("0", "1") == -1);
+  assert(qlcompare("1", "0") == 1);
+  assert(qlcompare("2", "10") == -1);
+  assert(qlcompare("10", "2") == 1);
+  assert(qlcompare("foo2", "foo10") == -1);
+  assert(qlcompare("99a", "99b") == -1);
   return 0;
 }

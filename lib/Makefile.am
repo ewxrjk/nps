@@ -24,7 +24,7 @@ priv.h process.h rc.h selectors.h sysinfo.h utils.h buffer.c bytes.c	\
 compare.c device.c error.c format.c io.c memory.c parse.c priv.c	\
 proc.c rc.c select.c selectors.c signal.c split.c sysinfo.c time.c
 
-TESTS=t-buffer t-bytes t-device t-error t-parse
+TESTS=t-buffer t-bytes t-device t-error t-parse t-compare
 
 clean-local:
 	rm -f *.gcno *.gcda *.gcov

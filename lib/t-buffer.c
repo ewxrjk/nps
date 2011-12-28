@@ -53,16 +53,16 @@ int main() {
   assert(b->pos == 26);
   assert(b->pos < b->size);
 
-  buffer_printf(b, "%s", "foo");
+  buffer_printf(b, "%s", "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   assert(b->base != NULL);
-  assert(!strncmp(b->base, "ab12345678901234567890sponfoo", 29));
-  assert(b->pos == 29);
+  assert(!strncmp(b->base, "ab12345678901234567890sponABCDEFGHIJKLMNOPQRSTUVWXYZ", 52));
+  assert(b->pos == 52);
   assert(b->pos < b->size);
 
   buffer_terminate(b);
   assert(b->base != NULL);
-  assert(!strcmp(b->base, "ab12345678901234567890sponfoo"));
-  assert(b->pos == 29);
+  assert(!strcmp(b->base, "ab12345678901234567890sponABCDEFGHIJKLMNOPQRSTUVWXYZ"));
+  assert(b->pos == 52);
   assert(b->pos < b->size);
 
   /* TODO buffer_strftime */

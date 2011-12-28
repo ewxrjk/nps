@@ -26,6 +26,7 @@ debian/nps
 debian/substvars.*
 lib/t-buffer
 lib/t-bytes
+lib/t-compare
 lib/t-device
 lib/t-error
 lib/t-parse
