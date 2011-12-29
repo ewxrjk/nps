@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "format.h"
 #include "general.h"
 
@@ -29,17 +30,20 @@ char *bytes(uintmax_t n,
             int fieldwidth,
             int ch,
             char buffer[],
-            size_t bufsize) {
+            size_t bufsize,
+            unsigned cutoff) {
   if(!ch) {
-    if(n < KILOBYTE)
+    if(!cutoff)
+      cutoff = 1;
+    if(n < KILOBYTE * cutoff)
       ch = 0;
-    else if(n < MEGABYTE)
+    else if(n < MEGABYTE * cutoff)
       ch = -'K';
-    else if(n < GIGABYTE)
+    else if(n < GIGABYTE * cutoff)
       ch = -'M';
-    else if(n < TERABYTE)
+    else if(n < TERABYTE * cutoff)
       ch = -'G';
-    else if(n < PETABYTE)
+    else if(n < PETABYTE * cutoff)
       ch = -'T';
     else
       ch = -'P';
@@ -57,5 +61,19 @@ char *bytes(uintmax_t n,
   else
     snprintf(buffer, bufsize, "%*ju", fieldwidth, n);
   return buffer;
+}
+
+int parse_byte_arg(const char *arg, unsigned *cutoff, unsigned flags) {
+  *cutoff = 1;
+  if(flags & FORMAT_RAW)
+    return 'b';
+  else if(arg) {
+    if(isdigit((unsigned char)arg[0])) {
+      *cutoff = atoi(arg);
+      return 0;
+    } else
+      return *arg;
+  } else
+    return 0;
 }
 

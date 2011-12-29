@@ -499,10 +499,11 @@ static void property_mem(const struct column *col, struct buffer *b,
                          struct procinfo *pi, taskident task,
                          unsigned flags) {
   char buffer[64];
+  unsigned cutoff;
+  int ch = parse_byte_arg(col->arg, &cutoff, flags);
   buffer_append(b,
                 bytes(col->prop->fetch.fetch_uintmax(pi, task),
-                      0, (flags & FORMAT_RAW ? 'b' : col->arg ? *col->arg : 0),
-                      buffer, sizeof buffer));
+                      0, ch, buffer, sizeof buffer, cutoff));
 }
 
 static void property_address(const struct column *col, struct buffer *b,
@@ -523,10 +524,11 @@ static void property_iorate(const struct column *col, struct buffer *b,
                             struct procinfo *pi, taskident task,
                             unsigned flags) {
   char buffer[64];
+  unsigned cutoff;
+  int ch = parse_byte_arg(col->arg, &cutoff, flags);
   buffer_append(b,
                 bytes(col->prop->fetch.fetch_double(pi, task),
-                      0, (flags & FORMAT_RAW ? 'b' : col->arg ? *col->arg : 0),
-                      buffer, sizeof buffer));
+                      0, ch, buffer, sizeof buffer, cutoff));
 }
 
 static void property_sched(const struct column *col, struct buffer *b,

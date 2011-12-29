@@ -25,13 +25,13 @@
  */
 
 /** @brief One kilobyte */
-#define KILOBYTE 1024
+#define KILOBYTE (uintmax_t)1024
 
 /** @brief One megabyte */
-#define MEGABYTE (1024 * KILOBYTE)
+#define MEGABYTE ((uintmax_t)1024 * KILOBYTE)
 
 /** @brief One gigabyte */
-#define GIGABYTE (1024 * MEGABYTE)
+#define GIGABYTE ((uintmax_t)1024 * MEGABYTE)
 
 /** @brief One terabyte */
 #define TERABYTE ((uintmax_t)1024 * GIGABYTE)

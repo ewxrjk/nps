@@ -302,39 +302,41 @@ static void sysprop_load(const struct sysinfo attribute((unused)) *si,
 static void sysprop_mem(const struct sysinfo *si,
                         struct procinfo attribute((unused)) *pi,
                         struct buffer *b) {
-  const int ch = si->arg ? *si->arg : 0;
   char btot[16], bused[16], bfree[16], bbuf[16], bcache[16];
+  unsigned cutoff = 1;
+  int ch = parse_byte_arg(si->arg, &cutoff, 0);
 
   get_meminfo();
   buffer_printf(b, "%s tot %s used %s free %s buf %s cache",
                 bytes(meminfo.MemTotal * KILOBYTE, 9, ch,
-                      btot, sizeof btot),
+                      btot, sizeof btot, cutoff),
                 bytes((meminfo.MemTotal - meminfo.MemFree) * KILOBYTE, 9, ch,
-                      bused, sizeof bused),
+                      bused, sizeof bused, cutoff),
                 bytes(meminfo.MemFree * KILOBYTE, 9, ch,
-                      bfree, sizeof bfree),
+                      bfree, sizeof bfree, cutoff),
                 bytes(meminfo.Buffers * KILOBYTE, 9, ch,
-                      bbuf, sizeof bbuf),
+                      bbuf, sizeof bbuf, cutoff),
                 bytes(meminfo.Cached * KILOBYTE, 9, ch,
-                      bcache, sizeof bcache));
+                      bcache, sizeof bcache, cutoff));
 }
 
 static void sysprop_swap(const struct sysinfo *si,
                          struct procinfo attribute((unused)) *pi,
                          struct buffer *b) {
-  const int ch = si->arg ? *si->arg : 0;
   char btot[32], bused[32], bfree[32], bcache[32];
+  unsigned cutoff = 1;
+  int ch = parse_byte_arg(si->arg, &cutoff, 0);
 
   get_meminfo();
   buffer_printf(b, "%s tot %s used %s free %s cache",
                 bytes(meminfo.SwapTotal * KILOBYTE, 9, ch,
-                      btot, sizeof btot),
+                      btot, sizeof btot, cutoff),
                 bytes((meminfo.SwapTotal - meminfo.SwapFree) * KILOBYTE, 9, ch,
-                      bused, sizeof bused),
+                      bused, sizeof bused, cutoff),
                 bytes(meminfo.SwapFree * KILOBYTE, 9, ch,
-                      bfree, sizeof bfree),
+                      bfree, sizeof bfree, cutoff),
                 bytes(meminfo.Cached * KILOBYTE, 9, ch,
-                      bcache, sizeof bcache));
+                      bcache, sizeof bcache, cutoff));
 }
 
 static void sysprop_cpu_one(const struct cpuhistory *cpu,

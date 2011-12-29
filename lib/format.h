@@ -205,12 +205,19 @@ char *format_get_ordering(void);
  * @param ch Size code
  * @param buffer Output buffer
  * @param bufsize Output buffer size
+ * @param cutoff Multiplier for automatic size choice
  * @return @p buffer
  *
  * Supported size codes are:
  * - @c 0 to pick one automatically
  * - @c b, @c K, @c G, @c M, @c T for bytes up to terabytes
  * - @c p for pages
+ *
+ * When picking a size automatically (i.e. when @p ch is 0), @p cutoff
+ * determines the minimum whole number of kilobytes that will be
+ * displayed as bytes, of megabytes that will be displayed as
+ * kilobytes, etc.  A value of 1 will always use the smallest unit
+ * that can possibly fit.  A @p cutoff of 0 will be upgraded to 1.
  *
  * In addition a negative size code means that the units should be
  * included in the output (also true for 0).
@@ -219,7 +226,19 @@ char *bytes(uintmax_t n,
             int fieldwidth,
             int ch,
             char buffer[],
-            size_t bufsize);
+            size_t bufsize,
+            unsigned cutoff);
+
+/** @brief Parse an argument string for use with bytes()
+ * @param arg Argment string (or NULL)
+ * @param cutoff Where to store @c cutoff value
+ * @param flags
+ * @return @c ch value
+ *
+ * @p flags may contain:
+ * - @ref FORMAT_RAW for force a return of 'b'.
+ */
+int parse_byte_arg(const char *arg, unsigned *cutoff, unsigned flags);
 
 /** @brief Format an argument string
  * @param b String buffer for output

@@ -27,43 +27,43 @@
 int main() {
   char output[64];
 
-  assert(bytes(0, 0, 0, output, sizeof output) == output);
+  assert(bytes(0, 0, 0, output, sizeof output, 1) == output);
   assert(!strcmp(output, "0"));
 
-  assert(bytes(1024, 0, 0, output, sizeof output) == output);
+  assert(bytes(1024, 0, 0, output, sizeof output, 1) == output);
   assert(!strcmp(output, "1K"));
 
-  assert(bytes(1024 * 1024, 0, 0, output, sizeof output) == output);
+  assert(bytes(1024 * 1024, 0, 0, output, sizeof output, 1) == output);
   assert(!strcmp(output, "1M"));
 
-  assert(bytes(1024 * 1024 * 1024, 0, 0, output, sizeof output) == output);
+  assert(bytes(1024 * 1024 * 1024, 0, 0, output, sizeof output, 1) == output);
   assert(!strcmp(output, "1G"));
 
-  assert(bytes(1024LL * 1024 * 1024 * 1024, 0, 0, output, sizeof output) == output);
+  assert(bytes(1024LL * 1024 * 1024 * 1024, 0, 0, output, sizeof output, 1) == output);
   assert(!strcmp(output, "1T"));
 
-  assert(bytes(1024LL * 1024 * 1024 * 1024 * 1024, 0, 0, output, sizeof output) == output);
+  assert(bytes(1024LL * 1024 * 1024 * 1024 * 1024, 0, 0, output, sizeof output, 1) == output);
   assert(!strcmp(output, "1P"));
 
-  assert(bytes(1024, 0, 'M', output, sizeof output) == output);
+  assert(bytes(1024, 0, 'M', output, sizeof output, 1) == output);
   assert(!strcmp(output, "0"));
 
-  assert(bytes(1024 * 1024, 0, 'M', output, sizeof output) == output);
+  assert(bytes(1024 * 1024, 0, 'M', output, sizeof output, 1) == output);
   assert(!strcmp(output, "1"));
 
-  assert(bytes(1024 * 1024 * 1024, 0, 'M', output, sizeof output) == output);
+  assert(bytes(1024 * 1024 * 1024, 0, 'M', output, sizeof output, 1) == output);
   assert(!strcmp(output, "1024"));
 
-  assert(bytes(1024LL * 1024 * 1024 * 1024, 0, 'M', output, sizeof output) == output);
+  assert(bytes(1024LL * 1024 * 1024 * 1024, 0, 'M', output, sizeof output, 1) == output);
   assert(!strcmp(output, "1048576"));
 
-  assert(bytes(1024LL * 1024 * 1024 * 1024 * 1024, 0, 'M', output, sizeof output) == output);
+  assert(bytes(1024LL * 1024 * 1024 * 1024 * 1024, 0, 'M', output, sizeof output, 1) == output);
   assert(!strcmp(output, "1073741824"));
 
-  assert(bytes(1024LL * 1024 * 1024 * 1024 * 1024, 20, 'M', output, sizeof output) == output);
+  assert(bytes(1024LL * 1024 * 1024 * 1024 * 1024, 20, 'M', output, sizeof output, 1) == output);
   assert(!strcmp(output, "          1073741824"));
 
-  assert(bytes(16 * sysconf(_SC_PAGESIZE), 0, 'p', output, sizeof output) == output);
+  assert(bytes(16 * sysconf(_SC_PAGESIZE), 0, 'p', output, sizeof output, 1) == output);
   assert(!strcmp(output, "16"));
 
   return 0;

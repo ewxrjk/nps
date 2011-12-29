@@ -381,7 +381,7 @@ They are always given in the local timezone.
 If a column width is requested then more compact forms may be used:
 \fIHH\fB:\fIMM\fR for a time in this day or \fIMM\fB-\fIDD\fR for
 a date in this year.
-.SS "Understanding Memory Usage"
+.SS "Memory"
 \fBrss\fR is the resident set size of a process, i.e. the amount
 physical RAM it is currently using.
 However, some of that RAM may be shared with other processes, for
@@ -423,8 +423,11 @@ Display in terabytes.
 Display in petabytes.
 .IP \fBp
 Display in pages.
+.IP \fICUTOFF
+Display in bytes up to \fICUTOFF\fR kilobytes, in kilobytes up to
+\fICUTOFF\fR megabytes and so on up to petabytes.
 .PP
-With no argument, units are selected automatically.
+With no argument, units are selected as if \fICUTOFF\fR was 1.
 .PP
 The same applies to I/O rates, except that they are kilobytes per
 seconds, etc.
@@ -521,7 +524,8 @@ Cached blocks.
 Cached files.
 .RE
 .IP
-Use \fBmemK\fR or \fBmemM\fR to display kilobytes or megabytes.
+The same argument syntax described in \fBMemory\fR
+above can be used to control the units used.
 .IP \fBprocesses
 The current number of processes.
 .IP \fBswap
@@ -543,7 +547,8 @@ Memory both in RAM and in swap.
 It can be used or swapped out without IO being required.
 .RE
 .IP
-Use \fBswapK\fR or \fBswapM\fR to display kilobytes or megabytes.
+The same argument syntax described in \fBMemory\fR
+above can be used to control the units used.
 .IP \fBtime
 The current time (using the local timezone).
 If an argument is supplied, it is passed to \fBstrftime\fR(3) to
