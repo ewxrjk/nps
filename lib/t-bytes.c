@@ -26,6 +26,8 @@
 
 int main() {
   char output[64];
+  int ch;
+  unsigned cutoff;
 
   assert(bytes(0, 0, 0, output, sizeof output, 1) == output);
   assert(!strcmp(output, "0"));
@@ -65,6 +67,38 @@ int main() {
 
   assert(bytes(16 * sysconf(_SC_PAGESIZE), 0, 'p', output, sizeof output, 1) == output);
   assert(!strcmp(output, "16"));
+
+  ch = parse_byte_arg(NULL, &cutoff, 0);
+  assert(ch == 0);
+  assert(cutoff == 1);
+
+  ch = parse_byte_arg("", &cutoff, 0);
+  assert(ch == 0);
+  assert(cutoff == 1);
+
+  ch = parse_byte_arg("K", &cutoff, 0);
+  assert(ch == 'K');
+  assert(cutoff == 1);
+
+  ch = parse_byte_arg("4", &cutoff, 0);
+  assert(ch == 0);
+  assert(cutoff == 4);
+
+  ch = parse_byte_arg(NULL, &cutoff, FORMAT_RAW);
+  assert(ch == 'b');
+  assert(cutoff == 1);
+
+  ch = parse_byte_arg("", &cutoff, FORMAT_RAW);
+  assert(ch == 'b');
+  assert(cutoff == 1);
+
+  ch = parse_byte_arg("K", &cutoff, FORMAT_RAW);
+  assert(ch == 'b');
+  assert(cutoff == 1);
+
+  ch = parse_byte_arg("4", &cutoff, FORMAT_RAW);
+  assert(ch == 'b');
+  assert(cutoff == 1);
 
   return 0;
 }
