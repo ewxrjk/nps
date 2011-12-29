@@ -19,9 +19,12 @@
  */
 #include <config.h>
 #include "buffer.h"
+#include <time.h>
 #include <assert.h>
 
 int main() {
+  struct tm t;
+  time_t zero = 0;
   struct buffer b[1];
 
   buffer_init(b);
@@ -65,7 +68,13 @@ int main() {
   assert(b->pos == 52);
   assert(b->pos < b->size);
 
-  /* TODO buffer_strftime */
+  b->pos = 0;
+  gmtime_r(&zero, &t);
+  buffer_strftime(b, "", &t);
+  assert(b->pos == 0);
+  buffer_strftime(b, "%F %T", &t);
+  buffer_terminate(b);
+  assert(!strcmp(b->base, "1970-01-01 00:00:00"));
 
   return 0;
 }
