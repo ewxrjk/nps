@@ -1201,6 +1201,7 @@ void format_process(struct procinfo *pi, taskident task, struct buffer *b) {
     }
   }
   buffer_terminate(b);
+  free(bb->base);
 }
 
 void format_value(struct procinfo *pi, taskident task,
