@@ -735,22 +735,22 @@ static const struct propinfo properties[] = {
     property_address, compare_uintmax, { .fetch_uintmax = proc_get_insn_pointer }
   },
   {
-    "args", "COMMAND", "Command with arguments",
-    property_command, compare_string, { .fetch_string = proc_get_cmdline }
-  },
-  {
-    "argsbrief", "COMMAND", "Command with arguments (but path removed)",
+    "args", "COMMAND", "Command with arguments (but path removed)",
     property_command_brief, compare_string, { .fetch_string = proc_get_cmdline }
   },
   {
-    "cmd", NULL, "=argsbrief", NULL, NULL, {}
+    "argsfull", "COMMAND", "Command with arguments",
+    property_command, compare_string, { .fetch_string = proc_get_cmdline }
+  },
+  {
+    "cmd", NULL, "=args", NULL, NULL, {}
   },
   {
     "comm", "COMMAND", "Command",
     property_command, compare_string, { .fetch_string = proc_get_comm }
   },
   {
-    "command", NULL, "=argsbrief", NULL, NULL, {}
+    "command", NULL, "=args", NULL, NULL, {}
   },
   {
     "cputime", NULL, "=time", NULL, NULL, {}

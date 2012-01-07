@@ -46,7 +46,7 @@ If no formatting options at all are specified then the default is
 equivalent to:
 .PP
 .RS
-\fB-Ouser,pid,nice,rss,pcpu,read,write,tty=TTY,argsbrief=CMD
+\fB-Ouser,pid,nice,rss,pcpu,read,write,tty=TTY,args=CMD
 .RE
 .PP
 If the calling user is not \fBroot\fR then \fBread\fR and \fBwrite\fR

@@ -334,7 +334,7 @@ int main(int argc, char **argv) {
       format_set("user,pid,nice,rss,pcpu=%C", FORMAT_QUOTED);
       if(!priv_euid)
         format_set("read,write", FORMAT_QUOTED|FORMAT_ADD);
-      format_set("tty=TTY,argsbrief=CMD", FORMAT_QUOTED|FORMAT_ADD);
+      format_set("tty=TTY,args=CMD", FORMAT_QUOTED|FORMAT_ADD);
     }
   }
   /* Set up SIGWINCH detection

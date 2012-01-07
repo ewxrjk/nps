@@ -10,9 +10,9 @@ script the first element will be the name of the interpreter and the
 second element the name of the script.
 .IP
 Requested widths are mandatory for \fBargs\fR.
-.IP \fBargsbrief
+.IP \fBargsfull
 Exactly the same as \fBargs\fR but with the directory part of the
-command stripped.
+command included.
 .IP \fBcomm
 Program filename.
 This corresponds to the first argument to \fBexecve\fR(3); for a
@@ -227,9 +227,9 @@ In addition the following aliases are supported:
 .IP \fB%cpu
 Alias for \fBpcpu\fR.
 .IP \fBcmd
-Alias for \fBargsbrief\fR.
+Alias for \fBargs\fR.
 .IP \fBcommand
-Alias for \fBargsbrief\fR.
+Alias for \fBargs\fR.
 .IP \fBcputime
 Alias for \fBtime\fR.
 .IP \fBegid

@@ -290,7 +290,7 @@ int main(int argc, char **argv) {
       format_set("user=UID,pid", FORMAT_QUOTED);
       if(procflags & PROC_THREADS)
         format_set("tid", FORMAT_QUOTED|FORMAT_ADD);
-      format_set("ppid,pcpu=C,stime,tty=TTY,time,argsbrief=CMD", FORMAT_ADD|FORMAT_QUOTED);
+      format_set("ppid,pcpu=C,stime,tty=TTY,time,args=CMD", FORMAT_ADD|FORMAT_QUOTED);
     }
     break;
   case 'l':
