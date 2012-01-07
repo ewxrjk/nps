@@ -205,6 +205,16 @@ static struct process *proc_add(struct procinfo *pi, struct procinfo *last,
   return p;
 }
 
+/* fix up stupid readdir() API */
+static struct dirent *readdir_wrapper(const char *dir, DIR *dp) {
+  struct dirent *de;
+  errno = 0;
+  de = readdir(dp);
+  if(!de && errno)
+    fatal(errno, "reading %s", dir);
+  return de;
+}
+
 static void proc_enumerate_threads(struct procinfo *pi, struct procinfo *last,
                                    pid_t pid) {
   DIR *dp;
@@ -217,17 +227,13 @@ static void proc_enumerate_threads(struct procinfo *pi, struct procinfo *last,
     /* TODO we should mark the process as vanished */
     return;
   }
-  errno = 0;
-  while((de = readdir(dp))) {
-    errno = 0;
+  while((de = readdir_wrapper(buffer, dp))) {
     /* Only consider files that look like threads */
     if(strspn(de->d_name, "0123456789") == strlen(de->d_name)) {
       tid = conv(de->d_name);
       proc_add(pi, last, pid, tid);
     }
   }
-  if(errno)
-    fatal(errno, "reading %s", buffer);
   closedir(dp);
 }
 
@@ -246,9 +252,7 @@ struct procinfo *proc_enumerate(struct procinfo *last,
   /* Look through /proc for process information */
   if(!(dp = opendir("/proc")))
     fatal(errno, "opening /proc");
-  errno = 0;
-  while((de = readdir(dp))) {
-    errno = 0;
+  while((de = readdir_wrapper("/proc", dp))) {
     /* Only consider files that look like processes */
     if(strspn(de->d_name, "0123456789") == strlen(de->d_name)) {
       pid = conv(de->d_name);
@@ -257,8 +261,6 @@ struct procinfo *proc_enumerate(struct procinfo *last,
         proc_enumerate_threads(pi, last, pid);
     }
   }
-  if(errno)
-    fatal(errno, "reading /proc");
   closedir(dp);
   for(n = 0; n < HASH_SIZE; ++n)
     pi->lookup[n] = SIZE_MAX;
