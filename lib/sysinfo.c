@@ -339,8 +339,10 @@ static void sysprop_swap(const struct sysinfo *si,
                       bcache, sizeof bcache, cutoff));
 }
 
-static void sysprop_cpu_one(const struct cpuhistory *cpu,
+static void sysprop_cpu_one(int prec,
+                            const struct cpuhistory *cpu,
                             struct buffer *b) {
+  int width = prec ? prec + 3 : 2;
   /* Figure out the total tick difference
    *
    * Observations based on the kernel:
@@ -357,39 +359,41 @@ static void sysprop_cpu_one(const struct cpuhistory *cpu,
        + cpu->last.idle + cpu->last.irq + cpu->last.softirq
        + cpu->last.steal);
   /* How to figure out the percentage differences */
-#define CPUINFO_PCT(F) (int)(100 * (cpu->curr.F - cpu->last.F) / total)
+#define CPUINFO_PCT(F) (100.0 * (cpu->curr.F - cpu->last.F) / total)
   /* Display them */
   if(total)
-    buffer_printf(b, "%2d%% user %2d%% nice %2d%% guest %2d%% sys %2d%% io",
-                  CPUINFO_PCT(user_total),
-                  CPUINFO_PCT(nice),
-                  CPUINFO_PCT(guest_total),
-                  CPUINFO_PCT(system),
-                  CPUINFO_PCT(iowait));
+    buffer_printf(b, "%*.*f%% user %*.*f%% nice %*.*f%% guest %*.*f%% sys %*.*f%% io",
+                  width, prec, CPUINFO_PCT(user_total),
+                  width, prec, CPUINFO_PCT(nice),
+                  width, prec, CPUINFO_PCT(guest_total),
+                  width, prec, CPUINFO_PCT(system),
+                  width, prec, CPUINFO_PCT(iowait));
   else
     buffer_printf(b, " -%% user   -%% nice -%% guest  -%% sys  -%% io");
   
 }
 
-static void sysprop_cpu(const struct sysinfo attribute((unused)) *si,
+static void sysprop_cpu(const struct sysinfo *si,
                         struct procinfo attribute((unused)) *pi,
                         struct buffer *b) {
+  const int prec = si->arg && *si->arg ? atoi(si->arg) : 0;
   get_stat();
   if(ncpuinfos) {
-    sysprop_cpu_one(&cpuinfos[0], b);
+    sysprop_cpu_one(prec, &cpuinfos[0], b);
   }
 }
 
 static void sysprop_cpus(const struct sysinfo attribute((unused)) *si,
                          struct procinfo attribute((unused)) *pi,
                          struct buffer *b) {
+  const int prec = si->arg && *si->arg ? atoi(si->arg) : 0;
   size_t n;
   get_stat();
   for(n = 1; n < ncpuinfos; ++n) {
     if(n > 1)
       buffer_putc(b, '\n');
     buffer_printf(b, "CPU %zu:", n - 1);
-    sysprop_cpu_one(&cpuinfos[n], b);
+    sysprop_cpu_one(prec, &cpuinfos[n], b);
   }
 }
 
