@@ -10,6 +10,7 @@ running on the system.
 .SH OPTIONS
 .IP "\fB-o \fIFORMAT\fR, \fB-O \fIFORMAT\fR, \fB--format \fIFORMAT"
 Set a specific format.
+\fB-o\fR uses SUS syntax, the rest use NPS syntax.
 If multiple options are given then they are cumulative.
 See \fBFORMATTING\fR below.
 .IP "\fB-d \fISECONDS\fR, \fB--delay \fISECONDS"
@@ -200,11 +201,8 @@ recognizing the following keys:
 The default update interval in seocnds (overridden with the \fB-d\fR
 option).
 .IP \fBtop_format
-The default format (overridden with the \fB-o\fR or \fB-O\fR option).
-Headings may be quoted (and must be quoted, if they contain a space,
-comma or quotes).
-The syntax is the same as when editing with the \fBo\fR key, and
-different from the command-line syntax.
+The default format (overridden with the \fB-O\fR option).
+Uses NPS syntax (see \fBFORMATTING\fR above).
 .IP \fBtop_order
 The default order (overridden with the \fB-s\fR option).
 .IP \fBtop_sysinfo

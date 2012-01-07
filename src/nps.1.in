@@ -45,6 +45,7 @@ If used twice, both threads and processes are used.
 Ignored.
 .IP "\fB-o \fIFORMAT\fR, \fB-O \fIFORMAT\fR, \fB--format \fIFORMAT"
 Set a specific format.
+\fB-o\fR uses SUS syntax, the rest use NPS syntax.
 If multiple options are given then they are cumulative.
 See \fBFORMATTING\fR below.
 .IP "\fB-p \fILIST\fR, \fB--pid \fILIST"
@@ -207,8 +208,7 @@ The format to use if \fB-f\fR is specified.
 .IP \fBps_l_format
 The format to use if \fB-l\fR is specified.
 .PP
-In this file, unlike in command line arguments, headings may be quoted
-(and must be quoted, if they contain a space, comma or quotes).
+All three use NPS syntax (see \fBFORMATTING\fR above).
 .SH ENVIRONMENT
 .TP
 .B COLUMNS
@@ -220,6 +220,8 @@ kind of output.
 The meaning of \fBflags\fR is not very clear.
 .SH STANDARDS
 Intended to follow SUS v4.
+The SUS syntax for headings is rather inflexible, hence NPS syntax
+everywhere that isn't defined by SUS.
 .PP
 CSV output follows RFC 1480.
 .SH AUTHOR

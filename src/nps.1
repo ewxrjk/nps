@@ -45,6 +45,7 @@ If used twice, both threads and processes are used.
 Ignored.
 .IP "\fB-o \fIFORMAT\fR, \fB-O \fIFORMAT\fR, \fB--format \fIFORMAT"
 Set a specific format.
+\fB-o\fR uses SUS syntax, the rest use NPS syntax.
 If multiple options are given then they are cumulative.
 See \fBFORMATTING\fR below.
 .IP "\fB-p \fILIST\fR, \fB--pid \fILIST"
@@ -182,6 +183,7 @@ interpreter.
 Requested widths are mandatory for \fBcomm\fR.
 .IP \fBetime
 Time elapsed since the process started.
+See \fBTime Intervals\fR below for more information
 .IP \fBflags
 Flags word from the kernel (octal).
 You will need a copy of the kernel sources to be able to interpret this.
@@ -205,6 +207,7 @@ will be used instead.
 .IP \fBio
 IO rate.
 This is the sum of \fBread\fR and \fBwrite\fR.
+See \fBMemory\fR below for argument syntax.
 .IP \fBlocaltime
 The time at which process information was gathered.
 This is independent of the process; it is intended for use with
@@ -214,12 +217,15 @@ format the time.
 .IP \fBmajflt
 Major fault rate.
 Major faults are page faults that require a page to be read from disk.
+See \fBMemory\fR below for argument syntax.
 .IP \fBmem
 The total memory (resident and swapped) used by the process.
 Equivalent to \fBrss\fR+\fBswap\fR.
+See \fBMemory\fR below for argument syntax.
 .IP \fBminflt
 Minor fault rate.
 Minor faults do not require a page to be read from disk.
+See \fBMemory\fR below for argument syntax.
 .IP \fBnice
 Nice value.
 Higher values mean lower priority ("nicer").
@@ -243,6 +249,7 @@ Process ID.
 The total memory (resident and swapped) used by the process,
 scaled down to account for sharing with other processes.
 Equivalent to \fBpss\fR+\fBswap\fR.
+See \fBMemory\fR below for argument syntax.
 .IP \fBppid
 Parent process ID.
 .IP \fBpri
@@ -253,8 +260,11 @@ This the total amount of RAM used by the process, with each page's
 contribution divided by the number of processes it is shared with.
 .IP
 Only root can read the \fBpss\fR of processes it doesn't own.
+.IP
+See \fBMemory\fR below for argument syntax.
 .IP \fBread
 Read rate.
+See \fBMemory\fR below for argument syntax.
 .IP \fBrgid
 Real group ID (decimal).
 .IP \fBrgroup
@@ -264,6 +274,7 @@ will be used instead.
 .IP \fBrss
 Resident set size.
 This the total amount of RAM used by the process.
+See \fBMemory\fR below for argument syntax.
 .IP \fBrtprio
 Realtime scheduling priority.
 See \fBsched_setscheduler\fR(2).
@@ -344,12 +355,14 @@ Supplementary group IDs as strings.
 Saved user ID as a string.
 .IP \fBswap
 The amount of swap used.
+See \fBMemory\fR below for argument syntax.
 .IP \fBthreads
 The number of threads, or \fB-\fR a thread.
 .IP \fBtid
 The thread ID, or \fB-\fR for a process.
 .IP \fBtime
 The cumulative CPU time used over the process's lifetime (user and kernel).
+See \fBTime Intervals\fR below for more information
 .IP \fBtpgid
 Foreground process group ID on controlling terminal.
 .IP \fBtty
@@ -364,10 +377,12 @@ will be used instead.
 .IP \fBvsz
 Virtual memory size.
 This is the total address space used by the process.
+See \fBMemory\fR below for argument syntax.
 .IP \fBwchan
 Wait channel.
 .IP \fBwrite
 Write rate.
+See \fBMemory\fR below for argument syntax.
 .SS Aliases
 In addition the following aliases are supported:
 .IP \fB%cpu
@@ -426,21 +441,20 @@ However if possible an alternative representation will be used to fit
 within the requested width.
 For certain properties such as \fBargs\fR requested widths are
 mandatory.
-.SS "Parameters"
+.SS "Headings"
 To give a property a different heading, use the syntax
 \fIPROPERTY\fB=\fIHEADING\fR.
-With \fB-o\fR this only works on the last property in a single argument.
+In SUS syntax (\fB-o\fR) this only works on the last property in a single argument.
 Use multiple \fB-o\fR options to work around this.
-With \fB-O\fR this can be used on any or all of the properties within
-an argument.
+In NPS syntax (\fB-O\fR and all other contexts) this can be used on
+any or all of the properties within an argument.
 If the heading contains spaces or quotes then it must be quoted.
-.PP
+.SS "Arguments"
 To supply an argument to a property, use the syntax
-\fIPROPERTY\fB/\fIPARAMETER\fR.
+\fIPROPERTY\fB/\fIARGUMENT\fR.
 If the argument contains spaces or quotes then it must be quoted.
 .PP
-If both a heading and an argument are supplied then the heading must
-be first and it must be quoted.
+Widths always come first; then headings; then arguments.
 .SS "Time Intervals"
 Time intervals (such as \fBetime\fR) are represented as
 [[\fIDD\fB-\fR]\fIHH\fB:\fR]\fIMM\fB:\fISS\fR, with \fIDD\fR
@@ -501,6 +515,9 @@ They are always given in the local timezone.
 If a column width is requested then more compact forms may be used:
 \fIHH\fB:\fIMM\fR for a time in this day or \fIMM\fB-\fIDD\fR for
 a date in this year.
+.PP
+If an argument is supplied, it is passed to \fBstrftime\fR(3) to
+format the time.
 .SS "Memory"
 \fBrss\fR is the resident set size of a process, i.e. the amount
 physical RAM it is currently using.
@@ -603,8 +620,7 @@ The format to use if \fB-f\fR is specified.
 .IP \fBps_l_format
 The format to use if \fB-l\fR is specified.
 .PP
-In this file, unlike in command line arguments, headings may be quoted
-(and must be quoted, if they contain a space, comma or quotes).
+All three use NPS syntax (see \fBFORMATTING\fR above).
 .SH ENVIRONMENT
 .TP
 .B COLUMNS
@@ -616,6 +632,8 @@ kind of output.
 The meaning of \fBflags\fR is not very clear.
 .SH STANDARDS
 Intended to follow SUS v4.
+The SUS syntax for headings is rather inflexible, hence NPS syntax
+everywhere that isn't defined by SUS.
 .PP
 CSV output follows RFC 1480.
 .SH AUTHOR
