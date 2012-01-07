@@ -41,6 +41,8 @@ archive=${package}-${version}.tar.gz
 rm -rf products ${dir}
 mkdir products
 cp ${archive} products/.
+man -Tutf8 -l src/nps.1 | texttohtml -iT 'nps(1)' > products/nps.1.html
+man -Tutf8 -l src/nps-top.1 | texttohtml -iT 'nps-top(1)' > products/nps-top.1.html
 
 build i386 lenny32
 build amd64 lenny64
