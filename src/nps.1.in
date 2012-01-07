@@ -223,6 +223,6 @@ Intended to follow SUS v4.
 The SUS syntax for headings is rather inflexible, hence NPS syntax
 everywhere that isn't defined by SUS.
 .PP
-CSV output follows RFC 1480.
+CSV output follows RFC 4180.
 .SH AUTHOR
 Richard Kettlewell <rjk@greenend.org.uk>
