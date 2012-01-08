@@ -373,4 +373,5 @@ static void report(void) {
     xprintf("%.*s\n", (int)min(b->pos, chosen_width), b->base);
   }
   free(b->base);
+  free(tasks);
 }
