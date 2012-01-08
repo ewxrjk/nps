@@ -59,6 +59,7 @@ struct propinfo {
   const char *name;
   const char *heading;
   const char *description;
+  unsigned flags;
   formatfn *format;
   comparefn *compare;
   union {
@@ -74,6 +75,8 @@ struct propinfo {
     void (*fetch_sigset)(struct procinfo *, taskident, sigset_t *);
   } fetch;
 };
+#define PROP_TEXT 1
+#define PROP_NUMERIC 2
 
 #define ANTIWOBBLE 16           /* size of anti-wobble ring buffer */
 
@@ -109,20 +112,33 @@ void format_syntax(enum format_syntax s) {
 // ----------------------------------------------------------------------------
 
 static void format_integer(intmax_t im, struct buffer *b, int base) {
-  buffer_printf(b, (base == 'o' ? "%jo" :
-                    base == 'x' ? "%jx" :
-                    base == 'X' ? "%jX" :
-                    base == 'u' ? "%ju" :
-                    "%jd"), im);
+  // For CSV output force decimal
+  if(syntax == syntax_csv) {
+    switch(base) {
+    case 'o': case 'x': case 'X': base = 'u';
+    }
+  }
+  switch(base) {
+  case 'o': buffer_printf(b, "%jo", im); break;
+  case 'x': buffer_printf(b, "%jx", im); break;
+  case 'X': buffer_printf(b, "%jX", im); break;
+  case 'u': buffer_printf(b, "%ju", im); break;
+  default: buffer_printf(b, "%jd", im); break;
+  }
 }
 
 static void format_addr(uintmax_t im, struct buffer *b) {
-  if(im > 0xFFFFFFFFFFFFLL)
-    buffer_printf(b, "%016jx", im);
-  else if(im > 0xFFFFFFFF)
-    buffer_printf(b, "%012jx", im);
-  else
-    buffer_printf(b, "%08jx", im);
+  // For CSV output fore decimal
+  if(syntax == syntax_csv)
+    buffer_printf(b, "%ju", im);
+  else {
+    if(im > 0xFFFFFFFFFFFFLL)
+      buffer_printf(b, "%016jx", im);
+    else if(im > 0xFFFFFFFF)
+      buffer_printf(b, "%012jx", im);
+    else
+      buffer_printf(b, "%08jx", im);
+  }
 }
 
 static void format_usergroup(intmax_t id, struct buffer *b, size_t columnsize,
@@ -148,7 +164,7 @@ static void format_interval(long seconds, struct buffer *b,
                             const char *format,
                             unsigned flags) {
   size_t startpos;
-  if(flags & FORMAT_RAW) {
+  if((flags & FORMAT_RAW) || syntax == syntax_csv) {
     format_integer(seconds, b, 'd');
     return;
   }
@@ -485,7 +501,7 @@ static void property_pcpu(const struct column *col, struct buffer *b,
                           unsigned flags) {
   double pcpu = 100 * col->prop->fetch.fetch_double(pi, task);
   int prec;
-  if(flags & FORMAT_RAW)
+  if((flags & FORMAT_RAW) || syntax == syntax_csv)
     buffer_printf(b, "%g", pcpu);
   else if(col->arg && *col->arg) {
     prec = atoi(col->arg);
@@ -500,7 +516,7 @@ static void property_mem(const struct column *col, struct buffer *b,
                          unsigned flags) {
   char buffer[64];
   unsigned cutoff;
-  int ch = parse_byte_arg(col->arg, &cutoff, flags);
+  int ch = (syntax == syntax_csv ? 'b' : parse_byte_arg(col->arg, &cutoff, flags));
   buffer_append(b,
                 bytes(col->prop->fetch.fetch_uintmax(pi, task),
                       0, ch, buffer, sizeof buffer, cutoff));
@@ -525,7 +541,7 @@ static void property_iorate(const struct column *col, struct buffer *b,
                             unsigned flags) {
   char buffer[64];
   unsigned cutoff;
-  int ch = parse_byte_arg(col->arg, &cutoff, flags);
+  int ch = (syntax == syntax_csv ? 'b' : parse_byte_arg(col->arg, &cutoff, flags));
   buffer_append(b,
                 bytes(col->prop->fetch.fetch_double(pi, task),
                       0, ch, buffer, sizeof buffer, cutoff));
@@ -724,309 +740,369 @@ static int compare_sigset(const struct propinfo *prop, struct procinfo *pi,
 
 static const struct propinfo properties[] = {
   {
-    "%cpu", NULL, "=pcpu", NULL, NULL, {}
+    "%cpu", NULL, "=pcpu", 0, NULL, NULL, {}
   },
   {
     "_hier", NULL, NULL,
+    0,
     NULL, compare_hier, { }
   },
   {
     "addr", "ADDR", "Instruction pointer address (hex)",
+    PROP_NUMERIC,
     property_address, compare_uintmax, { .fetch_uintmax = proc_get_insn_pointer }
   },
   {
     "args", "COMMAND", "Command with arguments (but path removed)",
+    PROP_TEXT,
     property_command_brief, compare_string, { .fetch_string = proc_get_cmdline }
   },
   {
     "argsfull", "COMMAND", "Command with arguments",
+    PROP_TEXT,
     property_command, compare_string, { .fetch_string = proc_get_cmdline }
   },
   {
-    "cmd", NULL, "=args", NULL, NULL, {}
+    "cmd", NULL, "=args", 0, NULL, NULL, {}
   },
   {
     "comm", "COMMAND", "Command",
+    PROP_TEXT,
     property_command, compare_string, { .fetch_string = proc_get_comm }
   },
   {
-    "command", NULL, "=args", NULL, NULL, {}
+    "command", NULL, "=args", 0, NULL, NULL, {}
   },
   {
-    "cputime", NULL, "=time", NULL, NULL, {}
+    "cputime", NULL, "=time", 0, NULL, NULL, {}
   },
   {
-    "egid", NULL, "=gid", NULL, NULL, {}
+    "egid", NULL, "=gid", 0, NULL, NULL, {}
   },
   {
-    "egroup", NULL, "=group", NULL, NULL, {}
+    "egroup", NULL, "=group", 0, NULL, NULL, {}
   },
   {
     "etime", "ELAPSED", "Elapsed time (argument: format string)",
+    PROP_NUMERIC,
     property_etime, compare_intmax, { .fetch_intmax = proc_get_elapsed_time }
   },
   {
-    "euid", NULL, "=uid", NULL, NULL, {}
+    "euid", NULL, "=uid", 0, NULL, NULL, {}
   },
   {
-    "euser", NULL, "=user", NULL, NULL, {}
+    "euser", NULL, "=user", 0, NULL, NULL, {}
   },
   {
-    "f", NULL, "=flags", NULL, NULL, {}
+    "f", NULL, "=flags", 0, NULL, NULL, {}
   },
   {
-    "flag", NULL, "=flags", NULL, NULL, {}
+    "flag", NULL, "=flags", 0, NULL, NULL, {}
   },
   {
     "flags", "F", "Flags (octal; argument o/d/x/X)",
+    PROP_NUMERIC,
     property_uoctal, compare_uintmax, { .fetch_uintmax = proc_get_flags }
   },
   {
     "fsgid", "FSGID", "Filesystem group ID (decimal)",
+    PROP_NUMERIC,
     property_gid, compare_gid, { .fetch_gid = proc_get_fsgid }
   },
   {
     "fsgroup", "FSGROUP", "Filesystem group ID (name)",
+    PROP_TEXT,
     property_group, compare_group, { .fetch_gid = proc_get_fsgid }
   },
   {
     "fsuid", "FSUID", "Filesysem user ID (decimal)",
+    PROP_NUMERIC,
     property_uid, compare_uid, { .fetch_uid = proc_get_fsuid }
   },
   {
     "fsuser", "FSUSER", "Filesystem user ID (name)",
+    PROP_NUMERIC,
     property_user, compare_user, { .fetch_uid = proc_get_fsuid }
   },
   {
     "gid", "GID","Effective group ID (decimal)",
+    PROP_NUMERIC,
     property_gid, compare_gid, { .fetch_gid = proc_get_egid }
   },
   {
     "group", "GROUP", "Effective group ID (name)",
+    PROP_TEXT,
     property_group, compare_group, { .fetch_gid = proc_get_egid }
   },
   {
     "io", "IO", "Recent read+write rate (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
     property_iorate, compare_double, { .fetch_double = proc_get_rw_bytes }
   },
   {
     "localtime", "LTIME", "Timestamp (argument: strftime format string)",
+    PROP_TEXT,
     property_stime, compare_intmax, { .fetch_intmax = shim_get_time },
   },
   {
-    "lwp", NULL, "=tid", NULL, NULL, {}
+    "lwp", NULL, "=tid", 0, NULL, NULL, {}
   },
   {
-    "nlwp", NULL, "=threads", NULL, NULL, {}
+    "nlwp", NULL, "=threads", 0, NULL, NULL, {}
   },
   {
     "majflt", "+FLT", "Major fault rate (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
     property_iorate, compare_double, { .fetch_double = proc_get_majflt }
   },
   {
     "mem", "MEM", "Memory usage (argument: K/M/G/T/P/p) ",
+    PROP_NUMERIC,
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_mem }
   },
   {
     "minflt", "-FLT", "Minor fault rate (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
     property_iorate, compare_double, { .fetch_double = proc_get_minflt }
   },
   {
-    "ni", NULL, "=ni", NULL, NULL, {}
+    "ni", NULL, "=ni", 0, NULL, NULL, {}
   },
   {
     "nice", "NI", "Nice value",
+    PROP_NUMERIC,
     property_decimal, compare_intmax, { .fetch_intmax = proc_get_nice }
   },
   {
     "oom", "OOM", "OOM score",
+    PROP_NUMERIC,
     property_decimal, compare_intmax, { .fetch_intmax = proc_get_oom_score }
   },
   {
     "pcomm", "PCMD", "Parent command name",
+    PROP_TEXT,
     property_command, compare_string, { .fetch_string = shim_get_pcomm },
   },
   {
     "pcpu", "%CPU", "%age CPU used (argument: precision)",
+    PROP_NUMERIC,
     property_pcpu, compare_double, { .fetch_double = proc_get_pcpu }
   },
   {
     "pgrp", "PGRP", "Process group ID",
+    PROP_NUMERIC,
     property_pid, compare_pid, { .fetch_pid = proc_get_pgrp }
   },
   {
-    "pgrp", NULL, "=pgid", NULL, NULL, {}
+    "pgrp", NULL, "=pgid", 0, NULL, NULL, {}
   },
   {
     "pid", "PID", "Process ID",
+    PROP_NUMERIC,
     property_pid, compare_pid, { .fetch_pid = proc_get_pid }
   },
   {
     "pmem", "PMEM", "Proportional memory usage (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pmem }
   },
   {
     "ppid", "PPID", "Parent process ID",
+    PROP_NUMERIC,
     property_pid, compare_pid, { .fetch_pid = proc_get_ppid }
   },
   {
     "pri", "PRI", "Priority",
+    PROP_NUMERIC,
     property_decimal, compare_intmax, { .fetch_intmax = proc_get_priority }
   },
   {
     "pss", "PSS", "Proportional resident set size (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pss }
   },
   {
     "read", "RD", "Recent read rate (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
     property_iorate, compare_double, { .fetch_double = proc_get_read_bytes }
   },
   {
     "rgid", "RGID", "Real group ID (decimal)",
+    PROP_NUMERIC,
     property_gid, compare_gid, { .fetch_gid = proc_get_rgid }
   },
   {
     "rgroup", "RGROUP", "Real group ID (name)",
+    PROP_TEXT,
     property_group, compare_group, { .fetch_gid = proc_get_rgid }
   },
   {
     "rss", "RSS", "Resident set size (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_rss }
   },
   {
-    "rssize", NULL, "=rss", NULL, NULL, {},
+    "rssize", NULL, "=rss", 0, NULL, NULL, {},
   },
   {
-    "rsz", NULL, "=rss", NULL, NULL, {},
+    "rsz", NULL, "=rss", 0, NULL, NULL, {},
   },
   {
     "rtprio", "RTPRI", "Realtime scheduling priority",
+    PROP_NUMERIC,
     property_udecimal, compare_uintmax, { .fetch_uintmax = proc_get_rtprio }
   },
   {
     "ruid", "RUID", "Real user ID (decimal)",
+    PROP_NUMERIC,
     property_uid, compare_uid, { .fetch_uid = proc_get_ruid }
   },
   {
     "ruser", "RUSER", "Real user ID (name)",
+    PROP_TEXT,
     property_user, compare_user, { .fetch_uid = proc_get_ruid }
   },
   {
     "sched", "SCHED", "Scheduling policy",
+    PROP_NUMERIC,
     property_sched, compare_int, { .fetch_int = proc_get_sched_policy }
   },
   {
-    "sess", NULL, "=sid", NULL, NULL, {},
+    "sess", NULL, "=sid", 0, NULL, NULL, {},
   },
   {
-    "session", NULL, "=sid", NULL, NULL, {},
+    "session", NULL, "=sid", 0, NULL, NULL, {},
   },
   {
     "sgid", "SGID", "Saved group ID (decimal)",
+    PROP_NUMERIC,
     property_gid, compare_gid, { .fetch_gid = proc_get_sgid }
   },
   {
     "sgroup", "SGROUP", "Saved group ID (name)",
+    PROP_TEXT,
     property_group, compare_group, { .fetch_gid = proc_get_sgid }
   },
   {
     "sid", "SID", "Session ID",
+    PROP_NUMERIC,
     property_pid, compare_pid, { .fetch_pid = proc_get_session }
   },
   {
     "sigblocked", "BLOCKED", "Blocked signals",
+    PROP_TEXT,
     property_sigset, compare_sigset, { .fetch_sigset = proc_get_sig_blocked },
   },
   {
     "sigcaught", "CAUGHT", "Caught signals",
+    PROP_TEXT,
     property_sigset, compare_sigset, { .fetch_sigset = proc_get_sig_caught },
   },
   {
     "sigignored", "IGNORED", "Ignored signals",
+    PROP_TEXT,
     property_sigset, compare_sigset, { .fetch_sigset = proc_get_sig_ignored },
   },
   {
     "sigpending", "PENDING", "Pending signals",
+    PROP_TEXT,
     property_sigset, compare_sigset, { .fetch_sigset = proc_get_sig_pending },
   },
   {
     "state", "S", "Process state",
+    PROP_TEXT,
     property_char, compare_int, { .fetch_int = proc_get_state }
   },
   {
     "stime", "STIME", "Start time (argument: strftime format string)",
+    PROP_TEXT,
     property_stime, compare_intmax, { .fetch_intmax = proc_get_start_time }
   },
   {
     "suid", "SUID", "Saved user ID (decimal)",
+    PROP_NUMERIC,
     property_uid, compare_uid, { .fetch_uid = proc_get_suid }
   },
   {
     "supgid", "SUPGID", "Supplementary group IDs (decimal)",
+    PROP_TEXT,
     property_gids, compare_gids, { .fetch_gids = proc_get_supgids }
   },
   {
     "supgrp", "SUPGRP", "Supplementary group IDs (names)",
+    PROP_TEXT,
     property_groups, compare_gids, { .fetch_gids = proc_get_supgids }
   },
   {
     "suser", "SUSER", "Saved user ID (name)",
+    PROP_TEXT,
     property_user, compare_user, { .fetch_uid = proc_get_suid }
   },
   {
     "swap", "SWAP", "Swap usage (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_swap }
   },
   {
-    "thcount", NULL, "=threads", NULL, NULL, {}
+    "thcount", NULL, "=threads", 0, NULL, NULL, {}
   },
   {
     "threads", "T", "Number of threads",
+    PROP_NUMERIC,
     property_num_threads, compare_pid, { .fetch_int = proc_get_num_threads }
   },
   {
     "tid", "TID", "Thread ID",
+    PROP_NUMERIC,
     property_pid, compare_pid, { .fetch_pid = proc_get_tid }
   },
   {
     "time", "TIME", "Scheduled time (argument: format string)",
+    PROP_TEXT,
     property_time, compare_intmax, { .fetch_intmax = proc_get_scheduled_time }
   },
   {
-    "tname", NULL, "=tty", NULL, NULL, {}
+    "tname", NULL, "=tty", 0, NULL, NULL, {}
   },
   {
     "tpgid", "TPGID", "Foreground progress group on controlling terminal",
+    PROP_NUMERIC,
     property_pid, compare_pid, { .fetch_pid = proc_get_tpgid }
   },
   {
-    "tt", NULL, "=tty", NULL, NULL, {}
+    "tt", NULL, "=tty", 0, NULL, NULL, {}
   },
   {
     "tty", "TT", "Terminal",
+    PROP_TEXT,
     property_tty, compare_int, { .fetch_int = proc_get_tty }
   },
   {
     "uid", "UID", "Effective user ID (decimal)",
+    PROP_NUMERIC,
     property_uid, compare_uid, { .fetch_uid = proc_get_euid }
   },
   {
     "user", "USER", "Effective user ID (name)",
+    PROP_TEXT,
     property_user, compare_user, { .fetch_uid = proc_get_euid }
   },
   {
-    "vsize", NULL, "=vsz", NULL, NULL, {}
+    "vsize", NULL, "=vsz", 0, NULL, NULL, {}
   },
   {
     "vsz", "VSZ", "Virtual memory used (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_vsize }
   },
   {
     "wchan", "WCHAN", "Wait channel (hex)",
+    PROP_NUMERIC,
     property_address, compare_uintmax, { .fetch_uintmax = proc_get_wchan }
   },
   {
     "write", "WR", "Recent write rate (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
     property_iorate, compare_double, { .fetch_double = proc_get_write_bytes }
   },
 };
@@ -1152,17 +1228,17 @@ void format_heading(struct procinfo *pi, struct buffer *b) {
 void format_process(struct procinfo *pi, taskident task, struct buffer *b) {
   struct buffer bb[1];
   size_t i, left, c;
-  int quoted, ch;
+  int ch;
   b->pos = 0;
   buffer_init(bb);
   for(c = 0; c < ncolumns; ++c) {
     /* Render the value or heading */
     bb->pos = 0;
+    /* Emit it in the chosen syntax */
     if(task.pid == -1)
       buffer_append(bb, columns[c].heading);
     else
       columns[c].prop->format(&columns[c], bb, columns[c].width, pi, task, 0);
-    /* Emit it in the chosen syntax */
     switch(syntax) {
     case syntax_normal:
       buffer_append_n(b, bb->base, bb->pos);
@@ -1177,15 +1253,7 @@ void format_process(struct procinfo *pi, taskident task, struct buffer *b) {
     case syntax_csv:
       if(c > 0)
         buffer_putc(b, ',');
-      quoted = 0;
-      for(i = 0; i < bb->pos; ++i) {
-        ch = bb->base[i];
-        if(ch == '"' || ch == ',' || ch == '\n') {
-          quoted = 1;
-          break;
-        }
-      }
-      if(quoted) {
+      if(columns[c].prop->flags & PROP_TEXT) {
         buffer_putc(b, '"');
         for(i = 0; i < bb->pos; ++i) {
           ch = bb->base[i];

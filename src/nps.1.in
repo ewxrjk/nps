@@ -21,6 +21,7 @@ Select processes by name.
 Equivalent to \fBcomm=:\fINAME\fR (see \fBMATCH EXPRESSIONS\fR below).
 .IP \fB--csv
 Set CSV format output.
+See \fBCSV OUTPUT\fR below.
 .IP \fB-d
 Select all processes that are not session leaders.
 .IP "\fB-f\fR, \fB--full"
@@ -182,6 +183,27 @@ wchan,tty=TTY,time,args=CMD
 .RE
 .PP
 In all cases, if \fB-L\fR is used, \fBtid\fR is added after \fBpid\fR.
+.SH "CSV OUTPUT"
+The \fB--csv\fR option modifies the output in the following ways:
+.TP
+.B \(bu
+Padding is suppressed and columns are separated with a comma.
+.TP
+.B \(bu
+Numeric properties are always represented in decimal, without quotes.
+.TP
+.B \(bu
+Text properties are always quoted.
+.TP
+.B \(bu
+Memory and IO rate properties are always given in bytes.
+.PP
+Timestamps are text properties, and the usual argument rules apply.
+Time intervals are numeric properties are always displayed as a count
+of seconds.
+.PP
+The intent is that the output can easily be imported into a
+spreadsheet.
 .SH SORTING
 The \fB--sort\fR option specifies the properties which control the order
 in which processes are displayed, separate by spaces or commas.
