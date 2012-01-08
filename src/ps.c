@@ -83,11 +83,12 @@ const struct option options[] = {
   { 0, 0, 0, 0 },
 };
 
-static void report(void);
+static void report(int first);
 
 static unsigned procflags;
 static int sorting;
 static size_t width;
+static int csv;
 
 int main(int argc, char **argv) {
   int n;
@@ -98,6 +99,7 @@ int main(int argc, char **argv) {
   struct procinfo *p;
   int sample_interval = 100000/*μs*/;
   double update_interval = 0;
+  long poll_count = -1;
 
   /* Initialize privilege support (this must stay first) */
   priv_init(argc, argv);
@@ -190,11 +192,20 @@ int main(int argc, char **argv) {
       sorting = 1;
       break;
     case OPT_POLL:
-      update_interval = parse_interval(optarg);
+      {
+        char *colon = strchr(optarg, ':');
+        if(colon) {
+          *colon++ = 0;
+          poll_count = atol(colon);
+        } else
+          poll_count = -1;
+        update_interval = parse_interval(optarg);
+      }
       break;
     case OPT_CSV:
       format_syntax(syntax_csv);
       width = INT_MAX;
+      csv = 1;
       break;
     case OPT_HELP:
       xprintf("Usage:\n"
@@ -213,7 +224,7 @@ int main(int argc, char **argv) {
              "  -L, --threads           Display threads\n"
              "  -o, -O, --format PROPS  Set output format; see --help-format\n"
              "  -p, --pids PIDS         Select processes by process ID\n"
-             "  --poll SECONDS          Repeat output\n"
+             "  --poll SECONDS[:COUNT]  Repeat output\n"
              "  --ppid PIDS             Select processes by parent process ID\n"
              "  --sort [+/-]PROPS...    Set ordering; see --help-format\n"
              "  -t, --tty TERMS         Select processes by terminal\n"
@@ -315,10 +326,13 @@ int main(int argc, char **argv) {
     proc_free(p);
   }
   if(update_interval) {
+    int first = 1;
     for(;;) {
       struct timespec ts;
       int rc;
-      report();
+      report(first);
+      if(poll_count > 0 && !--poll_count)
+        break;
       ts.tv_sec = update_interval;
       ts.tv_nsec = 1000000000 * (update_interval - update_interval);
       do
@@ -329,14 +343,15 @@ int main(int argc, char **argv) {
       p = global_procinfo;
       global_procinfo = proc_enumerate(p, procflags);
       proc_free(p);
+      first = 0;
     }
   } else
-    report();
+    report(1/*first*/);
   proc_free(global_procinfo);
   xexit(0);
 }
 
-static void report(void) {
+static void report(int first) {
   struct buffer b[1];
   size_t ntasks, chosen_width, i;
   taskident *tasks;
@@ -351,7 +366,8 @@ static void report(void) {
   /* Set up output formatting */
   format_columns(global_procinfo, tasks, ntasks);
   buffer_init(b);
-  format_heading(global_procinfo, b);
+  if(first || !csv)
+    format_heading(global_procinfo, b);
   /* Figure out the display width */
   if(!width) {
     if((s = getenv("COLUMNS")) && (n = atoi(s)))

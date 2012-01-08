@@ -51,8 +51,12 @@ If multiple options are given then they are cumulative.
 See \fBFORMATTING\fR below.
 .IP "\fB-p \fILIST\fR, \fB--pid \fILIST"
 Select all the processes in \fILIST\fR.
-.IP "\fB--poll \fISECONDS"
+.IP "\fB--poll \fISECONDS\fR[\fB:\fICOUNT\fR]"
 Repeat the output every \fISECONDS\fR seconds.
+If a \fICOUNT\fR is specified then only that many repetitions are performed.
+.IP
+To distinguish lines that describe the same process at different times, use the
+\fBlocaltime\fR property.
 .IP "\fB--ppid \fILIST"
 Select all the processes in whose parent is in \fILIST\fR.
 .IP "\fB-t \fILIST\fR, \fB--tty \fILIST"
@@ -609,6 +613,9 @@ Text properties are always quoted.
 .TP
 .B \(bu
 Memory and IO rate properties are always given in bytes.
+.TP
+.B \(bu
+With \fB--poll\fR, only the first line contains column headings.
 .PP
 Timestamps are text properties, and the usual argument rules apply.
 Time intervals are numeric properties are always displayed as a count
