@@ -9,6 +9,11 @@ nps \- list processes
 .B nps
 writes a snapshot of information about processes running on the system.
 .SH OPTIONS
+All \fILIST\fR options consists of elements separated by spaces or
+commas.
+.PP
+.SS "Selecting Processes"
+These options select which processes to display.
 .IP \fB-a
 Select processes which have a controlling terminal.
 .IP "\fB-A\fR, \fB-e\fR, \fB--all"
@@ -19,15 +24,8 @@ Select all the processes with an ancestor in \fILIST\fR.
 Select processes by name.
 .IP
 Equivalent to \fBcomm=:\fINAME\fR (see \fBMATCH EXPRESSIONS\fR below).
-.IP \fB--csv
-Set CSV format output.
-See \fBCSV OUTPUT\fR below.
 .IP \fB-d
 Select all processes that are not session leaders.
-.IP "\fB-f\fR, \fB--full"
-Set the "full" output format.
-.IP "\fB-l\fR, \fB--long"
-Set the "long" output format.
 .IP "\fB-g \fILIST\fR"
 Select all processes whose sessions are in \fILIST\fR (by name or
 number).
@@ -37,26 +35,8 @@ number).
 .IP "\fB-G \fILIST\fR, \fB--real-group \fILIST\fR, \fB--Group \fILIST"
 Select all processes whose real group ID is in \fILIST\fR (by name or
 number).
-.IP "\fB-H\fR, \fB--forest"
-Hierarchical display.
-.IP "\fB-L\fR, \fB--threads"
-Display threads instead of processes.
-If used twice, both threads and processes are used.
-.IP "\fB-n \fIANYTHING"
-Ignored.
-.IP "\fB-o \fIFORMAT\fR, \fB-O \fIFORMAT\fR, \fB--format \fIFORMAT"
-Set a specific format.
-\fB-o\fR uses SUS syntax, the rest use NPS syntax.
-If multiple options are given then they are cumulative.
-See \fBFORMATTING\fR below.
 .IP "\fB-p \fILIST\fR, \fB--pid \fILIST"
 Select all the processes in \fILIST\fR.
-.IP "\fB--poll \fISECONDS\fR[\fB:\fICOUNT\fR]"
-Repeat the output every \fISECONDS\fR seconds.
-If a \fICOUNT\fR is specified then only that many repetitions are performed.
-.IP
-To distinguish lines that describe the same process at different times, use the
-\fBlocaltime\fR property.
 .IP "\fB--ppid \fILIST"
 Select all the processes in whose parent is in \fILIST\fR.
 .IP "\fB-t \fILIST\fR, \fB--tty \fILIST"
@@ -68,11 +48,53 @@ name or number).
 .IP "\fB-U \fILIST\fR, \fB--real-user \fILIST\fR, \fB--User \fILIST"
 Select all the processes whose real user ID is in \fILIST\fR (by
 name or number).
+.PP
+In addition, any non-option arguments are used to select processes.
+See \fBMATCH EXPRESSIONS\fR below.
+.PP
+Process selection is cumulative, i.e. if multiple process selection
+options are given then any process which is selected by at least
+one of them is selected.
+If no selection options are given then only processes that share an
+effective UID and terminal with the current process are selected.
+
+.SS "Formatting"
+These options determine how the output is formatted.
+.IP \fB--csv
+Set CSV format output.
+See \fBCSV OUTPUT\fR below.
+.IP "\fB-f\fR, \fB--full"
+Set the "full" output format.
+.IP "\fB-l\fR, \fB--long"
+Set the "long" output format.
+.IP "\fB-H\fR, \fB--forest"
+Hierarchical display.
+.IP "\fB-o \fIFORMAT\fR, \fB-O \fIFORMAT\fR, \fB--format \fIFORMAT"
+Set a specific format.
+\fB-o\fR uses SUS syntax, the rest use NPS syntax.
+If multiple options are given then they are cumulative.
+See \fBFORMATTING\fR below.
+.IP \fB-w
+Don't truncate output.
+Normally when writing to a terminal, output is truncated at the
+terminal width.
+If the output is not a terminal then it is never truncated.
+
+.SS "Other Options"
+.IP "\fB-L\fR, \fB--threads"
+Display threads instead of processes.
+If used twice, both threads and processes are used.
+.IP "\fB-n \fIANYTHING"
+Ignored.
+.IP "\fB--poll \fISECONDS\fR[\fB:\fICOUNT\fR]"
+Repeat the output every \fISECONDS\fR seconds.
+If a \fICOUNT\fR is specified then only that many repetitions are performed.
+.IP
+To distinguish lines that describe the same process at different times, use the
+\fBlocaltime\fR property.
 .IP "\fB--sort \fIORDER"
 Set the order in which processes are listed.
 See \fBSORTING\fR below.
-.IP \fB-w
-Don't truncate output.
 .IP \fB--help
 Display a usage message.
 .IP \fB--help-format
@@ -81,15 +103,6 @@ Displays help for the \fB-o\fR option.
 Displays help for match expressions.
 .IP \fB--version
 Display a version string.
-.PP
-All \fILIST\fR options consists of elements separated by spaces or
-commas.
-.PP
-Process selection is cumulative, i.e. if multiple process selection
-options are given then any process which is selected by at least
-one of them is selected.
-If no selection options are given then only processes that share an
-effective UID and terminal with the current process are selected.
 .SH "MATCH EXPRESSIONS"
 Following the options may appear one or more match expressions.
 These are general-purpose process selection options and come in several
