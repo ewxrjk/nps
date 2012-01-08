@@ -27,8 +27,7 @@ Equivalent to \fBcomm=:\fINAME\fR (see \fBMATCH EXPRESSIONS\fR below).
 .IP \fB-d
 Select all processes that are not session leaders.
 .IP "\fB-g \fILIST\fR"
-Select all processes whose sessions are in \fILIST\fR (by name or
-number).
+Select all processes whose sessions are in \fILIST\fR.
 .IP "\fB--group \fILIST\fR"
 Select all processes whose effective group ID is in \fILIST\fR (by name or
 number).
@@ -134,7 +133,7 @@ kilobytes, megabytes, etc.
 For instance, \fBrss==1048576\fR will match processes with an RSS of
 exactly one megabyte.
 .IP \(bu
-TTY paths are not abbreviated.
+Terminal paths are not abbreviated.
 .IP \(bu
 Times are represnted as second counts.
 .PP
