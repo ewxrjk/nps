@@ -12,7 +12,8 @@ Linux.
 - Read defaults from a configuration file
 - Flexible process selection (e.g. rss>1M, regexp match on command,
   etc)
-- Modify settings on the the fly, without interrupting display
+- Flexible output formatting, including CSV output from ps
+- Modify 'top' settings on the the fly, without interrupting display
 - On-screen help
 
 * Installation
