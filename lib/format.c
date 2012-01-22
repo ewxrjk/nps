@@ -515,7 +515,7 @@ static void property_mem(const struct column *col, struct buffer *b,
                          struct procinfo *pi, taskident task,
                          unsigned flags) {
   char buffer[64];
-  unsigned cutoff;
+  unsigned cutoff = 0;
   int ch = (syntax == syntax_csv ? 'b' : parse_byte_arg(col->arg, &cutoff, flags));
   buffer_append(b,
                 bytes(col->prop->fetch.fetch_uintmax(pi, task),
@@ -540,7 +540,7 @@ static void property_iorate(const struct column *col, struct buffer *b,
                             struct procinfo *pi, taskident task,
                             unsigned flags) {
   char buffer[64];
-  unsigned cutoff;
+  unsigned cutoff = 0;
   int ch = (syntax == syntax_csv ? 'b' : parse_byte_arg(col->arg, &cutoff, flags));
   buffer_append(b,
                 bytes(col->prop->fetch.fetch_double(pi, task),
