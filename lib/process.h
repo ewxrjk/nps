@@ -271,12 +271,28 @@ double proc_get_pcpu(struct procinfo *pi, taskident taskid);
  */
 uintmax_t proc_get_vsize(struct procinfo *pi, taskident taskid);
 
+/** @brief Retrieve peak virtual memory size of a process
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @return Number of bytes mapped
+ *
+ * Note that (traditionally) this includes @c PROT_NONE maps.
+ */
+uintmax_t proc_get_peak_vsize(struct procinfo *pi, taskident taskid);
+
 /** @brief Retrieve resident set size of a process
  * @param pi Pointer to process information
  * @param taskid Process or thread ID
  * @return Number of bytes resident
  */
 uintmax_t proc_get_rss(struct procinfo *pi, taskident taskid);
+
+/** @brief Retrieve peak resident set size of a process
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @return Number of bytes resident
+ */
+uintmax_t proc_get_peak_rss(struct procinfo *pi, taskident taskid);
 
 /** @brief Retrieve current execution address of a process
  * @param pi Pointer to process information

@@ -95,6 +95,24 @@
   U(write_bytes)               \
   U(cancelled_write_bytes)
 
+#define VM_PROPS(M) M(VmPeak, 1)                \
+  M(VmSize, 2)                                  \
+  M(VmLck, 4)                                   \
+  M(VmHWM, 8)                                   \
+  M(VmRSS, 16)                                  \
+  M(VmData, 32)                                 \
+  M(VmStk, 64)                                  \
+  M(VmExe, 128)                                 \
+  M(VmLib, 256)                                 \
+  M(VmPTE, 512)                                 \
+  M(VmSwap, 1024)
+#define VMMEMBER(N,B) uintmax_t prop_##N;
+#define VMTABLE(N,B) { #N, offsetof(struct process, prop_##N), B },
+#define VMENUM(N,B) bit_##N = B,
+enum {
+  VM_PROPS(VMENUM)
+};
+
 #define SMEMBER(X) intmax_t prop_##X;
 #define BASE_SMEMBER(X) uintmax_t base_##X;
 #define UMEMBER(X) uintmax_t prop_##X;
@@ -115,6 +133,7 @@ struct process {
   unsigned elapsed_set:1;       /* nonzero if elapsed has been set */
   unsigned eid_set:1;           /* nonzero if e[ug]id have been set */
   unsigned oom_score_set:1;     /* nonzero if oom_score is set */
+  unsigned vmbits;              /* Vm... bit set */
   char *prop_comm;
   char *prop_cmdline;
   int prop_state;
@@ -133,6 +152,7 @@ struct process {
   STAT_PROPS(UMEMBER,SMEMBER)
   IO_PROPS(UMEMBER,SMEMBER)
   IO_PROPS(BASE_SMEMBER,BASE_UMEMBER)
+  VM_PROPS(VMMEMBER)
 };
 
 static const size_t propinfo_stat[] = {
@@ -144,6 +164,15 @@ static const size_t propinfo_io[] = {
   IO_PROPS(OFFSET,OFFSET)
 };
 #define NIOS (sizeof propinfo_io / sizeof *propinfo_io)
+
+static const struct {
+  const char *name;
+  size_t offset;
+  unsigned bit;
+} propinfo_vm[] = {
+  VM_PROPS(VMTABLE)
+};
+#define NVMS (sizeof propinfo_vm / sizeof *propinfo_vm)
 
 #define HASH_SIZE 256           /* hash table size */
 
@@ -428,7 +457,7 @@ static void parse_sigset(sigset_t *ss, const char *ptr) {
 
 static void proc_status(struct process *p) {
   char buffer[1024], *ptr;
-  size_t i;
+  size_t i, n;
   FILE *fp;
   int c;
   long e, r, s, f;
@@ -452,7 +481,15 @@ static void proc_status(struct process *p) {
         *ptr++ = 0;
         while(*ptr && (*ptr == ' ' || *ptr == '\t'))
           ++ptr;
-        if(!strcmp(buffer, "Uid")
+        if(buffer[0] == 'V' && buffer[1] == 'm') {
+          for(n = 0; n < NVMS; ++n)
+            if(!strcmp(buffer, propinfo_vm[n].name)) {
+              uintmax_t *u = (uintmax_t *)((char *)p + propinfo_vm[n].offset);
+              *u = strtoumax(ptr, NULL, 10);
+              p->vmbits |= propinfo_vm[n].bit;
+              break;
+            }
+        } else if(!strcmp(buffer, "Uid")
            && sscanf(ptr, "%ld %ld %ld %ld", &r, &e, &s, &f) == 4) {
           p->prop_ruid = r;
           p->prop_euid = e;
@@ -830,14 +867,30 @@ double proc_get_pcpu(struct procinfo *pi, taskident taskid) {
 
 uintmax_t proc_get_vsize(struct procinfo *pi, taskident taskid) {
   struct process *p = proc_find(pi, taskid);
+  if(p->vmbits & bit_VmSize)
+    return p->prop_VmSize * KILOBYTE;
   proc_stat(p);
   return p->prop_vsize;
 }
 
+uintmax_t proc_get_peak_vsize(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
+  proc_status(p);
+  return p->prop_VmPeak;
+}
+
 uintmax_t proc_get_rss(struct procinfo *pi, taskident taskid) {
   struct process *p = proc_find(pi, taskid);
+  if(p->vmbits & bit_VmRSS)
+    return p->prop_VmRSS * KILOBYTE;
   proc_stat(p);
   return p->prop_rss * sysconf(_SC_PAGESIZE);
+}
+
+uintmax_t proc_get_peak_rss(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
+  proc_status(p);
+  return p->prop_VmHWM;
 }
 
 uintmax_t proc_get_insn_pointer(struct procinfo *pi, taskident taskid) {
@@ -916,6 +969,12 @@ uintmax_t proc_get_pss(struct procinfo *pi, taskident taskid) {
 
 uintmax_t proc_get_swap(struct procinfo *pi, taskident taskid) {
   struct process *p = proc_find(pi, taskid);
+  proc_status(p);
+  /* Since 2.6.34 (b084d4353ff99d824d3bc5a5c2c22c70b1fba722), swap
+   * usage has been exposed directly */
+  if(p->vmbits & bit_VmSwap)
+    return p->prop_VmSwap * KILOBYTE;
+  /* Prior to that we have to work it out by adding up smaps entries */
   proc_smaps(p);
   return p->prop_swap * KILOBYTE;
 }

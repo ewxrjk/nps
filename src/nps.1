@@ -292,6 +292,11 @@ will be used instead.
 Resident set size.
 This the total amount of RAM used by the process.
 See \fBMemory\fR below for argument syntax.
+.IP \fBrsspk
+Peak resident set size.
+This is the highest value that \fBrss\fR has reached in the lifetime
+of the process.
+See \fBMemory\fR below for argument syntax.
 .IP \fBrtprio
 Realtime scheduling priority.
 See \fBsched_setscheduler\fR(2).
@@ -373,6 +378,9 @@ Saved user ID as a string.
 .IP \fBswap
 The amount of swap used.
 See \fBMemory\fR below for argument syntax.
+.IP
+Prior to kernel 2.6.34, only root can read the \fBswap\fR of processes
+it doesn't own.
 .IP \fBthreads
 The number of threads, or \fB-\fR a thread.
 .IP \fBtid
@@ -394,6 +402,11 @@ will be used instead.
 .IP \fBvsz
 Virtual memory size.
 This is the total address space used by the process.
+See \fBMemory\fR below for argument syntax.
+.IP \fBvszpk
+Peak virtual memory size.
+This is the highest value that \fBvsz\fR has reached in the lifetime
+of the process.
 See \fBMemory\fR below for argument syntax.
 .IP \fBwchan
 Wait channel.

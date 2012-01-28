@@ -942,6 +942,11 @@ static const struct propinfo properties[] = {
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_rss }
   },
   {
+    "rsspk", "RSSPK", "Peak resident set size (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_peak_rss }
+  },
+  {
     "rssize", NULL, "=rss", 0, NULL, NULL, {},
   },
   {
@@ -1094,6 +1099,11 @@ static const struct propinfo properties[] = {
     "vsz", "VSZ", "Virtual memory used (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_vsize }
+  },
+  {
+    "vszpk", "VSZPK", "Peak virtual memory used (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_peak_vsize }
   },
   {
     "wchan", "WCHAN", "Wait channel (hex)",
