@@ -98,14 +98,15 @@
 #define VM_PROPS(M) M(VmPeak, 1)                \
   M(VmSize, 2)                                  \
   M(VmLck, 4)                                   \
-  M(VmHWM, 8)                                   \
-  M(VmRSS, 16)                                  \
-  M(VmData, 32)                                 \
-  M(VmStk, 64)                                  \
-  M(VmExe, 128)                                 \
-  M(VmLib, 256)                                 \
-  M(VmPTE, 512)                                 \
-  M(VmSwap, 1024)
+  M(VmPin, 8)                                   \
+  M(VmHWM, 16)                                   \
+  M(VmRSS, 32)                                  \
+  M(VmData, 64)                                 \
+  M(VmStk, 128)                                  \
+  M(VmExe, 256)                                 \
+  M(VmLib, 512)                                 \
+  M(VmPTE, 1024)                                 \
+  M(VmSwap, 2048)
 #define VMMEMBER(N,B) uintmax_t prop_##N;
 #define VMTABLE(N,B) { #N, offsetof(struct process, prop_##N), B },
 #define VMENUM(N,B) bit_##N = B,
@@ -876,7 +877,7 @@ uintmax_t proc_get_vsize(struct procinfo *pi, taskident taskid) {
 uintmax_t proc_get_peak_vsize(struct procinfo *pi, taskident taskid) {
   struct process *p = proc_find(pi, taskid);
   proc_status(p);
-  return p->prop_VmPeak;
+  return p->prop_VmPeak * KILOBYTE;
 }
 
 uintmax_t proc_get_rss(struct procinfo *pi, taskident taskid) {
@@ -890,7 +891,7 @@ uintmax_t proc_get_rss(struct procinfo *pi, taskident taskid) {
 uintmax_t proc_get_peak_rss(struct procinfo *pi, taskident taskid) {
   struct process *p = proc_find(pi, taskid);
   proc_status(p);
-  return p->prop_VmHWM;
+  return p->prop_VmHWM * KILOBYTE;
 }
 
 uintmax_t proc_get_insn_pointer(struct procinfo *pi, taskident taskid) {
@@ -1043,6 +1044,30 @@ void proc_get_sig_caught(struct procinfo *pi, taskident taskid,
   struct process *p = proc_find(pi, taskid);
   proc_status(p);
   *signals = p->sigcaught;
+}
+
+uintmax_t proc_get_stack(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
+  proc_status(p);
+  return p->prop_VmStk * KILOBYTE;
+}
+
+uintmax_t proc_get_locked(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
+  proc_status(p);
+  return p->prop_VmLck * KILOBYTE;
+}
+
+uintmax_t proc_get_pinned(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
+  proc_status(p);
+  return p->prop_VmPin * KILOBYTE;
+}
+
+uintmax_t proc_get_pte(struct procinfo *pi, taskident taskid) {
+  struct process *p = proc_find(pi, taskid);
+  proc_status(p);
+  return p->prop_VmPTE * KILOBYTE;
 }
 
 // ----------------------------------------------------------------------------

@@ -487,6 +487,34 @@ void proc_get_sig_ignored(struct procinfo *pi, taskident taskid,
 void proc_get_sig_caught(struct procinfo *pi, taskident taskid,
                          sigset_t *signals);
 
+/** @brief Retrieve stack size
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @return Number of bytes resident
+ */
+uintmax_t proc_get_stack(struct procinfo *pi, taskident taskid);
+
+/** @brief Retrieve locked memory
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @return Number of bytes resident
+ */
+uintmax_t proc_get_locked(struct procinfo *pi, taskident taskid);
+
+/** @brief Retrieve pinned memory
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @return Number of bytes resident
+ */
+uintmax_t proc_get_pinned(struct procinfo *pi, taskident taskid);
+
+/** @brief Retrieve page table entry memory usage
+ * @param pi Pointer to process information
+ * @param taskid Process or thread ID
+ * @return Number of bytes resident
+ */
+uintmax_t proc_get_pte(struct procinfo *pi, taskident taskid);
+
 // ----------------------------------------------------------------------------
 
 /** @brief Return true if @p a is an ancestor of, or equal to, @p b

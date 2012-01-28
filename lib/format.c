@@ -845,6 +845,11 @@ static const struct propinfo properties[] = {
     property_stime, compare_intmax, { .fetch_intmax = shim_get_time },
   },
   {
+    "locked", "LCK", "Locked memory (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_locked }
+  },    
+  {
     "lwp", NULL, "=tid", 0, NULL, NULL, {}
   },
   {
@@ -902,6 +907,11 @@ static const struct propinfo properties[] = {
     property_pid, compare_pid, { .fetch_pid = proc_get_pid }
   },
   {
+    "pinned", "PIN", "Pinned memory (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pinned }
+  },    
+  {
     "pmem", "PMEM", "Proportional memory usage (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pmem }
@@ -921,6 +931,11 @@ static const struct propinfo properties[] = {
     PROP_NUMERIC,
     property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pss }
   },
+  {
+    "pte", "PTE", "Page table memory (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pte }
+  },    
   {
     "read", "RD", "Recent read rate (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
@@ -1013,6 +1028,11 @@ static const struct propinfo properties[] = {
     PROP_TEXT,
     property_sigset, compare_sigset, { .fetch_sigset = proc_get_sig_pending },
   },
+  {
+    "stack", "STK", "Stack size (argument: K/M/G/T/P/p)",
+    PROP_NUMERIC,
+    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_stack }
+  },    
   {
     "state", "S", "Process state",
     PROP_TEXT,
