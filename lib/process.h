@@ -75,7 +75,13 @@ void proc_free(struct procinfo *pi);
  * @param pi Pointer to process information
  * @return Number of processes
  */
-int proc_count(struct procinfo *pi);
+int proc_processes(struct procinfo *pi);
+
+/** @brief Count the number of threads
+ * @param pi Pointer to process information
+ * @return Number of threads
+ */
+int proc_threads(struct procinfo *pi);
 
 /** @brief Retrieve the time that process information was gathered
  * @param pi Pointer to process information

@@ -178,10 +178,15 @@ static const struct {
 #define HASH_SIZE 256           /* hash table size */
 
 struct procinfo {
+  /* How many processes/threads are in the system */
+  size_t nprocesses, nthreads;
+  /* Number of entries, and space, in procs array */
   size_t nprocs, nslots;
+  /* Table of processes and threads */
   struct process *procs;
+  /* Real time that this sample was started */
   struct timespec time;
-  unsigned flags;
+  /* Heads of hash chains */
   size_t lookup[HASH_SIZE];
 };
 
@@ -262,6 +267,7 @@ static void proc_enumerate_threads(struct procinfo *pi, struct procinfo *last,
     if(strspn(de->d_name, "0123456789") == strlen(de->d_name)) {
       tid = conv(de->d_name);
       proc_add(pi, last, pid, tid);
+      ++pi->nthreads;
     }
   }
   closedir(dp);
@@ -287,6 +293,7 @@ struct procinfo *proc_enumerate(struct procinfo *last,
     if(strspn(de->d_name, "0123456789") == strlen(de->d_name)) {
       pid = conv(de->d_name);
       proc_add(pi, last, pid, -1);
+      ++pi->nprocesses;
       if(flags & PROC_THREADS)
         proc_enumerate_threads(pi, last, pid);
     }
@@ -304,8 +311,12 @@ struct procinfo *proc_enumerate(struct procinfo *last,
   return pi;
 }
 
-int proc_count(struct procinfo *pi) {
-  return pi->nprocs;
+int proc_processes(struct procinfo *pi) {
+  return pi->nprocesses;
+}
+
+int proc_threads(struct procinfo *pi) {
+  return pi->nthreads;
 }
 
 void proc_time(struct procinfo *pi, struct timespec *ts) {

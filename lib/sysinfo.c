@@ -267,7 +267,13 @@ static void sysprop_localtime(const struct sysinfo *si,
 static void sysprop_processes(const struct sysinfo attribute((unused)) *si,
                               struct procinfo *pi,
                               struct buffer *b) {
-  buffer_printf(b, "%d", proc_count(pi));
+  buffer_printf(b, "%d", proc_processes(pi));
+}
+
+static void sysprop_threads(const struct sysinfo attribute((unused)) *si,
+                            struct procinfo *pi,
+                            struct buffer *b) {
+  buffer_printf(b, "%d", proc_threads(pi));
 }
 
 static void sysprop_uptime(const struct sysinfo *si,
@@ -422,12 +428,16 @@ const struct sysprop sysproperties[] = {
     sysprop_mem
   },
   {
-    "processes", "Tasks", "Number of processes",
+    "processes", "Procs", "Number of processes",
     sysprop_processes
   },
   {
     "swap", "Swap", "Swap information (argument: K/M/G/T/P/p)",
     sysprop_swap
+  },
+  {
+    "threads", "Threads", "Number of threads",
+    sysprop_threads
   },
   {
     "time", "Time", "Current (local) time (argument: strftime format string)",
