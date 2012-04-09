@@ -75,7 +75,7 @@ int buffer_printf(struct buffer *b, const char *fmt, ...) {
 
 void buffer_strftime(struct buffer *b, const char *format, const struct tm *tm) {
   size_t n;
-  n = strftime(NULL, 0, format, tm);
+  n = strftime(NULL, SIZE_MAX, format, tm);
   buffer_need(b, n + 1);
   b->pos += strftime(b->base + b->pos, b->size - b->pos, format, tm);
 }
