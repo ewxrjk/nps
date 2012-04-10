@@ -51,7 +51,7 @@ union arg arg_group(const char *s) {
     if(gr)
       a.gid = gr->gr_gid;
     else
-      fatal(0, "unknown user '%s'", s);
+      fatal(0, "unknown group '%s'", s);
   }
   return a; 
 }
