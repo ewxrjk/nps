@@ -26,6 +26,7 @@
 #include "buffer.h"
 #include "parse.h"
 #include "io.h"
+#include "uptime.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -48,23 +49,6 @@ struct sysinfo {
   char *arg;
   char *heading;
 };
-
-static int got_uptime;
-static double up, idle;
-
-static void get_uptime(void) {
-  if(!got_uptime) {
-    FILE *fp;
-    char *path;
-    up = idle = 0;
-    fp = xfopenf(&path, "r","%s/uptime", proc);
-    if(fscanf(fp, "%lg %lg", &up, &idle) < 0)
-      fatal(errno, "reading %s", path);
-    fclose(fp);
-    free(path);
-    got_uptime = 1;
-  }
-}
 
 // ----------------------------------------------------------------------------
 
@@ -278,15 +262,14 @@ static void sysprop_threads(const struct sysinfo attribute((unused)) *si,
 static void sysprop_uptime(const struct sysinfo *si,
                            struct procinfo attribute((unused)) *pi,
                            struct buffer *b) {
-  get_uptime();
-  sysprop_format_time(up, si->arg, b);
+  sysprop_format_time(uptime_up(), si->arg, b);
 }
 
 static void sysprop_idletime(const struct sysinfo *si,
                              struct procinfo attribute((unused)) *pi,
                              struct buffer *b) {
-  get_uptime();
-  sysprop_format_time(idle, si->arg, b);
+  get_stat();
+  sysprop_format_time(clock_to_seconds(cpuinfos[0].curr.idle), si->arg, b);
 }
 
 static void sysprop_load(const struct sysinfo attribute((unused)) *si,
@@ -513,7 +496,6 @@ int sysinfo_set(const char *format, unsigned flags) {
 size_t sysinfo_reset(void) {
   size_t ncpu;
 
-  got_uptime = 0;
   got_meminfo = 0;
   got_stat = 0;
   for(ncpu = 0; ncpu < maxcpuinfos; ++ncpu) {

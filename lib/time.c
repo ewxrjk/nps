@@ -22,6 +22,7 @@
 #include "buffer.h"
 #include "io.h"
 #include "process.h"
+#include "uptime.h"
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
@@ -30,20 +31,7 @@
 #include <stdlib.h>
 
 double clock_to_time(unsigned long long ticks) {
-  static double boot_time;
-
-  if(!boot_time) {
-    FILE *fp;
-    char *path;
-    double ssb;
-    fp = xfopenf(&path, "r", "%s/uptime", proc);
-    if(fscanf(fp, "%lg", &ssb) != 1)
-      fatal(errno, "reading %s", path);
-    fclose(fp);
-    free(path);
-    boot_time = clock_now() - ssb;
-  }
-  return boot_time + clock_to_seconds(ticks);
+  return uptime_booted() + clock_to_seconds(ticks);
 }
 
 double clock_to_seconds(unsigned long long ticks) {
