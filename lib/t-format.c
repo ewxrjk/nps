@@ -21,6 +21,7 @@
 #include "format.h"
 #include "buffer.h"
 #include <assert.h>
+#include <stdio.h>
 
 /* TODO this a bit rudimentary - there is lots of complicated stuff in
  * format.c that could use some tests. */
@@ -37,6 +38,14 @@
   format_addr(VALUE, b);                        \
   buffer_terminate(b);                          \
   assert(!strcmp(b->base, RESULT));             \
+} while(0)
+
+#define INTERVAL(VALUE,AH,CS,FORMAT,FLAGS,RESULT) do {  \
+  b->pos = 0;                                           \
+  format_interval(VALUE, b, AH, CS, FORMAT, FLAGS);     \
+  buffer_terminate(b);                                  \
+  fprintf(stderr, "got: [%s]\n", b->base); \
+  assert(!strcmp(b->base, RESULT));                     \
 } while(0)
 
 int main() {
@@ -56,6 +65,43 @@ int main() {
   ADDRESS(0x000000FF000000FF, "00ff000000ff");
   ADDRESS(0x00FF0000000000FF, "00ff0000000000ff");
 
+  INTERVAL(1000, 0, SIZE_MAX, "%h:%M:%S", 0, "0:16:40");
+  INTERVAL(1000, 1, SIZE_MAX, "%h:%M:%S", 0, "0:16:40");
+  INTERVAL(1000, 0, 0, "%h:%M:%S", 0, "0:16:40");
+
+  INTERVAL(0, 0, SIZE_MAX, NULL, 0, "00:00");
+  INTERVAL(1, 0, SIZE_MAX, NULL, 0, "00:01");
+  INTERVAL(60, 0, SIZE_MAX, NULL, 0, "01:00");
+  INTERVAL(3600, 0, SIZE_MAX, NULL, 0, "01:00:00");
+  INTERVAL(0, 1, SIZE_MAX, NULL, 0, "00:00:00");
+  INTERVAL(1, 1, SIZE_MAX, NULL, 0, "00:00:01");
+  INTERVAL(60, 1, SIZE_MAX, NULL, 0, "00:01:00");
+  INTERVAL(3600, 1, SIZE_MAX, NULL, 0, "01:00:00");
+
+  INTERVAL(86400, 0, SIZE_MAX, NULL, 0, "1-00:00:00");
+  INTERVAL(172800, 0, SIZE_MAX, NULL, 0, "2-00:00:00");
+  INTERVAL(86400, 1, SIZE_MAX, NULL, 0, "1-00:00:00");
+  INTERVAL(172800, 1, SIZE_MAX, NULL, 0, "2-00:00:00");
+
+  INTERVAL(0, 0, 0, NULL, 0, "00m00");
+  INTERVAL(1, 0, 0, NULL, 0, "00m01");
+  INTERVAL(60, 0, 0, NULL, 0, "01m00");
+  INTERVAL(3600, 0, 0, NULL, 0, "01h00");
+  INTERVAL(0, 1, 0, NULL, 0, "00m00");
+  INTERVAL(1, 1, 0, NULL, 0, "00m01");
+  INTERVAL(60, 1, 0, NULL, 0, "01m00");
+  INTERVAL(3600, 1, 0, NULL, 0, "01h00");
+
+  INTERVAL(86400, 0, 0, NULL, 0, "1d00");
+  INTERVAL(172800, 0, 0, NULL, 0, "2d00");
+  INTERVAL(86400, 1, 0, NULL, 0, "1d00");
+  INTERVAL(172800, 1, 0, NULL, 0, "2d00");
+
+  INTERVAL(1000, 0, SIZE_MAX, "%h:%M:%S", FORMAT_RAW, "1000");
+  INTERVAL(0, 0, SIZE_MAX, NULL, FORMAT_RAW, "0");
+  INTERVAL(86400, 0, SIZE_MAX, NULL, FORMAT_RAW, "86400");
+  INTERVAL(172800, 1, 0, NULL, FORMAT_RAW, "172800");
+
   format_syntax(syntax_csv);
 
   INTEGER(100, 'd', "100");
@@ -68,6 +114,11 @@ int main() {
   ADDRESS(0x00000000000000FF, "255");
   ADDRESS(0x000000FF000000FF, "1095216660735");
   ADDRESS(0x00FF0000000000FF, "71776119061217535");
+
+  INTERVAL(1000, 0, SIZE_MAX, "%h:%M:%S", 0, "1000");
+  INTERVAL(0, 0, SIZE_MAX, NULL, 0, "0");
+  INTERVAL(86400, 0, SIZE_MAX, NULL, 0, "86400");
+  INTERVAL(172800, 1, 0, NULL, 0, "172800");
 
   return 0;
 }

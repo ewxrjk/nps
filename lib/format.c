@@ -159,10 +159,10 @@ static void format_group(gid_t gid, struct buffer *b, size_t columnsize) {
   format_usergroup(gid, b, columnsize, gr ? gr->gr_name : NULL);
 }
 
-static void format_interval(long seconds, struct buffer *b,
-                            int always_hours, size_t columnsize,
-                            const char *format,
-                            unsigned flags) {
+void format_interval(long seconds, struct buffer *b,
+                     int always_hours, size_t columnsize,
+                     const char *format,
+                     unsigned flags) {
   size_t startpos;
   if((flags & FORMAT_RAW) || syntax == syntax_csv) {
     format_integer(seconds, b, 'd');
@@ -172,7 +172,7 @@ static void format_interval(long seconds, struct buffer *b,
     strfelapsed(b, format, seconds);
   else {
     startpos = b->pos;
-    if(always_hours)
+    if(always_hours || seconds >= 86400)
       strfelapsed(b, "%?+-d%02H:%02M:%02S", seconds);
     else
       strfelapsed(b, "%?+-d%02?+:H%02M:%02S", seconds);

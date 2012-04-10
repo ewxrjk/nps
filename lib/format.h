@@ -282,6 +282,33 @@ void format_integer(intmax_t im, struct buffer *b, int base);
  */
 void format_addr(uintmax_t im, struct buffer *b);
 
+/** @brief Format a time interval
+ * @param seconds Number of seconds
+ * @param b String buffer for output
+ * @param always_hours Always include the hours
+ * @param columnsize The column size
+ * @param format The format string or a null pointer
+ * @param flags Flags
+ *
+ * In CSV mode, or if @p flags includes @ref FORMAT_RAW, a decimal
+ * second count is written regardless of other parameters.
+ *
+ * Otherwise, if a non-NULL format string is supplied then that is
+ * used as per @ref strfelapsed.
+ *
+ * Otherwise, the format [[D-]HH:]MM:SS is used (with @p always_hours
+ * being nonzero forcing the hours to always be listed), unless the
+ * result exceeds @p columnsize, in which case one of DdHH (for a day
+ * or longer), HHhMM (for an hour or longer) or MMmSS (for less than
+ * an hour) are used.  Here, D means the number of days in decimal,
+ * and HH, MM and SS the number of hours, minutes an seconds in
+ * decimal and occupying at least two digits.
+ */
+void format_interval(long seconds, struct buffer *b,
+                     int always_hours, size_t columnsize,
+                     const char *format,
+                     unsigned flags);
+
 /** @brief Include hierarchy spacing in comm/args */
 extern int format_hierarchy;
 
