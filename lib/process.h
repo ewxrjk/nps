@@ -30,6 +30,9 @@
 /** @brief Opaque process information structure */
 struct procinfo;
 
+/** @brief Path to /proc */
+extern const char *proc;
+
 /** @brief Identifier for a process or thread */
 typedef struct {
   /** @brief Process ID */

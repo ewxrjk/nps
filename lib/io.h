@@ -52,6 +52,29 @@ void xexit(int rc) attribute((noreturn));
  */
 FILE *xfopen(const char *path, const char *mode);
 
+/** @brief Open a file
+ * @param mode Mode
+ * @param pathp Where to store path (or NULL)
+ * @param format Filename format
+ * @param ... Format arguments
+ * @return Pointer to stream
+ *
+ * Calls fatal() on error.
+ */
+FILE *xfopenf(char **pathp, const char *mode, const char *format, ...)
+  attribute((format (printf, 3, 4)));
+
+/** @brief Open a file
+ * @param mode Mode
+ * @param pathp Where to store path (or NULL)
+ * @param format Filename format
+ * @param ... Format arguments
+ * @return Pointer to stream
+ *
+ */
+FILE *fopenf(char **pathp, const char *mode, const char *format, ...)
+  attribute((format (printf, 3, 4)));
+
 /** @brief Close a file
  * @param Pointer to stream
  *

@@ -55,11 +55,13 @@ static double up, idle;
 static void get_uptime(void) {
   if(!got_uptime) {
     FILE *fp;
+    char *path;
     up = idle = 0;
-    fp = xfopen("/proc/uptime", "r");
+    fp = xfopenf(&path, "r","%s/uptime", proc);
     if(fscanf(fp, "%lg %lg", &up, &idle) < 0)
-      fatal(errno, "reading /proc/uptime");
+      fatal(errno, "reading %s", path);
     fclose(fp);
+    free(path);
     got_uptime = 1;
   }
 }
@@ -137,7 +139,7 @@ static void get_meminfo(void) {
     int c;
     uintmax_t *ptr;
     memset(&meminfo, 0, sizeof meminfo);
-    fp = xfopen("/proc/meminfo", "r");
+    fp = xfopenf(NULL, "r", "%s/meminfo", proc);
     while(fgets(input, sizeof input, fp)) {
       if((colon = strchr(input, ':'))) {
         *colon++ = 0;
@@ -214,7 +216,7 @@ static void get_stat(void) {
     size_t ncpu;
 
     ncpuinfos = 0;
-    fp = xfopen("/proc/stat", "r");
+    fp = xfopenf(NULL, "r", "%s/stat", proc);
     while(fgets(input, sizeof input, fp)) {
       if((ptr = strchr(input, ' '))) {
         *ptr++ = 0;
@@ -293,9 +295,10 @@ static void sysprop_load(const struct sysinfo attribute((unused)) *si,
   FILE *fp;
   double l1, l2, l3;
   int prec;
-  fp = xfopen("/proc/loadavg", "r");
+  char *path;
+  fp = xfopenf(&path, "r", "%s/loadavg", proc);
   if(fscanf(fp, "%lg %lg %lg", &l1, &l2, &l3) < 0)
-    fatal(errno, "reading /proc/loadavg");
+    fatal(errno, "reading %s", path);
   fclose(fp);
   prec = si->arg ? atoi(si->arg) : 1;
   buffer_printf(b, "%.*f %.*f %.*f", prec, l1, prec, l2, prec, l3);

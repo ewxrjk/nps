@@ -192,6 +192,8 @@ struct procinfo {
 
 static struct process *proc_find(const struct procinfo *pi, taskident taskid);
 
+const char *proc = "/proc";
+
 // ----------------------------------------------------------------------------
 
 static uintmax_t conv(const char *s) {
@@ -257,7 +259,7 @@ static void proc_enumerate_threads(struct procinfo *pi, struct procinfo *last,
   char buffer[128];
   pid_t tid;
 
-  snprintf(buffer, sizeof buffer, "/proc/%ld/task", (long)pid);
+  snprintf(buffer, sizeof buffer, "%s/%ld/task", proc, (long)pid);
   if(!(dp = opendir(buffer))) {
     /* TODO we should mark the process as vanished */
     return;
@@ -286,9 +288,9 @@ struct procinfo *proc_enumerate(struct procinfo *last,
   if(clock_gettime(CLOCK_REALTIME, &pi->time) < 0)
     fatal(errno, "clock_gettime");
   /* Look through /proc for process information */
-  if(!(dp = opendir("/proc")))
-    fatal(errno, "opening /proc");
-  while((de = readdir_wrapper("/proc", dp))) {
+  if(!(dp = opendir(proc)))
+    fatal(errno, "opening %s", proc);
+  while((de = readdir_wrapper(proc, dp))) {
     /* Only consider files that look like processes */
     if(strspn(de->d_name, "0123456789") == strlen(de->d_name)) {
       pid = conv(de->d_name);
@@ -347,10 +349,10 @@ static void getpath(const struct process *p,
                     char buffer[],
                     size_t bufsize) {
   if(p->taskid.tid == -1)
-    snprintf(buffer, bufsize, "/proc/%ld/%s", (long)p->taskid.pid, what);
+    snprintf(buffer, bufsize, "%s/%ld/%s", proc, (long)p->taskid.pid, what);
   else
-    snprintf(buffer, bufsize, "/proc/%ld/task/%ld/%s",
-             (long)p->taskid.pid, (long)p->taskid.tid, what);
+    snprintf(buffer, bufsize, "%s/%ld/task/%ld/%s",
+             proc, (long)p->taskid.pid, (long)p->taskid.tid, what);
 }
 
 static void proc_stat(struct process *p) {

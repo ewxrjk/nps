@@ -65,3 +65,30 @@ void xfclose(FILE *fp, const char *path) {
   if(fclose(fp) < 0)
     fatal(errno, "closing %s", path);
 }
+
+FILE *fopenf(char **pathp, const char *mode, const char *format, ...) {
+  char *path;
+  va_list ap;
+  va_start(ap, format);
+  if(vasprintf(&path, format, ap) < 0)
+    fatal(errno, "vasprintf");
+  va_end(ap);
+  if(pathp)
+    *pathp = path;
+  return fopen(path, mode);
+}
+
+FILE *xfopenf(char **pathp, const char *mode, const char *format, ...) {
+  char *path;
+  FILE *fp;
+  va_list ap;
+  va_start(ap, format);
+  if(vasprintf(&path, format, ap) < 0)
+    fatal(errno, "vasprintf");
+  va_end(ap);
+  if(pathp)
+    *pathp = path;
+  if(!(fp = fopen(path, mode)))
+    fatal(errno, "opening %s", path);
+  return fp;
+}
