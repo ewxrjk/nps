@@ -53,7 +53,6 @@
   b->pos = 0;                                           \
   format_time(VALUE, b, CS, FORMAT, FLAGS);             \
   buffer_terminate(b);                                  \
-  fprintf(stderr, "got %s\n", b->base); \
   assert(!strcmp(b->base, RESULT));                     \
 } while(0)
 
