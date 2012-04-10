@@ -31,3 +31,4 @@ lib/t-device
 lib/t-error
 lib/t-parse
 lib/t-format
+lib/t-time

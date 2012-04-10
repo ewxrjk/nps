@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 12 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,10 +54,10 @@ double clock_now(void) {
   return tv.tv_sec + tv.tv_usec / 1000000.0;
 }
 
-size_t strfelapsed(struct buffer *b, const char *format, intmax_t seconds) {
+void strfelapsed(struct buffer *b, const char *format, intmax_t seconds) {
   int ch;
-  size_t i;
-  unsigned fill, width, digits, skip0, follower, sign;
+  size_t i, n;
+  unsigned fill, width, extradigits, digits, skip0, follower, sign;
   intmax_t value;
   uintmax_t uvalue;
   char formatted[32];
@@ -76,10 +76,9 @@ size_t strfelapsed(struct buffer *b, const char *format, intmax_t seconds) {
         width = 10 * width + *format++ - '0';
       if(*format == '.') {
         ++format;
+        digits = 0;
         while(isdigit((unsigned char)*format))
           digits = 10 * digits + *format++ - '0';
-        if(digits > sizeof formatted)
-          digits = sizeof formatted; /* bit of a hack... */
       }
       if(*format == '?') {
         skip0 = 1;
@@ -134,27 +133,42 @@ size_t strfelapsed(struct buffer *b, const char *format, intmax_t seconds) {
       }
       /* Convert to decimal generating at least the minimum number of digits */
       i = 0;
-      while(i < digits || uvalue) {
+      while(uvalue) {
         ++i;
         formatted[sizeof formatted - i] = uvalue % 10 + '0';
         uvalue /= 10;
       }
-      /* Start with the sign */
-      if(sign) {
-        buffer_putc(b, '-');
-        if(width > 0)
-          --width;
+      extradigits = i < digits ? digits - i : 0;
+      /* Work out how much padding is required */
+      n = i + extradigits + !!sign + !!follower;
+      /* The padding (if spaces) */
+      if(fill != '0') {
+        while(n < width) {
+          buffer_putc(b, fill);
+          ++n;
+        }
       }
-      /* Add padding until there's only enough space for the formatted value */
-      while(width-- > i)
+      /* The sign */
+      if(sign)
+        buffer_putc(b, '-');
+      /* The padding (if digits) */
+      while(n < width) {
         buffer_putc(b, fill);
+        ++n;
+      }
+      /* Extra 0s require to meet the precision */
+      while(extradigits > 0) {
+        buffer_putc(b, '0');
+        --extradigits;
+      }
+      /* The formatted value */
       while(i > 0)
         buffer_putc(b, formatted[sizeof formatted - i--]);
+      /* The follower */
       if(follower)
         buffer_putc(b, follower);
     } else
       buffer_putc(b, ch);
   }
   buffer_terminate(b);
-  return b->pos;
 }

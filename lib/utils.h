@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 12 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,6 @@ double clock_now(void);
  * @param b String buffer for output
  * @param format Format string
  * @param seconds Number of seconds
- * @return Number that would be written if buffer big enough
  *
  * The format string consists of ordinary characters and format specifiers.
  *
@@ -65,8 +64,6 @@ double clock_now(void);
  * Next is an optional precision, being a "." followed by a decimal
  * integer.  This is the minimum number of digits to produce.  The
  * default is 1, ensuring that 0 doesn't format to an empty string.
- * There is a maximum permitted precision; if you ask for the value is
- * clamped to the maximum.
  *
  * Next is an optional "?".  If this is present then the value will be
  * skipped entirely if it is 0.
@@ -86,7 +83,7 @@ double clock_now(void);
  * - @c S to write the number of seconds, modulo one minute
  *
  */
-size_t strfelapsed(struct buffer *b, const char *format, intmax_t seconds);
+void strfelapsed(struct buffer *b, const char *format, intmax_t seconds);
 
 // ----------------------------------------------------------------------------
 
