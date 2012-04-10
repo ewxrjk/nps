@@ -1399,11 +1399,10 @@ char **format_help(void) {
   *next++ = xstrdup("  Property   Heading  Description");
   for(n = 0; n < NPROPERTIES; ++n) {
     if(properties[n].description && properties[n].description[0] != '=') {
-      if(asprintf(&ptr, "  %-9s  %-7s  %s",
-                  properties[n].name,
-                  properties[n].heading,
-                  properties[n].description) < 0)
-        fatal(errno, "asprintf");
+      xasprintf(&ptr, "  %-9s  %-7s  %s",
+                properties[n].name,
+                properties[n].heading,
+                properties[n].description);
       *next++ = ptr;
     }
   }

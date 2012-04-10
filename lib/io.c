@@ -18,7 +18,6 @@
  * USA
  */
 #include <config.h>
-#include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -37,10 +36,32 @@ int xprintf(const char *format, ...) {
   return rc;
 }
 
+int xasprintf(char **sp, const char *format, ...) {
+  va_list ap;
+  int rc;
+
+  va_start(ap, format);
+  rc = vasprintf(sp, format, ap);
+  if(rc < 0)
+    fatal(errno, "vasprintf");
+  va_end(ap);
+  return rc;
+}
+
 void xexit(int rc) {
-  if(!rc) {
-    if(fclose(stdout) < 0)
-      fatal(errno, "closing stdout");
-  }
+  if(!rc)
+    xfclose(stdout, "stdout");
   exit(rc);
+}
+
+FILE *xfopen(const char *path, const char *mode) {
+  FILE *fp = fopen(path, mode);
+  if(!fp)
+    fatal(errno, "opening %s", path);
+  return fp;
+}
+
+void xfclose(FILE *fp, const char *path) {
+  if(fclose(fp) < 0)
+    fatal(errno, "closing %s", path);
 }

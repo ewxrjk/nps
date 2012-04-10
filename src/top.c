@@ -31,7 +31,6 @@
 #include "io.h"
 #include "opts.h"
 #include <getopt.h>
-#include <stdio.h>
 #include <curses.h>
 #include <locale.h>
 #include <stdlib.h>

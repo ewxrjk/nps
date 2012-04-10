@@ -20,7 +20,7 @@
 #include <config.h>
 #include "utils.h"
 #include "buffer.h"
-#include <stdio.h>
+#include "io.h"
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
@@ -33,8 +33,7 @@ double clock_to_time(unsigned long long ticks) {
   if(!boot_time) {
     FILE *fp;
     double ssb;
-    if(!(fp = fopen("/proc/uptime", "r")))
-      fatal(errno, "opening /proc/uptime");
+    fp = xfopen("/proc/uptime", "r");
     if(fscanf(fp, "%lg", &ssb) != 1)
       fatal(errno, "reading /proc/uptime");
     fclose(fp);

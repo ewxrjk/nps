@@ -25,10 +25,10 @@
 #include "general.h"
 #include "buffer.h"
 #include "parse.h"
+#include "io.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <stdio.h>
 #include <errno.h>
 #include <math.h>
 #include <sys/time.h>
@@ -56,8 +56,7 @@ static void get_uptime(void) {
   if(!got_uptime) {
     FILE *fp;
     up = idle = 0;
-    if(!(fp = fopen("/proc/uptime", "r")))
-      fatal(errno, "opening /proc/uptime");
+    fp = xfopen("/proc/uptime", "r");
     if(fscanf(fp, "%lg %lg", &up, &idle) < 0)
       fatal(errno, "reading /proc/uptime");
     fclose(fp);
@@ -138,8 +137,7 @@ static void get_meminfo(void) {
     int c;
     uintmax_t *ptr;
     memset(&meminfo, 0, sizeof meminfo);
-    if(!(fp = fopen("/proc/meminfo", "r")))
-      fatal(errno, "opening /proc/meminfo");
+    fp = xfopen("/proc/meminfo", "r");
     while(fgets(input, sizeof input, fp)) {
       if((colon = strchr(input, ':'))) {
         *colon++ = 0;
@@ -216,8 +214,7 @@ static void get_stat(void) {
     size_t ncpu;
 
     ncpuinfos = 0;
-    if(!(fp = fopen("/proc/stat", "r")))
-      fatal(errno, "opening /proc/stat");
+    fp = xfopen("/proc/stat", "r");
     while(fgets(input, sizeof input, fp)) {
       if((ptr = strchr(input, ' '))) {
         *ptr++ = 0;
@@ -296,8 +293,7 @@ static void sysprop_load(const struct sysinfo attribute((unused)) *si,
   FILE *fp;
   double l1, l2, l3;
   int prec;
-  if(!(fp = fopen("/proc/loadavg", "r")))
-    fatal(errno, "opening /proc/loadavg");
+  fp = xfopen("/proc/loadavg", "r");
   if(fscanf(fp, "%lg %lg %lg", &l1, &l2, &l3) < 0)
     fatal(errno, "reading /proc/loadavg");
   fclose(fp);
@@ -555,10 +551,9 @@ char **sysinfo_help(void) {
   next = result = xrecalloc(NULL, 2 + NSYSPROPERTIES, sizeof (char *));
   *next++ = xstrdup("  Property    Description");
   for(n = 0; n < NSYSPROPERTIES; ++n) {
-    if(asprintf(&ptr, "  %-10s  %s",
-                sysproperties[n].name,
-                sysproperties[n].description) < 0)
-      fatal(errno, "asprintf");
+    xasprintf(&ptr, "  %-10s  %s",
+              sysproperties[n].name,
+              sysproperties[n].description);
     *next++ = ptr;
   }
   *next = NULL;

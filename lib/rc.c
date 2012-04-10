@@ -21,9 +21,9 @@
 #include "rc.h"
 #include "utils.h"
 #include "priv.h"
+#include "io.h"
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <errno.h>
 #include <ctype.h>
 #include <pwd.h>
@@ -76,8 +76,7 @@ static char *rcpath(const char *extra) {
       return NULL;
     home = pw->pw_dir;
   }
-  if(asprintf(&path, "%s/.npsrc%s", home, extra ? extra : "") < 0)
-    fatal(errno, "asprintf");
+  xasprintf(&path, "%s/.npsrc%s", home, extra ? extra : "");
   return path;
 }
 
@@ -141,15 +140,13 @@ void write_rc(void) {
   if(!path)
     fatal(0, "cannot determine path to .npsrc");
   assert(getuid() == geteuid());
-  if(!(fp = fopen(tmp, "w")))
-    fatal(errno, "opening %s", tmp);
+  fp = xfopen(tmp, "w");
   for(n = 0; n < NRC; ++n) {
     if(*rc_map[n].value)
       if(fprintf(fp, "%s=%s\n", rc_map[n].name, *rc_map[n].value) < 0)
         fatal(errno, "writing %s", tmp);
   }
-  if(fclose(fp) < 0)
-    fatal(errno, "closing %s", tmp);
+  xfclose(fp, tmp);
   if(rename(tmp, path) < 0)
     fatal(errno, "renaming %s to %s", tmp, path);
   free(path);

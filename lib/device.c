@@ -82,8 +82,7 @@ static void device_map(const char *dir) {
   errno = 0;
   while((de = readdir(dp))) {
     if(de->d_name[0] != '.') {
-      if(asprintf(&path, "%s/%s", dir, de->d_name) < 0)
-        fatal(errno, "asprintf");
+      xasprintf(&path, "%s/%s", dir, de->d_name);
       if(lstat(path, &sb) >= 0) {
         if(S_ISDIR(sb.st_mode))
           device_map(path);

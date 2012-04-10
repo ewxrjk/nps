@@ -24,6 +24,8 @@
  * @brief IO support
  */
 
+#include <stdio.h>
+
 /** @brief Error-checking printf wrapper
  * @param format Format string
  * @param ... Arguments
@@ -40,6 +42,22 @@ int xprintf(const char *format, ...) attribute((format (printf, 1, 2)));
  * failed.
  */
 void xexit(int rc) attribute((noreturn));
+
+/** @brief Open a file
+ * @param path Filename
+ * @param mode Mode
+ * @return Pointer to stream
+ *
+ * Calls fatal() on error.
+ */
+FILE *xfopen(const char *path, const char *mode);
+
+/** @brief Close a file
+ * @param Pointer to stream
+ *
+ * Calls fatal() on error.
+ */
+void xfclose(FILE *fp, const char *path);
 
 #endif /* IO_H */
 

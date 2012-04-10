@@ -209,5 +209,16 @@ const char *signame(int sig, char buffer[], size_t bufsize);
 
 // ----------------------------------------------------------------------------
 
+/** @brief Error-checking asprintf() wrapper
+ * @param sp Where to put result
+ * @param format Format string
+ * @param ... Arguments
+ * @return Number of characters stored
+ *
+ * Calls fatal() on error.
+ */
+int xasprintf(char **sp, const char *format, ...)
+  attribute((format (printf, 2, 3)));
+
 #endif /* UTILS_H */
 

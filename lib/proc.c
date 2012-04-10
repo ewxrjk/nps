@@ -789,8 +789,7 @@ const char *proc_get_cmdline(struct procinfo *pi, taskident taskid) {
      * option -f, is written in square brackets. */
     free(p->prop_cmdline);
     proc_stat(p);
-    if(asprintf(&p->prop_cmdline, "[%s]", p->prop_comm) < 0)
-      fatal(errno, "asprintf");
+    xasprintf(&p->prop_cmdline, "[%s]", p->prop_comm);
   }
   return p->prop_cmdline;
 }

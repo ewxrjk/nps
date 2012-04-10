@@ -29,7 +29,6 @@
 #include "io.h"
 #include "opts.h"
 #include <getopt.h>
-#include <stdio.h>
 #include <errno.h>
 #include <termios.h>
 #include <stdlib.h>
@@ -116,8 +115,7 @@ int main(int argc, char **argv) {
       select_add(select_all, NULL, 0);
       break;
     case 'C':
-      if(asprintf(&t, "comm=:%s", optarg) < 0)
-	fatal(errno, "asprintf");
+      xasprintf(&t, "comm=:%s", optarg);
       select_match(t);
       break;
     case 'd':
