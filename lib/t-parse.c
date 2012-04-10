@@ -78,6 +78,8 @@ int main(void) {
   verbose = !!getenv("VERBOSE");
 
   try("rss", 3, 99, "rss", SIZE_MAX, NULL, NULL, 0);
+  try("rss,pss", 3, 99, "rss", SIZE_MAX, NULL, NULL, 0);
+  try("rss pss", 3, 99, "rss", SIZE_MAX, NULL, NULL, 0);
 
   try("rss", 3, 0, "rss", SIZE_MAX, NULL, NULL, FORMAT_SIGN);
 

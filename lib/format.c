@@ -111,7 +111,7 @@ void format_syntax(enum format_syntax s) {
 
 // ----------------------------------------------------------------------------
 
-static void format_integer(intmax_t im, struct buffer *b, int base) {
+void format_integer(intmax_t im, struct buffer *b, int base) {
   // For CSV output force decimal
   if(syntax == syntax_csv) {
     switch(base) {
@@ -127,7 +127,7 @@ static void format_integer(intmax_t im, struct buffer *b, int base) {
   }
 }
 
-static void format_addr(uintmax_t im, struct buffer *b) {
+void format_addr(uintmax_t im, struct buffer *b) {
   // For CSV output fore decimal
   if(syntax == syntax_csv)
     buffer_printf(b, "%ju", im);

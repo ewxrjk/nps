@@ -56,6 +56,19 @@ int main() {
   assert(b->pos == 26);
   assert(b->pos < b->size);
 
+  buffer_printf(b, "%s", "");
+  assert(b->base != NULL);
+  assert(!strncmp(b->base, "ab12345678901234567890spon", 26));
+  assert(b->pos == 26);
+  assert(b->pos < b->size);
+
+  buffer_printf(b, "%s", "123456");
+  assert(b->base != NULL);
+  assert(!strncmp(b->base, "ab12345678901234567890spon123456", 32));
+  assert(b->pos == 32);
+  assert(b->pos < b->size);
+  b->pos -= 6;
+
   buffer_printf(b, "%s", "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   assert(b->base != NULL);
   assert(!strncmp(b->base, "ab12345678901234567890sponABCDEFGHIJKLMNOPQRSTUVWXYZ", 52));

@@ -35,5 +35,23 @@ int main() {
   assert(qlcompare("10", "2") == 1);
   assert(qlcompare("foo2", "foo10") == -1);
   assert(qlcompare("99a", "99b") == -1);
+  assert(qlcompare("16K", "16383") == 1);
+  assert(qlcompare("16K", "16384") == 0);
+  assert(qlcompare("16K", "16385") == -1);
+  assert(qlcompare("16M", "16383K") == 1);
+  assert(qlcompare("16M", "16384K") == 0);
+  assert(qlcompare("16M", "16385K") == -1);
+  assert(qlcompare("16G", "16383M") == 1);
+  assert(qlcompare("16G", "16384M") == 0);
+  assert(qlcompare("16G", "16385M") == -1);
+  assert(qlcompare("16T", "16383G") == 1);
+  assert(qlcompare("16T", "16384G") == 0);
+  assert(qlcompare("16T", "16385G") == -1);
+  assert(qlcompare("16P", "16383T") == 1);
+  assert(qlcompare("16P", "16384T") == 0);
+  assert(qlcompare("16P", "16385T") == -1);
+  assert(qlcompare("16383T", "16P") == -1);
+  assert(qlcompare("16384T", "16P") == 0);
+  assert(qlcompare("16385T", "16P") == 1);
   return 0;
 }

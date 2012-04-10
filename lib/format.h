@@ -264,6 +264,24 @@ void format_get_arg(struct buffer *b, const char *arg, int quote);
  */
 int format_rate(struct procinfo *pi, unsigned procflags);
 
+/** @brief Format an integer value
+ * @param im Value to format
+ * @param b String buffer for output
+ * @param base Format specifier (o/u/x/X/d)
+ *
+ * In CSV mode, the base is forced to decimal.
+ */
+void format_integer(intmax_t im, struct buffer *b, int base);
+
+/** @brief Format an address value
+ * @param im Value to format
+ * @param b String buffer for output
+ *
+ * Normally the address is rendered as 8, 12 or 16 hex digits.
+ * In CSV mode, decimal is used.
+ */
+void format_addr(uintmax_t im, struct buffer *b);
+
 /** @brief Include hierarchy spacing in comm/args */
 extern int format_hierarchy;
 

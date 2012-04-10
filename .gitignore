@@ -30,3 +30,4 @@ lib/t-compare
 lib/t-device
 lib/t-error
 lib/t-parse
+lib/t-format

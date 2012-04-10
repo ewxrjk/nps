@@ -35,6 +35,9 @@ int main() {
   assert(bytes(1024, 0, 0, output, sizeof output, 1) == output);
   assert(!strcmp(output, "1K"));
 
+  assert(bytes(1024 * 1024, 0, 0, output, sizeof output, 0) == output);
+  assert(!strcmp(output, "1M"));
+
   assert(bytes(1024 * 1024, 0, 0, output, sizeof output, 1) == output);
   assert(!strcmp(output, "1M"));
 
