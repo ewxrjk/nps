@@ -190,8 +190,8 @@ void format_interval(long seconds, struct buffer *b,
   }
 }
 
-static void format_time(time_t when, struct buffer *b, size_t columnsize,
-                        const char *format, unsigned flags) {
+void format_time(time_t when, struct buffer *b, size_t columnsize,
+                 const char *format, unsigned flags) {
   time_t now;
   struct tm when_tm, now_tm;
 

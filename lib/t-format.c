@@ -22,6 +22,8 @@
 #include "buffer.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 /* TODO this a bit rudimentary - there is lots of complicated stuff in
  * format.c that could use some tests. */
@@ -44,12 +46,32 @@
   b->pos = 0;                                           \
   format_interval(VALUE, b, AH, CS, FORMAT, FLAGS);     \
   buffer_terminate(b);                                  \
-  fprintf(stderr, "got: [%s]\n", b->base); \
+  assert(!strcmp(b->base, RESULT));                     \
+} while(0)
+
+#define TIME(VALUE,CS,FORMAT,FLAGS,RESULT) do {         \
+  b->pos = 0;                                           \
+  format_time(VALUE, b, CS, FORMAT, FLAGS);             \
+  buffer_terminate(b);                                  \
+  fprintf(stderr, "got %s\n", b->base); \
   assert(!strcmp(b->base, RESULT));                     \
 } while(0)
 
 int main() {
   struct buffer b[1];
+  time_t today, thisyear;
+  struct tm t;
+
+  putenv(strdup("TZ=UTC"));     /* force UTC for localtime */
+
+  today = time(NULL) / 86400 * 86400;
+  localtime_r(&today, &t);
+  t.tm_sec = 0;
+  t.tm_min = 0;
+  t.tm_hour = 0;
+  t.tm_mday = 1;
+  t.tm_mon = 0;
+  thisyear = mktime(&t);
 
   buffer_init(b);
   format_syntax(syntax_normal);
@@ -101,6 +123,17 @@ int main() {
   INTERVAL(0, 0, SIZE_MAX, NULL, FORMAT_RAW, "0");
   INTERVAL(86400, 0, SIZE_MAX, NULL, FORMAT_RAW, "86400");
   INTERVAL(172800, 1, 0, NULL, FORMAT_RAW, "172800");
+
+  TIME(0, SIZE_MAX, "%s", 0, "0");
+  TIME(0, 0, "%s", 0, "0");
+  TIME(0, 32, NULL, 0, "1970-01-01T00:00:00");
+  TIME(15638400, 32, NULL, 0, "1970-07-01T00:00:00");
+  TIME(today + 3 * 3600 + 4 * 60 + 5, SIZE_MAX, NULL, 0, "03:04:05");
+  TIME(today + 3 * 3600 + 4 * 60 + 5, 0, NULL, 0, "03:04");
+  TIME(0, SIZE_MAX, NULL, 0, "1970-01-01");
+  TIME(thisyear + 3600, 0, NULL, 0, "01-01");
+
+  TIME(15638400, 32, NULL, FORMAT_RAW, "15638400");
 
   format_syntax(syntax_csv);
 

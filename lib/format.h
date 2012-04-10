@@ -309,6 +309,34 @@ void format_interval(long seconds, struct buffer *b,
                      const char *format,
                      unsigned flags);
 
+/** @brief Format a time
+ * @param when Timestamp
+ * @param b String buffer for output
+ * @param columnsize The column size
+ * @param format The format string or a null pointer
+ * @param flags Flags
+ *
+ * If flags includes @ref FORMAT_RAW, the time is always written as a
+ * decimal second count.
+ *
+ * Otherwise, if a format string is specified, that is used as per
+ * strftime().
+ *
+ * Otherwise, if it will fit in the column size and the column size is
+ * not @c SIZE_MAX, ISO format (YYYY-MM-DDTHH:MM:SS) is used.
+ *
+ * Otherwise, if the timestamp is from today and then HH:MM:SS is used
+ * unless it will not fit in the column size, in which case HH:MM is
+ * used.
+ *
+ * Otherwise, YYYY-MM-DD is used, unless the timestamp is from this
+ * year and it won't fit, in which case MM-DD is used.
+ *
+ * Local time is always used.
+ */
+void format_time(time_t when, struct buffer *b, size_t columnsize,
+                 const char *format, unsigned flags);
+
 /** @brief Include hierarchy spacing in comm/args */
 extern int format_hierarchy;
 
