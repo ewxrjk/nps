@@ -102,5 +102,7 @@ int main() {
   ELAPSED("%+:d%+:h%+:m%s", 0, "0:0:0:0");
   ELAPSED("%?+:d%?+:h%?+:m%s", 0, "0");
 
+  ELAPSED("%3+:s", 0, "  0:");
+  
   return 0;
 }

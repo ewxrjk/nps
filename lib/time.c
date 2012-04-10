@@ -140,7 +140,7 @@ void strfelapsed(struct buffer *b, const char *format, intmax_t seconds) {
       }
       extradigits = i < digits ? digits - i : 0;
       /* Work out how much padding is required */
-      n = i + extradigits + !!sign + !!follower;
+      n = i + extradigits + !!sign;
       /* The padding (if spaces) */
       if(fill != '0') {
         while(n < width) {

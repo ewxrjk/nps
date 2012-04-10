@@ -70,7 +70,8 @@ double clock_now(void);
  *
  * Next is an optional "+" and a follower character.  If this is
  * present it will be written after the converted value (if it is not
- * skipped).
+ * skipped).  The follower character is not counted towards the field
+ * width.
  *
  * Finally there is a conversion specifier:
  * - @c % to write a '%' (in which case all the other details are ignored)
