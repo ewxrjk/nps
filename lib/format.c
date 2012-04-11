@@ -23,11 +23,10 @@
 #include "process.h"
 #include "utils.h"
 #include "parse.h"
+#include "user.h"
 #include <string.h>
 #include <inttypes.h>
 #include <stdio.h>
-#include <pwd.h>
-#include <grp.h>
 #include <stdlib.h>
 #include <time.h>
 #include <errno.h>
@@ -150,13 +149,11 @@ static void format_usergroup(intmax_t id, struct buffer *b, size_t columnsize,
 }
 
 static void format_user(uid_t uid, struct buffer *b, size_t columnsize) {
-  struct passwd *pw = getpwuid(uid);
-  format_usergroup(uid, b, columnsize, pw ? pw->pw_name : NULL);
+  format_usergroup(uid, b, columnsize, lookup_user(uid));
 }
 
 static void format_group(gid_t gid, struct buffer *b, size_t columnsize) {
-  struct group *gr = getgrgid(gid);
-  format_usergroup(gid, b, columnsize, gr ? gr->gr_name : NULL);
+  format_usergroup(gid, b, columnsize, lookup_group(gid));
 }
 
 void format_interval(long seconds, struct buffer *b,
@@ -624,12 +621,12 @@ static int compare_user(const struct propinfo *prop, struct procinfo *pi,
                         taskident a, taskident b) {
   uid_t av = prop->fetch.fetch_uid(pi, a);
   uid_t bv = prop->fetch.fetch_uid(pi, b);
-  struct passwd *pw = getpwuid(av);
-  char *ua = xstrdup(pw ? pw->pw_name : "");
+  const char *ua = lookup_user(av), *ub;
+  ua = xstrdup(ua ? ua : "");
   int rc;
-  pw = getpwuid(bv);
-  rc = strcmp(ua, pw ? pw->pw_name : "");
-  free(ua);
+  ub = lookup_user(bv);
+  rc = strcmp(ua, ub ? ub : "");
+  free((char *)ua);
   return rc;
 }
 
@@ -667,12 +664,12 @@ static int compare_group(const struct propinfo *prop, struct procinfo *pi,
                        taskident a, taskident b) {
   uid_t av = prop->fetch.fetch_uid(pi, a);
   uid_t bv = prop->fetch.fetch_uid(pi, b);
-  struct group *gr = getgrgid(av);
-  char *ga = xstrdup(gr ? gr->gr_name : "");
+  const char *ga = lookup_group(av), *gb;
+  ga = xstrdup(ga ? ga : "");
   int rc;
-  gr = getgrgid(bv);
-  rc = strcmp(ga, gr ? gr->gr_name : "");
-  free(ga);
+  gb = lookup_group(bv);
+  rc = strcmp(ga, gb ? gb : "");
+  free((char *)ga);
   return rc;
 }
 

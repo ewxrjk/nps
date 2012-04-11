@@ -50,7 +50,7 @@ try() {
   local name="$1"
   local opts
   shift
-  opts="--set-proc ${TESTDATA}/0 --set-proc2 ${TESTDATA}/1 --set-self 17274 --set-time 1334151627"
+  opts="--set-proc ${TESTDATA}/0 --set-proc2 ${TESTDATA}/1 --set-self 17274 --set-time 1334151627 --set-users ${TESTDATA}/passwd --set-group ${TESTDATA}/group"
   if $verbose; then
     echo ./nps $opts "$@" '>'${TESTDATA}/$name.out
   fi

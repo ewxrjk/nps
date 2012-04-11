@@ -23,7 +23,7 @@ libps_a_SOURCES=buffer.h compare.h format.h general.h io.h parse.h	\
 priv.h process.h rc.h selectors.h sysinfo.h utils.h buffer.c bytes.c	\
 compare.c device.c error.c format.c io.c memory.c parse.c priv.c	\
 proc.c rc.c select.c selectors.c signal.c split.c sysinfo.c time.c	\
-uptime.h uptime.c
+uptime.h uptime.c user.h user.c
 
 TESTS=t-buffer t-bytes t-device t-error t-parse t-compare t-format	\
 t-time
