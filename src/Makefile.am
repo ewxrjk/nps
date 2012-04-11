@@ -19,6 +19,8 @@ bin_PROGRAMS=nps nps-top
 noinst_PROGRAMS=snapshot
 man_MANS=nps.1 nps-top.1
 
+TESTS=t-ps
+
 nps_SOURCES=ps.c threads.h opts.c opts.h
 nps_LDADD=../lib/libps.a
 

@@ -1,0 +1,39 @@
+Name:	bash
+State:	S (sleeping)
+Tgid:	23542
+Pid:	23542
+PPid:	23541
+TracerPid:	0
+Uid:	1000	1000	1000	1000
+Gid:	1000	1000	1000	1000
+FDSize:	256
+Groups:	0 4 9 20 24 25 27 29 44 46 110 114 115 119 129 1000 1002 1003 
+VmPeak:	   23636 kB
+VmSize:	   23576 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	    6136 kB
+VmRSS:	    6032 kB
+VmData:	    4400 kB
+VmStk:	     136 kB
+VmExe:	     868 kB
+VmLib:	    1972 kB
+VmPTE:	      64 kB
+VmSwap:	       0 kB
+Threads:	1
+SigQ:	0/16382
+SigPnd:	0000000000000000
+ShdPnd:	0000000000000000
+SigBlk:	0000000000010000
+SigIgn:	0000000000384004
+SigCgt:	000000004b813efb
+CapInh:	0000000000000000
+CapPrm:	0000000000000000
+CapEff:	0000000000000000
+CapBnd:	ffffffffffffffff
+Cpus_allowed:	f
+Cpus_allowed_list:	0-3
+Mems_allowed:	00000000,00000001
+Mems_allowed_list:	0
+voluntary_ctxt_switches:	2022
+nonvoluntary_ctxt_switches:	179

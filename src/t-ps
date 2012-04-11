@@ -1,0 +1,118 @@
+#! /bin/sh
+# This file is part of nps.
+# Copyright (C) 2012 Richard Kettlewell
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+set -e
+
+mode=test
+verbose=false
+
+# Options
+while test $# -gt 0; do
+  option="$1"
+  shift
+  case "$option" in
+  --regenerate | --test | --force-regenerate )
+    mode="$option"
+    ;;
+  --verbose )
+    verbose=true
+    ;;
+  * )
+    echo >&2 "ERROR: unknown option '$option'"
+    exit 1
+    ;;
+  esac
+done
+
+# Find test data
+if test "${srcdir}" = ""; then
+  TESTDATA=testdata
+else
+  TESTDATA=${srcdir}/testdata
+fi
+
+try() {
+  local name="$1"
+  local opts
+  shift
+  opts="--set-proc ${TESTDATA}/0 --set-proc2 ${TESTDATA}/1 --set-self 17274 --set-time 1334151627"
+  if $verbose; then
+    echo ./nps $opts "$@" '>'${TESTDATA}/$name.out
+  fi
+  ./nps $opts "$@" >${TESTDATA}/$name.out
+  case $mode in
+  --force-regenerate )
+    mv ${TESTDATA}/$name.out ${TESTDATA}/$name.expect
+    ;;
+  --regenerate )
+    if [ -e ${TESTDATA}/$name.expect ]; then
+      diff -u ${TESTDATA}/$name.expect ${TESTDATA}/$name.out
+      rm -f ${TESTDATA}/$name.out
+    else
+      mv ${TESTDATA}/$name.out ${TESTDATA}/$name.expect
+    fi
+    ;;
+  --test )
+    diff -u ${TESTDATA}/$name.expect ${TESTDATA}/$name.out
+    rm -f ${TESTDATA}/$name.out
+    ;;
+  esac
+}
+
+try raw
+try with-terminal -a
+try all -A
+try all -e
+try all --all
+try not-session-leader -d
+try csv --all --csv
+try full -ef
+try full --all --full
+try long -el
+try long --all --long
+try forest -eH
+try forest --all --forest
+try threads -eL
+try threads --all --threads
+try help --help
+try help-format --help-format
+try help-match --help-match
+
+try ancestor --ancestor 358
+try ancestor2 --ancestor 358,2621
+try comm -C udevd
+
+# TODO:
+
+# -g
+# --group
+# -G
+# -p
+# --ppid
+# -t
+# -u
+# -U
+
+# -o, -O
+# -w
+# -n
+# --sort
+
+# match expressions...
+
+# --poll

@@ -1,0 +1,39 @@
+Name:	init
+State:	S (sleeping)
+Tgid:	1
+Pid:	1
+PPid:	0
+TracerPid:	0
+Uid:	0	0	0	0
+Gid:	0	0	0	0
+FDSize:	64
+Groups:	
+VmPeak:	    8408 kB
+VmSize:	    8404 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	     788 kB
+VmRSS:	     608 kB
+VmData:	     188 kB
+VmStk:	     136 kB
+VmExe:	      36 kB
+VmLib:	    1856 kB
+VmPTE:	      40 kB
+VmSwap:	      96 kB
+Threads:	1
+SigQ:	3/31019
+SigPnd:	0000000000000000
+ShdPnd:	0000000000000000
+SigBlk:	0000000000000000
+SigIgn:	fffffffe57f0d8fc
+SigCgt:	00000000280b2603
+CapInh:	0000000000000000
+CapPrm:	ffffffffffffffff
+CapEff:	ffffffffffffffff
+CapBnd:	ffffffffffffffff
+Cpus_allowed:	f
+Cpus_allowed_list:	0-3
+Mems_allowed:	00000000,00000001
+Mems_allowed_list:	0
+voluntary_ctxt_switches:	210098
+nonvoluntary_ctxt_switches:	46

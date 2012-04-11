@@ -1,0 +1,39 @@
+Name:	mrtg
+State:	S (sleeping)
+Tgid:	17079
+Pid:	17079
+PPid:	17077
+TracerPid:	0
+Uid:	0	0	0	0
+Gid:	0	0	0	0
+FDSize:	64
+Groups:	0 
+VmPeak:	   54936 kB
+VmSize:	   54932 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	   18212 kB
+VmRSS:	   18212 kB
+VmData:	   15988 kB
+VmStk:	     136 kB
+VmExe:	       8 kB
+VmLib:	    3884 kB
+VmPTE:	     128 kB
+VmSwap:	       0 kB
+Threads:	1
+SigQ:	3/16382
+SigPnd:	0000000000000000
+ShdPnd:	0000000000000000
+SigBlk:	0000000000000000
+SigIgn:	0000000000000080
+SigCgt:	0000000180004003
+CapInh:	0000000000000000
+CapPrm:	ffffffffffffffff
+CapEff:	ffffffffffffffff
+CapBnd:	ffffffffffffffff
+Cpus_allowed:	f
+Cpus_allowed_list:	0-3
+Mems_allowed:	00000000,00000001
+Mems_allowed_list:	0
+voluntary_ctxt_switches:	40
+nonvoluntary_ctxt_switches:	20

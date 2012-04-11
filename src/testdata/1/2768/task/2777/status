@@ -1,0 +1,39 @@
+Name:	mysqld
+State:	S (sleeping)
+Tgid:	2768
+Pid:	2777
+PPid:	2631
+TracerPid:	0
+Uid:	130	130	130	130
+Gid:	113	113	113	113
+FDSize:	256
+Groups:	113 
+VmPeak:	  302204 kB
+VmSize:	  236668 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	   26872 kB
+VmRSS:	    3380 kB
+VmData:	  196384 kB
+VmStk:	     136 kB
+VmExe:	    9004 kB
+VmLib:	    3540 kB
+VmPTE:	     176 kB
+VmSwap:	   18408 kB
+Threads:	14
+SigQ:	0/31019
+SigPnd:	0000000000000000
+ShdPnd:	0000000000000000
+SigBlk:	0000000000087007
+SigIgn:	0000000000001006
+SigCgt:	00000001800066e9
+CapInh:	0000000000000000
+CapPrm:	0000000000000000
+CapEff:	0000000000000000
+CapBnd:	ffffffffffffffff
+Cpus_allowed:	f
+Cpus_allowed_list:	0-3
+Mems_allowed:	00000000,00000001
+Mems_allowed_list:	0
+voluntary_ctxt_switches:	1021741
+nonvoluntary_ctxt_switches:	64

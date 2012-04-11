@@ -1,0 +1,39 @@
+Name:	udisks-daemon
+State:	S (sleeping)
+Tgid:	8724
+Pid:	8724
+PPid:	1
+TracerPid:	0
+Uid:	0	0	0	0
+Gid:	0	0	0	0
+FDSize:	64
+Groups:	0 
+VmPeak:	   64212 kB
+VmSize:	   63944 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	    4068 kB
+VmRSS:	    2560 kB
+VmData:	    9164 kB
+VmStk:	     136 kB
+VmExe:	     236 kB
+VmLib:	    5088 kB
+VmPTE:	     140 kB
+VmSwap:	     324 kB
+Threads:	2
+SigQ:	3/31019
+SigPnd:	0000000000000000
+ShdPnd:	0000000000000000
+SigBlk:	0000000000000000
+SigIgn:	0000000000001002
+SigCgt:	0000000180010000
+CapInh:	0000000000000000
+CapPrm:	ffffffffffffffff
+CapEff:	ffffffffffffffff
+CapBnd:	ffffffffffffffff
+Cpus_allowed:	f
+Cpus_allowed_list:	0-3
+Mems_allowed:	00000000,00000001
+Mems_allowed_list:	0
+voluntary_ctxt_switches:	20241
+nonvoluntary_ctxt_switches:	9239

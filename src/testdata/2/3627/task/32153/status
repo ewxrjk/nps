@@ -1,0 +1,39 @@
+Name:	console-kit-dae
+State:	S (sleeping)
+Tgid:	3627
+Pid:	32153
+PPid:	1
+TracerPid:	0
+Uid:	0	0	0	0
+Gid:	0	0	0	0
+FDSize:	64
+Groups:	0 
+VmPeak:	  254132 kB
+VmSize:	  188596 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	    3480 kB
+VmRSS:	    2728 kB
+VmData:	  146472 kB
+VmStk:	     136 kB
+VmExe:	     132 kB
+VmLib:	    4856 kB
+VmPTE:	     132 kB
+VmSwap:	    4496 kB
+Threads:	64
+SigQ:	3/31019
+SigPnd:	0000000000000000
+ShdPnd:	0000000000000000
+SigBlk:	0000000000000000
+SigIgn:	0000000000001002
+SigCgt:	0000000180010200
+CapInh:	0000000000000000
+CapPrm:	ffffffffffffffff
+CapEff:	ffffffffffffffff
+CapBnd:	ffffffffffffffff
+Cpus_allowed:	f
+Cpus_allowed_list:	0-3
+Mems_allowed:	00000000,00000001
+Mems_allowed_list:	0
+voluntary_ctxt_switches:	1
+nonvoluntary_ctxt_switches:	0

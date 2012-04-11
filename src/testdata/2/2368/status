@@ -1,0 +1,39 @@
+Name:	atd
+State:	S (sleeping)
+Tgid:	2368
+Pid:	2368
+PPid:	1
+TracerPid:	0
+Uid:	0	1	1	1
+Gid:	0	1	1	1
+FDSize:	64
+Groups:	
+VmPeak:	   18764 kB
+VmSize:	   18764 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	     368 kB
+VmRSS:	     252 kB
+VmData:	     380 kB
+VmStk:	     136 kB
+VmExe:	      20 kB
+VmLib:	    1788 kB
+VmPTE:	      52 kB
+VmSwap:	     148 kB
+Threads:	1
+SigQ:	3/31019
+SigPnd:	0000000000000000
+ShdPnd:	0000000000000000
+SigBlk:	0000000000000000
+SigIgn:	0000000000000000
+SigCgt:	0000000000014003
+CapInh:	0000000000000000
+CapPrm:	ffffffffffffffff
+CapEff:	0000000000000000
+CapBnd:	ffffffffffffffff
+Cpus_allowed:	f
+Cpus_allowed_list:	0-3
+Mems_allowed:	00000000,00000001
+Mems_allowed_list:	0
+voluntary_ctxt_switches:	371
+nonvoluntary_ctxt_switches:	0

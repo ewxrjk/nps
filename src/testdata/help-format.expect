@@ -1,0 +1,82 @@
+The following properties can be used with the -O, -o and --sort options:
+
+  Property   Heading  Description
+  addr       ADDR     Instruction pointer address (hex)
+  args       COMMAND  Command with arguments (but path removed)
+  argsfull   COMMAND  Command with arguments
+  comm       COMMAND  Command
+  etime      ELAPSED  Elapsed time (argument: format string)
+  flags      F        Flags (octal; argument o/d/x/X)
+  fsgid      FSGID    Filesystem group ID (decimal)
+  fsgroup    FSGROUP  Filesystem group ID (name)
+  fsuid      FSUID    Filesysem user ID (decimal)
+  fsuser     FSUSER   Filesystem user ID (name)
+  gid        GID      Effective group ID (decimal)
+  group      GROUP    Effective group ID (name)
+  io         IO       Recent read+write rate (argument: K/M/G/T/P/p)
+  localtime  LTIME    Timestamp (argument: strftime format string)
+  locked     LCK      Locked memory (argument: K/M/G/T/P/p)
+  majflt     +FLT     Major fault rate (argument: K/M/G/T/P/p)
+  mem        MEM      Memory usage (argument: K/M/G/T/P/p) 
+  minflt     -FLT     Minor fault rate (argument: K/M/G/T/P/p)
+  nice       NI       Nice value
+  oom        OOM      OOM score
+  pcomm      PCMD     Parent command name
+  pcpu       %CPU     %age CPU used (argument: precision)
+  pgrp       PGRP     Process group ID
+  pid        PID      Process ID
+  pinned     PIN      Pinned memory (argument: K/M/G/T/P/p)
+  pmem       PMEM     Proportional memory usage (argument: K/M/G/T/P/p)
+  ppid       PPID     Parent process ID
+  pri        PRI      Priority
+  pss        PSS      Proportional resident set size (argument: K/M/G/T/P/p)
+  pte        PTE      Page table memory (argument: K/M/G/T/P/p)
+  read       RD       Recent read rate (argument: K/M/G/T/P/p)
+  rgid       RGID     Real group ID (decimal)
+  rgroup     RGROUP   Real group ID (name)
+  rss        RSS      Resident set size (argument: K/M/G/T/P/p)
+  rsspk      RSSPK    Peak resident set size (argument: K/M/G/T/P/p)
+  rtprio     RTPRI    Realtime scheduling priority
+  ruid       RUID     Real user ID (decimal)
+  ruser      RUSER    Real user ID (name)
+  sched      SCHED    Scheduling policy
+  sgid       SGID     Saved group ID (decimal)
+  sgroup     SGROUP   Saved group ID (name)
+  sid        SID      Session ID
+  sigblocked  BLOCKED  Blocked signals
+  sigcaught  CAUGHT   Caught signals
+  sigignored  IGNORED  Ignored signals
+  sigpending  PENDING  Pending signals
+  stack      STK      Stack size (argument: K/M/G/T/P/p)
+  state      S        Process state
+  stime      STIME    Start time (argument: strftime format string)
+  suid       SUID     Saved user ID (decimal)
+  supgid     SUPGID   Supplementary group IDs (decimal)
+  supgrp     SUPGRP   Supplementary group IDs (names)
+  suser      SUSER    Saved user ID (name)
+  swap       SWAP     Swap usage (argument: K/M/G/T/P/p)
+  threads    T        Number of threads
+  tid        TID      Thread ID
+  time       TIME     Scheduled time (argument: format string)
+  tpgid      TPGID    Foreground progress group on controlling terminal
+  tty        TT       Terminal
+  uid        UID      Effective user ID (decimal)
+  user       USER     Effective user ID (name)
+  vsz        VSZ      Virtual memory used (argument: K/M/G/T/P/p)
+  vszpk      VSZPK    Peak virtual memory used (argument: K/M/G/T/P/p)
+  wchan      WCHAN    Wait channel (hex)
+  write      WR       Recent write rate (argument: K/M/G/T/P/p)
+
+Multiple properties can be specified in one -o option, separated by
+commas or spaces. Multiple -o options accumulate rather than overriding
+one another.
+
+Use property=heading to override the heading and property/argument to set
+an argument.  With -o, headings extend to the end of the string.
+For headings with -O, and for arguments in general, they must be quoted
+if they contain a space or a comma.  Headings must be quoted if an
+argument follows.
+
+Multiple properties can also be specified with --sort.  Later properties are
+used to order processes that match in earlier properties.  To reverse the
+sense of an ordering, prefix it with '-'.

@@ -1,0 +1,39 @@
+Name:	innwatch
+State:	S (sleeping)
+Tgid:	14388
+Pid:	14388
+PPid:	14297
+TracerPid:	0
+Uid:	9	9	9	9
+Gid:	9	9	9	9
+FDSize:	256
+Groups:	9 
+VmPeak:	   11136 kB
+VmSize:	   11136 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	    1704 kB
+VmRSS:	    1260 kB
+VmData:	     396 kB
+VmStk:	     136 kB
+VmExe:	     868 kB
+VmLib:	    1772 kB
+VmPTE:	      40 kB
+VmSwap:	     212 kB
+Threads:	1
+SigQ:	0/16382
+SigPnd:	0000000000000000
+ShdPnd:	0000000000000000
+SigBlk:	0000000000010000
+SigIgn:	0000000000000006
+SigCgt:	0000000000014001
+CapInh:	0000000000000000
+CapPrm:	0000000000000000
+CapEff:	0000000000000000
+CapBnd:	ffffffffffffffff
+Cpus_allowed:	f
+Cpus_allowed_list:	0-3
+Mems_allowed:	00000000,00000001
+Mems_allowed_list:	0
+voluntary_ctxt_switches:	892602
+nonvoluntary_ctxt_switches:	4558

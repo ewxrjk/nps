@@ -1,0 +1,12 @@
+The following match expressions can be used:
+
+  PROP=VALUE     Exact match against displayed string
+  PROP~REGEXP    POSIX extended regular expression match
+  PROP<VALUE     Less-than match against value
+  PROP<=VALUE    Less-than-or-equal match against value
+  PROP>VALUE     Greater-than match against value
+  PROP>=VALUE    Greater-than-or-equal match against value
+  PROP==VALUE    Equal value
+  PROP<>VALUE    Different value
+
+Put a ':' after the operator to avoid confusion with first character of VALUE.

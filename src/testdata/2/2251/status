@@ -1,0 +1,39 @@
+Name:	secnet
+State:	S (sleeping)
+Tgid:	2251
+Pid:	2251
+PPid:	1
+TracerPid:	0
+Uid:	107	107	107	107
+Gid:	0	0	0	0
+FDSize:	64
+Groups:	
+VmPeak:	   19280 kB
+VmSize:	   19276 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	     676 kB
+VmRSS:	     276 kB
+VmData:	     336 kB
+VmStk:	     136 kB
+VmExe:	     132 kB
+VmLib:	    2228 kB
+VmPTE:	      56 kB
+VmSwap:	     288 kB
+Threads:	1
+SigQ:	0/31019
+SigPnd:	0000000000000000
+ShdPnd:	0000000000000000
+SigBlk:	0000000000000000
+SigIgn:	0000000000000002
+SigCgt:	0000000000014201
+CapInh:	0000000000000000
+CapPrm:	0000000000000000
+CapEff:	0000000000000000
+CapBnd:	ffffffffffffffff
+Cpus_allowed:	f
+Cpus_allowed_list:	0-3
+Mems_allowed:	00000000,00000001
+Mems_allowed_list:	0
+voluntary_ctxt_switches:	5
+nonvoluntary_ctxt_switches:	0

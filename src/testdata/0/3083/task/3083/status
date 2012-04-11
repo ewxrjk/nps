@@ -1,0 +1,39 @@
+Name:	apache2
+State:	S (sleeping)
+Tgid:	3083
+Pid:	3083
+PPid:	1
+TracerPid:	0
+Uid:	0	0	0	0
+Gid:	0	0	0	0
+FDSize:	64
+Groups:	
+VmPeak:	  156796 kB
+VmSize:	  156792 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	   11240 kB
+VmRSS:	    1680 kB
+VmData:	   13660 kB
+VmStk:	     136 kB
+VmExe:	     440 kB
+VmLib:	   20260 kB
+VmPTE:	     304 kB
+VmSwap:	    4844 kB
+Threads:	1
+SigQ:	3/31019
+SigPnd:	0000000000000000
+ShdPnd:	0000000000000000
+SigBlk:	0000000000000000
+SigIgn:	0000000000001000
+SigCgt:	00000001880046eb
+CapInh:	0000000000000000
+CapPrm:	ffffffffffffffff
+CapEff:	ffffffffffffffff
+CapBnd:	ffffffffffffffff
+Cpus_allowed:	f
+Cpus_allowed_list:	0-3
+Mems_allowed:	00000000,00000001
+Mems_allowed_list:	0
+voluntary_ctxt_switches:	1022270
+nonvoluntary_ctxt_switches:	151

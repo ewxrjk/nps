@@ -1,0 +1,7 @@
+rchar: 409600
+wchar: 0
+syscr: 13
+syscw: 0
+read_bytes: 147456
+write_bytes: 0
+cancelled_write_bytes: 0

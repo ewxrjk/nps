@@ -1,0 +1,39 @@
+Name:	sh
+State:	S (sleeping)
+Tgid:	17077
+Pid:	17077
+PPid:	17075
+TracerPid:	0
+Uid:	0	0	0	0
+Gid:	0	0	0	0
+FDSize:	64
+Groups:	0 
+VmPeak:	   10884 kB
+VmSize:	   10884 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	    1340 kB
+VmRSS:	    1340 kB
+VmData:	     116 kB
+VmStk:	     136 kB
+VmExe:	     868 kB
+VmLib:	    1772 kB
+VmPTE:	      40 kB
+VmSwap:	       0 kB
+Threads:	1
+SigQ:	3/16382
+SigPnd:	0000000000000000
+ShdPnd:	0000000000000000
+SigBlk:	0000000000010000
+SigIgn:	0000000000000006
+SigCgt:	0000000000010000
+CapInh:	0000000000000000
+CapPrm:	ffffffffffffffff
+CapEff:	ffffffffffffffff
+CapBnd:	ffffffffffffffff
+Cpus_allowed:	f
+Cpus_allowed_list:	0-3
+Mems_allowed:	00000000,00000001
+Mems_allowed_list:	0
+voluntary_ctxt_switches:	2
+nonvoluntary_ctxt_switches:	1

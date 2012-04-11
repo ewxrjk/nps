@@ -1,0 +1,39 @@
+Name:	disorderd
+State:	S (sleeping)
+Tgid:	3158
+Pid:	3158
+PPid:	1
+TracerPid:	0
+Uid:	111	111	111	111
+Gid:	117	117	117	117
+FDSize:	64
+Groups:	29 117 
+VmPeak:	   50736 kB
+VmSize:	   50732 kB
+VmLck:	      16 kB
+VmPin:	       0 kB
+VmHWM:	    9396 kB
+VmRSS:	    2468 kB
+VmData:	    1060 kB
+VmStk:	     136 kB
+VmExe:	     836 kB
+VmLib:	    5660 kB
+VmPTE:	     112 kB
+VmSwap:	      92 kB
+Threads:	1
+SigQ:	0/31019
+SigPnd:	0000000000000000
+ShdPnd:	0000000000000000
+SigBlk:	0000000000000000
+SigIgn:	0000000000001000
+SigCgt:	00000001a0814003
+CapInh:	0000000000000000
+CapPrm:	0000000000000000
+CapEff:	0000000000000000
+CapBnd:	ffffffffffffffff
+Cpus_allowed:	f
+Cpus_allowed_list:	0-3
+Mems_allowed:	00000000,00000001
+Mems_allowed_list:	0
+voluntary_ctxt_switches:	1761445
+nonvoluntary_ctxt_switches:	101
