@@ -131,7 +131,6 @@ struct process {
   unsigned sorted:1;            /* nonzero if properties sorted */
   unsigned vanished:1;          /* nonzero if process vanished */
   unsigned elapsed_set:1;       /* nonzero if elapsed has been set */
-  unsigned eid_set:1;           /* nonzero if e[ug]id have been set */
   unsigned oom_score_set:1;     /* nonzero if oom_score is set */
   unsigned vmbits;              /* Vm... bit set */
   char *prop_comm;
@@ -351,7 +350,6 @@ static void proc_stat(struct process *p) {
   char buffer[1024], *start, *bp;
   size_t field;
   uintmax_t *ptr;
-  struct stat sb;
 
   if(p->stat || p->vanished)
     return;
@@ -360,17 +358,6 @@ static void proc_stat(struct process *p) {
   if(!(fp = fopen(buffer, "r"))) {
     p->vanished = 1;
     return;
-  }
-  /* The owner/group of the file are the euid/egid of the process,
-   * except that for some ("undumpable") processes it is forced to 0.
-   * (See kernel change 87bfbf679ffb1e95dd9ada694f66aafc4bfa5959 for
-   * discussion.) */
-  if(!p->eid_set
-     && fstat(fileno(fp), &sb) >= 0
-     && (sb.st_uid || sb.st_gid)) {
-    p->prop_euid = sb.st_uid;
-    p->prop_egid = sb.st_gid;
-    p->eid_set = 1;
   }
   field = 0;
   if(fgets(buffer, sizeof buffer, fp)) {
@@ -523,7 +510,6 @@ static void proc_status(struct process *p) {
       i = 0;
     }
   }
-  p->eid_set = 1;
   fclose(fp);
 }
 
@@ -688,8 +674,7 @@ uid_t proc_get_ruid(struct procinfo *pi, taskident taskid) {
 uid_t proc_get_euid(struct procinfo *pi, taskident taskid) {
   struct process *p = proc_find(pi, taskid);
 
-  if(!p->eid_set)
-    proc_status(p);
+  proc_status(p);
   return p->prop_euid;
 }
 
@@ -717,8 +702,7 @@ gid_t proc_get_rgid(struct procinfo *pi, taskident taskid) {
 gid_t proc_get_egid(struct procinfo *pi, taskident taskid) {
   struct process *p = proc_find(pi, taskid);
 
-  if(!p->eid_set)
-    proc_status(p);
+  proc_status(p);
   return p->prop_egid;
 }
 
