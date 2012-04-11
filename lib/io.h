@@ -25,6 +25,7 @@
  */
 
 #include <stdio.h>
+#include <dirent.h>
 
 /** @brief Error-checking printf wrapper
  * @param format Format string
@@ -81,6 +82,31 @@ FILE *fopenf(char **pathp, const char *mode, const char *format, ...)
  * Calls fatal() on error.
  */
 void xfclose(FILE *fp, const char *path);
+
+/** @brief Open a directory
+ * @param pathp Where to store path (or NULL)
+ * @param format Filename format
+ * @param ... Format arguments
+ * @return Pointer to directory stream
+ */
+DIR *opendirf(char **pathp, const char *format, ...)
+  attribute((format (printf, 2, 3)));
+
+/** @brief Read from a directory
+ * @param dir Name of directory
+ * @param dp Pointer to directory stream
+ *
+ * Calls fatal() on error.
+ */
+struct dirent *xreaddir(const char *dir, DIR *dp);
+
+/** @brief Create a directory
+ * @param path New directory
+ * @param mode Permissions
+ *
+ * Calls fatal() on error.
+ */
+void xmkdir(const char *path, mode_t mode);
 
 #endif /* IO_H */
 

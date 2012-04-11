@@ -23,8 +23,7 @@
 #include "selectors.h"
 #include "priv.h"
 #include "general.h"
-#include <stdio.h>
-#include <dirent.h>
+#include "io.h"
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -242,29 +241,19 @@ static struct process *proc_add(struct procinfo *pi, struct procinfo *last,
   return p;
 }
 
-/* fix up stupid readdir() API */
-static struct dirent *readdir_wrapper(const char *dir, DIR *dp) {
-  struct dirent *de;
-  errno = 0;
-  de = readdir(dp);
-  if(!de && errno)
-    fatal(errno, "reading %s", dir);
-  return de;
-}
-
 static void proc_enumerate_threads(struct procinfo *pi, struct procinfo *last,
                                    pid_t pid) {
   DIR *dp;
   struct dirent *de;
-  char buffer[128];
+  char *path;
   pid_t tid;
 
-  snprintf(buffer, sizeof buffer, "%s/%ld/task", proc, (long)pid);
-  if(!(dp = opendir(buffer))) {
+  if(!(dp = opendirf(&path, "%s/%ld/task", proc, (long)pid))) {
+    free(path);
     /* TODO we should mark the process as vanished */
     return;
   }
-  while((de = readdir_wrapper(buffer, dp))) {
+  while((de = xreaddir(path, dp))) {
     /* Only consider files that look like threads */
     if(strspn(de->d_name, "0123456789") == strlen(de->d_name)) {
       tid = conv(de->d_name);
@@ -273,6 +262,7 @@ static void proc_enumerate_threads(struct procinfo *pi, struct procinfo *last,
     }
   }
   closedir(dp);
+  free(path);
 }
 
 struct procinfo *proc_enumerate(struct procinfo *last,
@@ -290,7 +280,7 @@ struct procinfo *proc_enumerate(struct procinfo *last,
   /* Look through /proc for process information */
   if(!(dp = opendir(proc)))
     fatal(errno, "opening %s", proc);
-  while((de = readdir_wrapper(proc, dp))) {
+  while((de = xreaddir(proc, dp))) {
     /* Only consider files that look like processes */
     if(strspn(de->d_name, "0123456789") == strlen(de->d_name)) {
       pid = conv(de->d_name);

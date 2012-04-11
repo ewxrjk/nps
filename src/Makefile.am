@@ -16,6 +16,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 bin_PROGRAMS=nps nps-top
+noinst_PROGRAMS=snapshot
 man_MANS=nps.1 nps-top.1
 
 nps_SOURCES=ps.c threads.h opts.c opts.h
@@ -23,6 +24,9 @@ nps_LDADD=../lib/libps.a
 
 nps_top_SOURCES=top.c input.h input.c threads.h opts.c opts.h
 nps_top_LDADD=../lib/libps.a $(LIBCURSES) $(LIBM)
+
+snapshot_SOURCES=snapshot.c
+snapshot_LDADD=../lib/libps.a
 
 AM_CPPFLAGS=-I${top_srcdir}/lib
 

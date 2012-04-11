@@ -21,6 +21,8 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "utils.h"
 #include "io.h"
 
@@ -91,4 +93,30 @@ FILE *xfopenf(char **pathp, const char *mode, const char *format, ...) {
   if(!(fp = fopen(path, mode)))
     fatal(errno, "opening %s", path);
   return fp;
+}
+
+DIR *opendirf(char **pathp, const char *format, ...) {
+  char *path;
+  va_list ap;
+  va_start(ap, format);
+  if(vasprintf(&path, format, ap) < 0)
+    fatal(errno, "vasprintf");
+  va_end(ap);
+  if(pathp)
+    *pathp = path;
+  return opendir(path);
+}
+
+struct dirent *xreaddir(const char *dir, DIR *dp) {
+  struct dirent *de;
+  errno = 0;
+  de = readdir(dp);
+  if(!de && errno)
+    fatal(errno, "reading %s", dir);
+  return de;
+}
+
+void xmkdir(const char *path, mode_t mode) {
+  if(mkdir(path, mode) < 0)
+    fatal(errno, "mkdir %s", path);
 }

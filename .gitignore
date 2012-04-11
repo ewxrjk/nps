@@ -18,6 +18,7 @@ config.status
 configure
 src/nps
 src/nps-top
+src/snapshot
 stamp-h1
 *.tar.gz
 TAGS
