@@ -71,6 +71,14 @@ void priv_init(int argc, char **argv);
  */
 int priv_run(int (*op)(void *u), void *u);
 
+/** @brief Return true if this process is privileged
+ * @return Nonzero if this process is privileged
+ *
+ * A nonzero return means that the process can acquire elevated
+ * privilege; not necessarily that it has it at the moment.
+ */
+int privileged(void);
+
 /** @brief Real UID at startup */
 extern uid_t priv_ruid;
 

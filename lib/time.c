@@ -30,6 +30,8 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+struct timespec forcetime;
+
 double clock_to_time(unsigned long long ticks) {
   return uptime_booted() + clock_to_seconds(ticks);
 }
@@ -38,11 +40,22 @@ double clock_to_seconds(unsigned long long ticks) {
   return (double)ticks / sysconf(_SC_CLK_TCK);
 }
 
+time_t timespec_now(struct timespec *tsr) {
+  struct timespec ts;
+  if(!forcetime.tv_sec) {
+    if(clock_gettime(CLOCK_REALTIME, &ts) < 0)
+      fatal(errno, "clock_gettime");
+  } else
+    ts = forcetime;
+  if(tsr)
+    *tsr = ts;
+  return ts.tv_sec;
+}
+
 double clock_now(void) {
-  struct timeval tv;
-  if(gettimeofday(&tv, NULL) < 0)
-    fatal(errno, "gettimeofday");
-  return tv.tv_sec + tv.tv_usec / 1000000.0;
+  struct timespec ts;
+  timespec_now(&ts);
+  return ts.tv_sec + ts.tv_nsec / 1000000000.0;
 }
 
 void strfelapsed(struct buffer *b, const char *format, intmax_t seconds) {

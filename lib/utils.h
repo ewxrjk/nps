@@ -46,6 +46,15 @@ double clock_to_seconds(unsigned long long ticks);
  */
 double clock_now(void);
 
+/** @brief Get the current time
+ * @param ts Where to put time or NULL
+ * @return Timestamp in seconds
+ */
+time_t timespec_now(struct timespec *ts);
+
+/** @brief Override for time */
+extern struct timespec forcetime;
+
 /** @brief Format elapsed time
  * @param b String buffer for output
  * @param format Format string

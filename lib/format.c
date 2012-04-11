@@ -199,7 +199,7 @@ void format_time(time_t when, struct buffer *b, size_t columnsize,
     format_integer(when, b, 'd');
     return;
   }
-  time(&now);
+  now = timespec_now(NULL);
   localtime_r(&when, &when_tm);
   localtime_r(&now, &now_tm);
   if(format)

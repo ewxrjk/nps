@@ -142,8 +142,8 @@ struct process {
   gid_t prop_rgid, prop_egid, prop_sgid, prop_fsgid;
   intmax_t base_utime, base_stime;
   uintmax_t base_majflt, base_minflt;
-  struct timeval base_stat_time, stat_time;
-  struct timeval base_io_time, io_time;
+  struct timespec base_stat_time, stat_time;
+  struct timespec base_io_time, io_time;
   intmax_t oom_score;
   uintmax_t prop_pss, prop_swap;
   size_t ngroups;
@@ -192,6 +192,7 @@ struct procinfo {
 static struct process *proc_find(const struct procinfo *pi, taskident taskid);
 
 const char *proc = "/proc";
+pid_t selfpid = -1;
 
 // ----------------------------------------------------------------------------
 
@@ -294,7 +295,7 @@ struct procinfo *proc_enumerate(struct procinfo *last,
   for(n = 0; n < HASH_SIZE; ++n)
     pi->lookup[n] = SIZE_MAX;
   for(n = 0; n < pi->nprocs; ++n) {
-    size_t h = (pi->procs[n].taskid.pid + pi->procs[n].taskid.tid) % HASH_SIZE;
+    size_t h = (size_t)(pi->procs[n].taskid.pid + pi->procs[n].taskid.tid) % HASH_SIZE;
     if(pi->lookup[h] != SIZE_MAX)
       pi->procs[n].link = pi->lookup[h];
     pi->lookup[h] = n;
@@ -324,7 +325,7 @@ void proc_reselect(struct procinfo *pi) {
 // ----------------------------------------------------------------------------
 
 static struct process *proc_find(const struct procinfo *pi, taskident taskid) {
-  size_t n = pi->lookup[(taskid.pid + taskid.tid) % HASH_SIZE];
+  size_t n = pi->lookup[(size_t)(taskid.pid + taskid.tid) % HASH_SIZE];
   while(n != SIZE_MAX
         && (pi->procs[n].taskid.pid != taskid.pid
             || pi->procs[n].taskid.tid != taskid.tid))
@@ -410,8 +411,7 @@ static void proc_stat(struct process *p) {
   if(!p->prop_comm)
     p->prop_comm = xstrdup("-");
   fclose(fp);
-  if(gettimeofday(&p->stat_time, NULL) < 0)
-    fatal(errno, "gettimeofday");
+  timespec_now(&p->stat_time);
 }
 
 static size_t parse_groups(const char *ptr,
@@ -600,8 +600,7 @@ static void proc_io(struct process *p) {
   d->p = p;
   priv_run(read_io, d);
   fclose(d->fp);
-  if(gettimeofday(&p->io_time, NULL) < 0)
-    fatal(errno, "gettimeofday");
+  timespec_now(&p->io_time);
 }
 
 static void proc_oom_score(struct process *p) {
@@ -843,8 +842,8 @@ int proc_get_state(struct procinfo *pi, taskident taskid) {
  * the first sample of top we have no such luxury.  Therefore we
  * report the rate over the process's entire lifetime. */
 static double proc_rate(struct process *p,
-                        struct timeval base_time,
-                        struct timeval end_time,
+                        struct timespec base_time,
+                        struct timespec end_time,
                         double quantity) {
   double seconds;
   /* If the process has vanished then whatever we've got now is
@@ -853,9 +852,9 @@ static double proc_rate(struct process *p,
     return 0;
   if(base_time.tv_sec)
     seconds = (end_time.tv_sec - base_time.tv_sec)
-      + (end_time.tv_usec - base_time.tv_usec) / 1000000.0;
+      + (end_time.tv_nsec - base_time.tv_nsec) / 1000000000.0;
   else
-    seconds = end_time.tv_sec + end_time.tv_usec / 1000000.0
+    seconds = end_time.tv_sec + end_time.tv_nsec / 1000000000.0
       - clock_to_time(p->prop_starttime);
   return quantity / seconds;
 }
@@ -1153,3 +1152,9 @@ taskident *proc_get_all(struct procinfo *pi, size_t *ntasks,
   return tasks; 
 }
 
+int self_tty(struct procinfo *pi) {
+  taskident self = { getpid(), -1 };
+  if(selfpid != -1)
+    self.pid = selfpid;
+  return proc_get_tty(pi, self);
+}

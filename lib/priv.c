@@ -72,3 +72,7 @@ int priv_run(int (*op)(void *u), void *u) {
   }
   return rc;
 }
+
+int privileged(void) {
+  return priv_euid != priv_ruid;
+}

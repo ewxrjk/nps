@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011,12 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,6 +52,10 @@ enum {
   OPT_ANCESTOR,
   OPT_POLL,
   OPT_CSV,
+  OPT_SET_PROC,
+  OPT_SET_PROC2,
+  OPT_SET_SELF,
+  OPT_SET_TIME,
 };
 
 const struct option options[] = {
@@ -77,6 +81,10 @@ const struct option options[] = {
   { "help-format", no_argument, 0, OPT_HELP_FORMAT },
   { "poll", required_argument, 0, OPT_POLL },
   { "csv", no_argument, 0, OPT_CSV },
+  { "set-proc", required_argument, 0, OPT_SET_PROC },
+  { "set-proc2", required_argument, 0, OPT_SET_PROC2 },
+  { "set-self", required_argument, 0, OPT_SET_SELF },
+  { "set-time", required_argument, 0, OPT_SET_TIME },
   { "help-match", no_argument, 0, OPT_HELP_MATCH },
   { "version", no_argument, 0, OPT_VERSION },
   { 0, 0, 0, 0 },
@@ -99,6 +107,7 @@ int main(int argc, char **argv) {
   int sample_interval = 100000/*μs*/;
   double update_interval = 0;
   long poll_count = -1;
+  const char *proc2 = NULL;
 
   /* Initialize privilege support (this must stay first) */
   priv_init(argc, argv);
@@ -204,6 +213,24 @@ int main(int argc, char **argv) {
       format_syntax(syntax_csv);
       width = INT_MAX;
       csv = 1;
+      break;
+    case OPT_SET_PROC:
+      /* This is quite a dangerous option: if ps is privileged it
+       * could be used to cause it to read arbitrary files. */
+      if(privileged())
+        fatal(0, "excess privilege");
+      proc = optarg;
+      break;
+    case OPT_SET_PROC2:
+      if(privileged())
+        fatal(0, "excess privilege");
+      proc2 = optarg;
+      break;
+    case OPT_SET_SELF:
+      selfpid = atoi(optarg);
+      break;
+    case OPT_SET_TIME:
+      forcetime.tv_sec = atoi(optarg);
       break;
     case OPT_HELP:
       xprintf("Usage:\n"
@@ -320,6 +347,10 @@ int main(int argc, char **argv) {
   if(format_rate(global_procinfo, procflags)) {
     usleep(sample_interval);
     p = global_procinfo;
+    if(proc2)
+      proc = proc2;
+    if(forcetime.tv_sec)
+      forcetime.tv_nsec = sample_interval * 1000;
     global_procinfo = proc_enumerate(p, procflags);
     proc_free(p);
   }

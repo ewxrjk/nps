@@ -33,6 +33,9 @@ struct procinfo;
 /** @brief Path to /proc */
 extern const char *proc;
 
+/** @brief PID to pretend to */
+extern pid_t selfpid;
+
 /** @brief Identifier for a process or thread */
 typedef struct {
   /** @brief Process ID */
@@ -561,4 +564,11 @@ taskident *proc_get_selected(struct procinfo *pi, size_t *ntasks,
  */
 taskident *proc_get_all(struct procinfo *pi, size_t *ntasks,
                         unsigned flags);
+
+/** @brief Return the current process's controlling terminal
+ * @param pi Process information
+ * @return Terminal number or -1
+ */
+int self_tty(struct procinfo *pi);
+
 #endif

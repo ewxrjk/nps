@@ -151,7 +151,6 @@ int select_ruid(struct procinfo *pi, taskident task, union arg *args, size_t nar
 int select_uid_tty(struct procinfo *pi, taskident task,
                    union arg attribute((unused)) *args, 
                    size_t attribute((unused)) nargs) {
-  taskident self = { getpid(), -1 };
   /* "By default, ps shall select all processes with the same
    * effective user ID as the current user and the same controlling
    * terminal as the invoker."
@@ -161,7 +160,7 @@ int select_uid_tty(struct procinfo *pi, taskident task,
    * effective UID of the caller will have been lost.
    */
   return proc_get_euid(pi, task) == geteuid()
-    && proc_get_tty(pi, task) == proc_get_tty(pi, self);
+    && proc_get_tty(pi, task) == self_tty(pi);
 }
 
 int select_nonidle(struct procinfo *pi, taskident task,

@@ -240,9 +240,8 @@ static void sysprop_format_time(intmax_t t, const char *format, struct buffer *b
 static void sysprop_localtime(const struct sysinfo *si,
                               struct procinfo attribute((unused)) *pi,
                               struct buffer *b) {
-  time_t now;
+  time_t now = timespec_now(NULL);
   struct tm now_tm;
-  time(&now);
   localtime_r(&now, &now_tm);
   buffer_strftime(b, si->arg ? si->arg : "%Y-%m-%d %H:%M:%S", &now_tm);
 }
