@@ -106,6 +106,9 @@ void strfelapsed(struct buffer *b, const char *format, intmax_t seconds);
  */
 const char *device_path(int type, dev_t dev);
 
+/** @brief Override for device list */
+extern const char *forcedev;
+
 // ----------------------------------------------------------------------------
 
 /** @brief Allocate memory

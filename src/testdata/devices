@@ -1,0 +1,17 @@
+0 0x0401 /dev/tty1
+0 0x0402 /dev/tty2
+0 0x0403 /dev/tty3
+0 0x0404 /dev/tty4
+0 0x0405 /dev/tty5
+0 0x0406 /dev/tty6
+0 0x0408 /dev/tty8
+0 0x8800 /dev/pts/0
+0 0x8801 /dev/pts/1
+0 0x8802 /dev/pts/2
+0 0x8803 /dev/pts/3
+0 0x8804 /dev/pts/4
+0 0x8805 /dev/pts/5
+0 0x8806 /dev/pts/6
+0 0x8807 /dev/pts/7
+0 0x8808 /dev/pts/8
+0 0x8809 /dev/pts/9

@@ -19,9 +19,9 @@
  */
 #include <config.h>
 #include "utils.h"
-#include <dirent.h>
+#include "io.h"
+#include <string.h>
 #include <sys/stat.h>
-#include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
 
@@ -33,6 +33,8 @@ struct device {
 
 static size_t ndevices, nslots;
 static struct device *devices;
+
+const char *forcedev;
 
 static void device_register(char *path, int type, dev_t device) {
   if(ndevices >= nslots) {
@@ -100,6 +102,26 @@ static void device_map(const char *dir) {
   closedir(dp);
 }
 
+static void device_force(void) {
+  char buffer[256], *p;
+  FILE *fp = xfopen(forcedev, "r");
+  int type;
+  dev_t dev;
+  while(fgets(buffer, sizeof buffer, fp)) {
+    if((p = strchr(buffer, '\n')))
+      *p = 0;
+    p = buffer;
+    type = strtol(p, &p, 0);
+    if(*p)
+      ++p;
+    dev = strtoul(p, &p, 0);
+    if(*p)
+      ++p;
+    device_register(xstrdup(p), type, dev);
+  }
+  fclose(fp);
+}
+
 const char *device_path(int type, dev_t device) {
   ssize_t l, r, m;
   int i;
@@ -120,7 +142,10 @@ const char *device_path(int type, dev_t device) {
         return devices[m].path;
     }
     device_clear();
-    device_map("/dev");
+    if(!forcedev)
+      device_map("/dev");
+    else
+      device_force();
     qsort(devices, ndevices, sizeof *devices, device_compare);
   }
   return NULL;
