@@ -21,10 +21,10 @@ man_MANS=nps.1 nps-top.1
 
 TESTS=t-ps
 
-nps_SOURCES=ps.c threads.h opts.c opts.h
+nps_SOURCES=ps.c threads.h
 nps_LDADD=../lib/libps.a
 
-nps_top_SOURCES=top.c input.h input.c threads.h opts.c opts.h
+nps_top_SOURCES=top.c input.h input.c threads.h
 nps_top_LDADD=../lib/libps.a $(LIBCURSES) $(LIBM)
 
 snapshot_SOURCES=snapshot.c
