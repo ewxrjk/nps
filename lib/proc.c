@@ -228,7 +228,7 @@ static struct process *proc_add(struct procinfo *pi, struct procinfo *last,
   p->taskid.pid = pid;
   p->taskid.tid = tid;
   /* Retrieve bases for delta values */
-  if(last && (lastp = proc_find(last, p->taskid)) && lastp->stat) {
+  if(last && (lastp = proc_find(last, p->taskid))) {
     p->base_utime = lastp->prop_utime;
     p->base_stime = lastp->prop_stime;
     p->base_stat_time = lastp->stat_time;

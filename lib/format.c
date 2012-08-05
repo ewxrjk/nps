@@ -1258,7 +1258,8 @@ void format_heading(struct procinfo *pi, struct buffer *b) {
 
 void format_process(struct procinfo *pi, taskident task, struct buffer *b) {
   struct buffer bb[1];
-  size_t i, left, c;
+  size_t i, c;
+  ssize_t left;
   int ch;
   b->pos = 0;
   buffer_init(bb);
