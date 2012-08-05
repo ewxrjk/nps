@@ -45,7 +45,7 @@ ${srcdir}/nps-top.1: nps-top.1.in mkmanpage formatting.1 sysinfo.1
 	chmod 444 ${srcdir}/nps-top.1
 
 EXTRA_DIST=${man_MANS} formatting.1 nps.1.in nps-top.1.in formatting.1	\
-sysinfo.1 mkmanpage
+sysinfo.1 mkmanpage t-ps testdata
 
 maintainer-clean-local:
 	rm -f ${srcdir}/nps.1 ${srcdir}/nps-top.1
