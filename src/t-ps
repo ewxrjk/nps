@@ -50,7 +50,7 @@ try() {
   local name="$1"
   local opts
   shift
-  opts="--set-proc ${TESTDATA}/0 --set-proc2 ${TESTDATA}/1 --set-self 17274 --set-time 1334151627 --set-users ${TESTDATA}/passwd --set-group ${TESTDATA}/group --set-dev ${TESTDATA}/devices"
+  opts="--set-proc ${TESTDATA}/0 --set-proc2 ${TESTDATA}/1 --set-self 17274 --set-time 1334151627 --set-users ${TESTDATA}/passwd --set-group ${TESTDATA}/group --set-dev ${TESTDATA}/devices --set-uid 1000 --sort -pid,-tid"
   if $verbose; then
     echo ./nps $opts "$@" '>'${TESTDATA}/$name.out
   fi
@@ -68,8 +68,11 @@ try() {
     fi
     ;;
   --test )
-    diff -u ${TESTDATA}/$name.expect ${TESTDATA}/$name.out
-    rm -f ${TESTDATA}/$name.out
+    if diff -u ${TESTDATA}/$name.expect ${TESTDATA}/$name.out; then
+      rm -f ${TESTDATA}/$name.out
+    else
+      exit=1
+    fi
     ;;
   esac
 }
@@ -116,3 +119,5 @@ try comm -C udevd
 # match expressions...
 
 # --poll
+
+exit $exit

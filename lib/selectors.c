@@ -30,6 +30,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+uid_t forceuid = -1;
+
 int select_has_terminal(struct procinfo *pi,
                         taskident task,
                         union arg attribute((unused)) *args,
@@ -159,7 +161,7 @@ int select_uid_tty(struct procinfo *pi, taskident task,
    * user in this case will be the real UID of the caller.  The
    * effective UID of the caller will have been lost.
    */
-  return proc_get_euid(pi, task) == geteuid()
+  return proc_get_euid(pi, task) == (forceuid == (uid_t)-1 ? geteuid() : forceuid)
     && proc_get_tty(pi, task) == self_tty(pi);
 }
 

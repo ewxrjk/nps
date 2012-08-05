@@ -379,5 +379,8 @@ int select_compare(struct procinfo *pi, taskident task, union arg *args,
 /** @brief "Greater than or equal to" comparison operator */
 #define GE 0x2265
 
+/** @brief Override own UID */
+extern uid_t forceuid;
+
 #endif /* SELECTORS_H */
 

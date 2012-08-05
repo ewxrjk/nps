@@ -60,6 +60,7 @@ enum {
   OPT_SET_USERS,
   OPT_SET_GROUPS,
   OPT_SET_DEV,
+  OPT_SET_UID,
 };
 
 const struct option options[] = {
@@ -92,6 +93,7 @@ const struct option options[] = {
   { "set-users", required_argument, 0, OPT_SET_USERS },
   { "set-groups", required_argument, 0, OPT_SET_GROUPS },
   { "set-dev", required_argument, 0, OPT_SET_DEV },
+  { "set-uid", required_argument, 0, OPT_SET_UID },
   { "help-match", no_argument, 0, OPT_HELP_MATCH },
   { "version", no_argument, 0, OPT_VERSION },
   { 0, 0, 0, 0 },
@@ -253,6 +255,11 @@ int main(int argc, char **argv) {
       if(privileged())
         fatal(0, "excess privilege");
       forcedev = optarg;
+      break;
+    case OPT_SET_UID:
+      if(privileged())
+        fatal(0, "excess privilege");
+      forceuid = atoi(optarg);
       break;
     case OPT_HELP:
       xprintf("Usage:\n"

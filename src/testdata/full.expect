@@ -1,226 +1,226 @@
 UID          PID   PPID  C    STIME      TTY   TIME     CMD
-root         5893  2     0    2012-04-07 -     00:00:00 [kdmflush]
-root         1548  2     0    2012-03-30 -     00:00:00 [kdmflush]
-root         20    2     0    2012-03-30 -     00:00:01 [watchdog/3]
-root         3627  1     0    2012-03-30 -     00:00:15 console-kit-daemon --no-daemon
-root         34    2     0    2012-03-30 -     00:00:00 [crypto]
-root         182   2     0    2012-03-30 -     00:00:00 [scsi_eh_1]
-root         273   2     0    2012-03-30 -     00:00:00 [ext4-dio-unwrit]
-libvirt-qemu 18776 1     20   2012-04-09 -     00:54:18 kvm -S -M pc-0.12 -enable-kvm -m 768 -smp 1,sockets=1,cores=1,threads=1 -name neutraloid -uuid c0c26d4a-da8f-956a-d2c1-2fde643590f9 -nodefaults -chardev socket,id=monitor,path=/var/lib/libvirt/qemu/neutraloid.monitor,server,nowait -mon chardev=monitor,mode=readline -rtc base=utc -boot c -drive file=/dev/araminta/neutraloid,if=none,id=drive-ide0-0-0,boot=on,format=raw -device ide-drive,bus=ide.0,unit=0,drive=drive-ide0-0-0,id=ide0-0-0 -drive if=none,media=cdrom,id=drive-ide0-1-0,readonly=on,format=raw -device ide-drive,bus=ide.1,unit=0,drive=drive-ide0-1-0,id=ide0-1-0 -device rtl8139,vlan=0,id=net0,mac=52:54:00:43:8e:d8,bus=pci.0,addr=0x3 -net tap,fd=40,vlan=0,name=hostnet0 -chardev pty,id=serial0 -device isa-serial,chardev=serial0 -usb -vnc 127.0.0.1:2 -vga cirrus -device AC97,id=sound0,bus=pci.0,addr=0x4 -device virtio-balloon-pci,id=balloon0,bus=pci.0,addr=0x5
-www-data     13110 3083  0    2012-04-08 -     00:00:01 apache2 -k start
-dovecot      12649 3357  0    11:43:50   -     00:00:00 imap-login
-root         8624  2     0    2012-03-30 -     00:00:00 [kauditd]
-statd        2055  1     0    2012-03-30 -     00:00:00 rpc.statd
-root         10    2     0    2012-03-30 -     00:00:55 [ksoftirqd/1]
-root         17075 3168  0    14:40:01   -     00:00:00 CRON
-root         2459  2     0    2012-03-30 -     00:00:00 [nfsd]
-root         8     2     0    2012-03-30 -     00:00:00 [migration/1]
-gitdaemon    3387  3385  0    2012-03-30 -     00:00:00 git-daemon --verbose --reuseaddr --base-path=/var/cache /var/cache/git
-root         27    2     0    2012-03-30 -     00:00:00 [kintegrityd]
-root         2458  2     0    2012-03-30 -     00:00:00 [nfsd]
-root         28    2     0    2012-03-30 -     00:00:00 [kblockd]
-root         3258  1     0    2012-03-30 -     00:00:12 nmbd -D
-root         18778 2     0    2012-04-09 -     00:00:00 [kvm-pit-wq]
-root         17079 17077 0    14:40:01   -     00:00:00 perl -w /usr/bin/mrtg /etc/mrtg.cfg
-root         2067  1     0    2012-03-30 -     00:00:00 rpc.idmapd
-root         2061  2     0    2012-03-30 -     00:00:00 [nfsiod]
-root         3     2     0    2012-03-30 -     00:04:07 [ksoftirqd/0]
-root         17077 17075 0    14:40:01   -     00:00:00 sh -c if [ -x /usr/bin/mrtg ] && [ -r /etc/mrtg.cfg ]; then mkdir -p /var/log/mrtg ; env LANG=C /usr/bin/mrtg /etc/mrtg.cfg >> /var/log/mrtg/mrtg.log 2>&1 ; fi
-root         17112 2     0    14:40:16   -     00:00:00 [flush-254:7]
-root         25058 2     0    04:15:06   -     00:00:01 [flush-254:3]
-root         2455  2     0    2012-03-30 -     00:00:00 [nfsd]
-richard      8143  8140  0    11:17:21   -     00:01:13 emacs
-daemon       2368  1     0    2012-03-30 -     00:00:00 atd
-root         1866  2     0    2012-03-30 -     00:00:57 [flush-254:1]
-daemon       2522  1     0    2012-03-30 -     00:00:02 slpd
-dovecot      12648 3357  0    11:43:50   -     00:00:00 imap-login
-root         2059  2     0    2012-03-30 -     00:00:00 [rpciod]
-root         18410 2     0    12:12:08   -     00:00:00 [kworker/u:2]
-root         3385  3384  0    2012-03-30 -     00:00:00 runsv git-daemon
-root         2407  2     0    2012-03-30 -     00:00:00 [lockd]
-www-data     26306 3083  0    2012-04-08 -     00:00:00 apache2 -k start
-www-data     10813 3083  0    2012-04-08 -     00:00:01 apache2 -k start
-root         3083  1     0    2012-03-30 -     00:00:15 apache2 -k start
-root         1695  2     0    2012-03-30 -     00:00:07 [jbd2/dm-2-8]
-root         546   2     0    2012-03-30 -     00:00:00 [scsi_eh_9]
-root         1491  2     0    2012-03-30 -     00:00:00 [kdmflush]
-news         14388 14297 0    2012-04-08 -     00:01:55 bash /usr/lib/news/bin/innwatch
-root         6     2     0    2012-03-30 -     00:00:00 [migration/0]
-root         8724  1     0    2012-03-30 -     00:00:51 udisks-daemon
-root         181   2     0    2012-03-30 -     00:00:00 [scsi_eh_0]
-root         2769  2631  0    2012-03-30 -     00:00:00 logger -t mysqld -p daemon.error
-root         3886  2     0    2012-03-30 -     00:00:00 [kcryptd_io]
-root         2450  2     0    2012-03-30 -     00:00:00 [nfsd]
-root         12540 2     0    14:17:56   -     00:00:00 [kworker/0:1]
 root         1     -     0    2012-03-30 -     00:00:06 init [2]  
-root         14051 2     0    2012-04-08 -     00:00:00 [kdmflush]
-root         3226  1     0    2012-03-30 -     00:00:00 gdm
-snmp         21092 1     0    09:30:11   -     00:00:04 snmpd -LSid -Lf /dev/null -u snmp -g snmp -I -smux -p /var/run/snmpd.pid
-root         255   2     0    2012-03-30 -     00:00:00 [kdmflush]
-root         11181 2     0    2012-04-07 -     00:00:00 [kdmflush]
-messagebus   11093 1     0    2012-04-04 -     00:00:00 dbus-daemon --system
-root         3380  1     0    2012-03-30 3     00:00:00 getty 38400 tty3
-dovecot      30070 3357  0    10:19:33   -     00:00:00 imap-login
-root         22    2     0    2012-03-30 -     00:00:00 [khelper]
-root         2424  2     0    2012-03-30 -     00:00:00 [nfsd]
-root         3378  1     0    2012-03-30 1     00:00:00 getty 38400 tty1
-root         3836  2     0    2012-03-30 -     00:01:35 [kjournald]
-root         272   2     0    2012-03-30 -     00:00:00 [jbd2/dm-0-8]
-secnet       2251  1     0    2012-03-30 -     00:00:00 secnet
-root         507   2     0    2012-03-30 -     00:06:42 [usb-storage]
-root         16    2     0    2012-03-30 -     00:00:01 [watchdog/2]
-root         10831 2     0    2012-04-07 -     00:00:00 [kdmflush]
-p4d          3138  1     0    2012-03-30 -     00:00:00 p4d
-root         188   2     0    2012-03-30 -     00:00:00 [scsi_eh_3]
-www-data     13114 3083  0    2012-04-08 -     00:00:01 apache2 -k start
-jukebox      3179  3158  0    2012-03-30 -     00:11:56 disorder-speaker --config /etc/disorder/config --no-debug --syslog
-root         1700  2     0    2012-03-30 -     00:00:00 [ext4-dio-unwrit]
-root         2417  2     0    2012-03-30 -     00:00:00 [nfsd4]
-root         3382  1     0    2012-03-30 5     00:00:00 getty 38400 tty5
-richard      23542 23541 0    09:43:45   pts/0 00:00:00 -bash
-root         1706  2     0    2012-03-30 -     00:00:00 [kjournald]
+root         2     -     0    2012-03-30 -     00:00:03 [kthreadd]
+root         3     2     0    2012-03-30 -     00:04:07 [ksoftirqd/0]
+root         6     2     0    2012-03-30 -     00:00:00 [migration/0]
+root         7     2     0    2012-03-30 -     00:00:01 [watchdog/0]
+root         8     2     0    2012-03-30 -     00:00:00 [migration/1]
+root         10    2     0    2012-03-30 -     00:00:55 [ksoftirqd/1]
 root         12    2     0    2012-03-30 -     00:00:01 [watchdog/1]
-root         16782 2     20   14:39:08   -     00:00:00 [kworker/0:2]
-root         24    2     0    2012-03-30 -     00:00:00 [netns]
-www-data     13108 3083  0    2012-04-08 -     00:00:01 apache2 -k start
-root         2631  1     0    2012-03-30 -     00:00:00 sh /usr/bin/mysqld_safe
-root         14092 2     0    14:25:38   -     00:00:00 [kworker/2:1]
-root         1697  2     0    2012-03-30 -     00:00:33 [jbd2/dm-1-8]
-richard      8150  8143  0    11:17:26   pts/3 00:00:00 idn --quiet --idna-to-ascii --usestd3asciirules
-root         1509  2     0    2012-03-30 -     00:00:00 [kdmflush]
-Debian-exim  3225  1     0    2012-03-30 -     00:00:01 exim4 -bd -q30m
-www-data     10810 3083  0    2012-04-08 -     00:00:00 apache2 -k start
-root         2540  1     0    2012-03-30 -     00:01:25 ekeyd-egd-linux -p888 -D/var/run/ekeyd-egd-linux.pid
-root         123   2     0    2012-03-30 -     00:00:00 [khubd]
-dovecot      12647 3357  0    11:43:50   -     00:00:00 imap-login
-root         3906  2     0    2012-03-30 -     00:01:27 [kjournald]
-root         23    2     0    2012-03-30 -     00:00:00 [kdevtmpfs]
-root         3174  1     0    2012-03-30 -     00:01:05 kerneloops
-root         9450  2     0    2012-04-07 -     00:00:00 [kdmflush]
-bind         2474  1     0    2012-03-30 -     00:02:19 named -u bind
-root         1455  2     0    2012-03-30 -     00:00:00 [kdmflush]
-root         1699  2     0    2012-03-30 -     00:00:02 [jbd2/dm-4-8]
-libvirt-qemu 8748  1     20   2012-04-07 -     01:58:03 kvm -S -M pc-0.12 -enable-kvm -m 512 -smp 1,sockets=1,cores=1,threads=1 -name sandestin -uuid 16a0e439-21d9-4bdc-8353-945190c29671 -nodefaults -chardev socket,id=monitor,path=/var/lib/libvirt/qemu/sandestin.monitor,server,nowait -mon chardev=monitor,mode=readline -rtc base=utc -boot c -drive file=/dev/araminta/sandestin,if=none,id=drive-virtio-disk0,boot=on,format=raw -device virtio-blk-pci,bus=pci.0,addr=0x5,drive=drive-virtio-disk0,id=virtio-disk0 -drive if=none,media=cdrom,id=drive-ide0-1-0,readonly=on,format=raw -device ide-drive,bus=ide.1,unit=0,drive=drive-ide0-1-0,id=ide0-1-0 -device virtio-net-pci,vlan=0,id=net0,mac=54:52:00:6d:e5:8d,bus=pci.0,addr=0x3 -net tap,fd=40,vlan=0,name=hostnet0 -chardev pty,id=serial0 -device isa-serial,chardev=serial0 -usb -vnc 127.0.0.1:1 -k en-gb -vga cirrus -device AC97,id=sound0,bus=pci.0,addr=0x4 -device virtio-balloon-pci,id=balloon0,bus=pci.0,addr=0x6
-avahi        2626  2620  0    2012-03-30 -     00:00:00 avahi-daemon: chroot helper
-root         3276  1     0    2012-03-30 -     00:00:00 smbd -D
-root         169   2     0    2012-03-30 -     00:00:00 [ata_sff]
+root         13    2     0    2012-03-30 -     00:00:00 [migration/2]
+root         15    2     0    2012-03-30 -     00:01:11 [ksoftirqd/2]
+root         16    2     0    2012-03-30 -     00:00:01 [watchdog/2]
 root         17    2     0    2012-03-30 -     00:00:00 [migration/3]
-root         30    2     0    2012-03-30 -     00:11:59 [kswapd0]
-ntp          3067  1     0    2012-03-30 -     00:00:32 ntpd -p /var/run/ntpd.pid -g -u 112:118
-root         358   1     0    2012-03-30 -     00:00:00 udevd --daemon
-messagebus   2563  1     0    2012-03-30 -     00:00:08 dbus-daemon --system
-root         1566  2     0    2012-03-30 -     00:00:00 [kdmflush]
+root         19    2     0    2012-03-30 -     00:01:04 [ksoftirqd/3]
+root         20    2     0    2012-03-30 -     00:00:01 [watchdog/3]
 root         21    2     0    2012-03-30 -     00:00:00 [cpuset]
-root         547   2     0    2012-03-30 -     00:06:16 [usb-storage]
-root         3379  1     0    2012-03-30 2     00:00:00 getty 38400 tty2
-root         13982 358   0    2012-04-08 -     00:00:00 udevd --daemon
-root         3810  2     0    2012-03-30 -     00:00:00 [kcryptd]
-root         32    2     0    2012-03-30 -     00:00:00 [khugepaged]
-www-data     18133 3083  0    2012-04-08 -     00:00:01 apache2 -k start
-www-data     18394 3083  0    2012-04-08 -     00:00:01 apache2 -k start
-jukebox      3158  1     0    2012-03-30 -     00:02:25 disorderd
-richard      23541 23535 80   09:43:45   -     00:00:02 sshd: richard@pts/0
-root         3809  2     0    2012-03-30 -     00:00:00 [kcryptd_io]
-root         2500  1     0    2012-03-30 -     00:00:00 rpc.mountd --manage-gids
+root         22    2     0    2012-03-30 -     00:00:00 [khelper]
+root         23    2     0    2012-03-30 -     00:00:00 [kdevtmpfs]
+root         24    2     0    2012-03-30 -     00:00:00 [netns]
+root         25    2     0    2012-03-30 -     00:00:01 [sync_supers]
+root         26    2     0    2012-03-30 -     00:00:00 [bdi-default]
+root         27    2     0    2012-03-30 -     00:00:00 [kintegrityd]
+root         28    2     0    2012-03-30 -     00:00:00 [kblockd]
 root         29    2     0    2012-03-30 -     00:00:00 [khungtaskd]
-news         14297 1     0    2012-04-08 -     00:00:00 bash /usr/lib/news/bin/rc.news
+root         30    2     0    2012-03-30 -     00:11:59 [kswapd0]
+root         31    2     0    2012-03-30 -     00:00:00 [ksmd]
+root         32    2     0    2012-03-30 -     00:00:00 [khugepaged]
+root         33    2     0    2012-03-30 -     00:00:00 [fsnotify_mark]
+root         34    2     0    2012-03-30 -     00:00:00 [crypto]
+root         123   2     0    2012-03-30 -     00:00:00 [khubd]
+root         169   2     0    2012-03-30 -     00:00:00 [ata_sff]
+root         170   2     0    2012-03-30 -     00:00:00 [firewire]
+root         181   2     0    2012-03-30 -     00:00:00 [scsi_eh_0]
+root         182   2     0    2012-03-30 -     00:00:00 [scsi_eh_1]
+root         187   2     0    2012-03-30 -     00:00:00 [scsi_eh_2]
+root         188   2     0    2012-03-30 -     00:00:00 [scsi_eh_3]
+root         189   2     0    2012-03-30 -     00:00:00 [scsi_eh_4]
+root         190   2     0    2012-03-30 -     00:00:00 [scsi_eh_5]
+root         191   2     0    2012-03-30 -     00:00:00 [scsi_eh_6]
+root         192   2     0    2012-03-30 -     00:00:25 [scsi_eh_7]
+root         255   2     0    2012-03-30 -     00:00:00 [kdmflush]
+root         272   2     0    2012-03-30 -     00:00:00 [jbd2/dm-0-8]
+root         273   2     0    2012-03-30 -     00:00:00 [ext4-dio-unwrit]
+root         358   1     0    2012-03-30 -     00:00:00 udevd --daemon
+root         475   2     0    2012-03-30 -     00:00:00 [kpsmoused]
+root         506   2     0    2012-03-30 -     00:00:00 [scsi_eh_8]
+root         507   2     0    2012-03-30 -     00:06:42 [usb-storage]
+root         546   2     0    2012-03-30 -     00:00:00 [scsi_eh_9]
+root         547   2     0    2012-03-30 -     00:06:16 [usb-storage]
+root         570   2     0    2012-03-30 -     00:00:00 [hd-audio0]
+root         1413  2     0    2012-03-30 -     00:00:00 [kdmflush]
+root         1437  2     0    2012-03-30 -     00:00:00 [kdmflush]
+root         1455  2     0    2012-03-30 -     00:00:00 [kdmflush]
+root         1473  2     0    2012-03-30 -     00:00:00 [kdmflush]
+root         1491  2     0    2012-03-30 -     00:00:00 [kdmflush]
+root         1509  2     0    2012-03-30 -     00:00:00 [kdmflush]
+root         1548  2     0    2012-03-30 -     00:00:00 [kdmflush]
+root         1566  2     0    2012-03-30 -     00:00:00 [kdmflush]
+root         1693  2     0    2012-03-30 -     00:00:00 [jbd2/sdb1-8]
+root         1694  2     0    2012-03-30 -     00:00:00 [ext4-dio-unwrit]
+root         1695  2     0    2012-03-30 -     00:00:07 [jbd2/dm-2-8]
+root         1696  2     0    2012-03-30 -     00:00:00 [ext4-dio-unwrit]
+root         1697  2     0    2012-03-30 -     00:00:33 [jbd2/dm-1-8]
+root         1698  2     0    2012-03-30 -     00:00:00 [ext4-dio-unwrit]
+root         1699  2     0    2012-03-30 -     00:00:02 [jbd2/dm-4-8]
+root         1700  2     0    2012-03-30 -     00:00:00 [ext4-dio-unwrit]
+root         1703  2     0    2012-03-30 -     00:00:00 [kjournald]
+root         1705  2     0    2012-03-30 -     00:00:31 [kjournald]
+root         1706  2     0    2012-03-30 -     00:00:00 [kjournald]
+root         1866  2     0    2012-03-30 -     00:00:57 [flush-254:1]
+daemon       2042  1     0    2012-03-30 -     00:00:00 portmap
+statd        2055  1     0    2012-03-30 -     00:00:00 rpc.statd
+root         2059  2     0    2012-03-30 -     00:00:00 [rpciod]
+root         2061  2     0    2012-03-30 -     00:00:00 [nfsiod]
+root         2067  1     0    2012-03-30 -     00:00:00 rpc.idmapd
+root         2240  2     0    2012-03-30 -     00:00:00 [kvm-irqfd-clean]
+root         2248  1     0    2012-03-30 -     00:00:11 rsyslogd -c4
+secnet       2251  1     0    2012-03-30 -     00:00:00 secnet
+daemon       2368  1     0    2012-03-30 -     00:00:00 atd
+root         2407  2     0    2012-03-30 -     00:00:00 [lockd]
+root         2417  2     0    2012-03-30 -     00:00:00 [nfsd4]
+root         2421  2     0    2012-03-30 -     00:00:00 [nfsd4_callbacks]
+root         2423  1     0    2012-03-30 -     00:00:25 ekeyd
+root         2424  2     0    2012-03-30 -     00:00:00 [nfsd]
+root         2437  2     0    2012-03-30 -     00:00:00 [nfsd]
+root         2439  2     0    2012-03-30 -     00:00:00 [nfsd]
+root         2443  2     0    2012-03-30 -     00:00:00 [nfsd]
+root         2450  2     0    2012-03-30 -     00:00:00 [nfsd]
+root         2455  2     0    2012-03-30 -     00:00:00 [nfsd]
+root         2458  2     0    2012-03-30 -     00:00:00 [nfsd]
+root         2459  2     0    2012-03-30 -     00:00:00 [nfsd]
+bind         2474  1     0    2012-03-30 -     00:02:19 named -u bind
+root         2478  1     0    2012-03-30 -     00:00:00 inetd
+root         2500  1     0    2012-03-30 -     00:00:00 rpc.mountd --manage-gids
+daemon       2522  1     0    2012-03-30 -     00:00:02 slpd
+root         2540  1     0    2012-03-30 -     00:01:25 ekeyd-egd-linux -p888 -D/var/run/ekeyd-egd-linux.pid
+root         2542  1     0    2012-03-30 -     00:00:00 uservd -daemon
+messagebus   2563  1     0    2012-03-30 -     00:00:08 dbus-daemon --system
+root         2601  1     0    2012-03-30 -     00:00:00 bluetoothd
+avahi        2620  1     0    2012-03-30 -     00:00:14 avahi-daemon: running [araminta.local]
+root         2621  1     0    2012-03-30 -     00:00:00 sshd
+avahi        2626  2620  0    2012-03-30 -     00:00:00 avahi-daemon: chroot helper
+root         2631  1     0    2012-03-30 -     00:00:00 sh /usr/bin/mysqld_safe
+root         2637  2     0    2012-03-30 -     00:00:00 [krfcommd]
+mysql        2768  2631  10   2012-03-30 -     00:04:26 mysqld --basedir=/usr --datadir=/var/lib/mysql --user=mysql --pid-file=/var/run/mysqld/mysqld.pid --socket=/var/run/mysqld/mysqld.sock --port=3306
+root         2769  2631  0    2012-03-30 -     00:00:00 logger -t mysqld -p daemon.error
+root         2781  1     0    2012-03-30 -     00:00:00 acpid
+root         2882  1     0    2012-03-30 -     00:00:00 smartd --pidfile /var/run/smartd.pid
+root         2891  1     0    2012-03-30 -     00:00:00 amd -F /etc/am-utils/amd.conf /net /usr/share/am-utils/amd.net
+ntp          3067  1     0    2012-03-30 -     00:00:32 ntpd -p /var/run/ntpd.pid -g -u 112:118
+root         3083  1     0    2012-03-30 -     00:00:15 apache2 -k start
+p4d          3138  1     0    2012-03-30 -     00:00:00 p4d
+jukebox      3158  1     0    2012-03-30 -     00:02:25 disorderd
+root         3168  1     0    2012-03-30 -     00:00:03 cron
+root         3174  1     0    2012-03-30 -     00:01:05 kerneloops
 root         3178  1     0    2012-03-30 -     00:00:03 cupsd -C /etc/cups/cupsd.conf
-root         23535 2621  0    09:43:45   -     00:00:00 sshd: richard [priv]
+jukebox      3179  3158  0    2012-03-30 -     00:11:56 disorder-speaker --config /etc/disorder/config --no-debug --syslog
+root         3181  1     0    2012-03-30 -     00:08:34 libvirtd -d
+jukebox      3219  3158  0    2012-03-30 -     00:00:10 disorder-deadlock --config /etc/disorder/config --no-debug --syslog
+Debian-exim  3225  1     0    2012-03-30 -     00:00:01 exim4 -bd -q30m
+root         3226  1     0    2012-03-30 -     00:00:00 gdm
+root         3231  3226  0    2012-03-30 -     00:00:00 gdm
+root         3258  1     0    2012-03-30 -     00:00:12 nmbd -D
+root         3276  1     0    2012-03-30 -     00:00:00 smbd -D
 root         3282  3276  0    2012-03-30 -     00:00:00 smbd -D
 root         3357  1     0    2012-03-30 -     00:00:14 dovecot -c /etc/dovecot/dovecot.conf
-root         2421  2     0    2012-03-30 -     00:00:00 [nfsd4_callbacks]
-root         1703  2     0    2012-03-30 -     00:00:00 [kjournald]
-gdm          32162 3231  0    2012-04-09 -     00:01:07 gdmgreeter
-root         7     2     0    2012-03-30 -     00:00:01 [watchdog/0]
-root         10857 2     0    14:08:24   -     00:00:00 [kworker/1:1]
-root         2882  1     0    2012-03-30 -     00:00:00 smartd --pidfile /var/run/smartd.pid
-root         187   2     0    2012-03-30 -     00:00:00 [scsi_eh_2]
-root         3887  2     0    2012-03-30 -     00:00:00 [kcryptd]
-root         17274 23542 1010 14:40:27   pts/0 00:00:01 snapshot -n3 -vd testdata
-root         8134  2621  0    11:17:21   -     00:00:00 sshd: richard [priv]
-root         11940 2     0    2012-04-07 -     00:00:00 [kvm-pit-wq]
-richard      12813 3357  0    11:44:06   -     00:00:00 imap
-richard      8140  8134  0    11:17:21   -     00:00:06 sshd: richard@notty
-root         2423  1     0    2012-03-30 -     00:00:25 ekeyd
-avahi        2620  1     0    2012-03-30 -     00:00:14 avahi-daemon: running [araminta.local]
-root         2439  2     0    2012-03-30 -     00:00:00 [nfsd]
-root         506   2     0    2012-03-30 -     00:00:00 [scsi_eh_8]
-root         31    2     0    2012-03-30 -     00:00:00 [ksmd]
-root         475   2     0    2012-03-30 -     00:00:00 [kpsmoused]
-root         1705  2     0    2012-03-30 -     00:00:31 [kjournald]
-root         15379 2     10   14:32:02   -     00:00:00 [kworker/2:0]
-dovecot      3958  3357  0    13:33:55   -     00:00:00 imap-login
-root         26    2     0    2012-03-30 -     00:00:00 [bdi-default]
-root         8752  2     0    2012-04-07 -     00:00:00 [kvm-pit-wq]
-root         1694  2     0    2012-03-30 -     00:00:00 [ext4-dio-unwrit]
-root         32152 3231  0    2012-04-09 8     00:00:33 X :0 -audit 0 -auth /var/lib/gdm/:0.Xauth -nolisten tcp vt8
-daemon       2042  1     0    2012-03-30 -     00:00:00 portmap
-root         1437  2     0    2012-03-30 -     00:00:00 [kdmflush]
-www-data     26137 3083  0    2012-04-08 -     00:00:00 apache2 -k start
+root         3359  3357  0    2012-03-30 -     00:00:05 dovecot-auth
+root         3378  1     0    2012-03-30 1     00:00:00 getty 38400 tty1
+root         3379  1     0    2012-03-30 2     00:00:00 getty 38400 tty2
+root         3380  1     0    2012-03-30 3     00:00:00 getty 38400 tty3
+root         3381  1     0    2012-03-30 4     00:00:00 getty 38400 tty4
+root         3382  1     0    2012-03-30 5     00:00:00 getty 38400 tty5
 root         3383  1     0    2012-03-30 6     00:00:00 getty 38400 tty6
-root         12533 2     0    14:17:52   -     00:00:00 [flush-254:13]
-root         15766 2     0    14:33:52   -     00:00:00 [kworker/0:0]
-root         2891  1     0    2012-03-30 -     00:00:00 amd -F /etc/am-utils/amd.conf /net /usr/share/am-utils/amd.net
-richard      3957  3357  0    13:33:55   -     00:00:00 imap
-mysql        2768  2631  10   2012-03-30 -     00:04:26 mysqld --basedir=/usr --datadir=/var/lib/mysql --user=mysql --pid-file=/var/run/mysqld/mysqld.pid --socket=/var/run/mysqld/mysqld.sock --port=3306
-root         2637  2     0    2012-03-30 -     00:00:00 [krfcommd]
-root         33    2     0    2012-03-30 -     00:00:00 [fsnotify_mark]
-root         15403 2     0    14:32:14   -     00:00:00 [kworker/3:0]
-root         3885  2     0    2012-03-30 -     00:00:00 [kdmflush]
-www-data     13112 3083  0    2012-04-08 -     00:00:01 apache2 -k start
-dovecot      12646 3357  0    11:43:50   -     00:00:00 imap-login
-root         2     -     0    2012-03-30 -     00:00:03 [kthreadd]
-root         170   2     0    2012-03-30 -     00:00:00 [firewire]
-gitlog       3386  3385  0    2012-03-30 -     00:00:00 svlogd -tt /var/log/git-daemon
-root         13979 358   0    2012-04-08 -     00:00:00 udevd --daemon
-richard      12643 3357  0    11:43:49   -     00:00:00 imap
-root         3168  1     0    2012-03-30 -     00:00:03 cron
-root         2478  1     0    2012-03-30 -     00:00:00 inetd
-root         2437  2     0    2012-03-30 -     00:00:00 [nfsd]
-root         13    2     0    2012-03-30 -     00:00:00 [migration/2]
-root         16014 2     0    14:35:20   -     00:00:00 [kworker/1:2]
-root         8726  8724  0    2012-03-30 -     00:00:35 udisks-daemon: polling /dev/sr0
-root         3181  1     0    2012-03-30 -     00:08:34 libvirtd -d
-root         13332 2     0    14:22:15   -     00:00:00 [flush-254:2]
-root         1413  2     0    2012-03-30 -     00:00:00 [kdmflush]
-root         8750  1     0    2012-03-30 -     00:00:05 polkitd
-root         12142 2     0    2012-04-07 -     00:00:00 [kdmflush]
-root         190   2     0    2012-03-30 -     00:00:00 [scsi_eh_5]
-root         192   2     0    2012-03-30 -     00:00:25 [scsi_eh_7]
-news         17259 14388 0    14:40:22   -     00:00:00 sleep 60
-jukebox      3219  3158  0    2012-03-30 -     00:00:10 disorder-deadlock --config /etc/disorder/config --no-debug --syslog
-root         1473  2     0    2012-03-30 -     00:00:00 [kdmflush]
-root         8778  1     0    2012-03-30 -     00:00:01 upowerd
-root         12541 2     0    14:18:04   -     00:00:00 [kworker/3:2]
-richard      12644 3357  0    11:43:49   -     00:00:00 imap
-root         2240  2     0    2012-03-30 -     00:00:00 [kvm-irqfd-clean]
-root         1693  2     0    2012-03-30 -     00:00:00 [jbd2/sdb1-8]
-root         189   2     0    2012-03-30 -     00:00:00 [scsi_eh_4]
-root         15    2     0    2012-03-30 -     00:01:11 [ksoftirqd/2]
-root         2443  2     0    2012-03-30 -     00:00:00 [nfsd]
-root         19    2     0    2012-03-30 -     00:01:04 [ksoftirqd/3]
-root         25    2     0    2012-03-30 -     00:00:01 [sync_supers]
-libvirt-qemu 11935 1     20   2012-04-07 -     05:17:20 kvm -S -M pc-0.12 -enable-kvm -m 512 -smp 1,sockets=1,cores=1,threads=1 -name deodand -uuid bff8ab0a-6c05-4b8b-946b-8b452018b8e3 -nodefaults -chardev socket,id=monitor,path=/var/lib/libvirt/qemu/deodand.monitor,server,nowait -mon chardev=monitor,mode=readline -rtc base=utc -boot c -drive file=/dev/araminta/deodand,if=none,id=drive-virtio-disk0,boot=on,format=raw -device virtio-blk-pci,bus=pci.0,addr=0x5,drive=drive-virtio-disk0,id=virtio-disk0 -drive if=none,media=cdrom,id=drive-ide0-1-0,readonly=on,format=raw -device ide-drive,bus=ide.1,unit=0,drive=drive-ide0-1-0,id=ide0-1-0 -device virtio-net-pci,vlan=0,id=net0,mac=54:52:00:42:60:3c,bus=pci.0,addr=0x3 -net tap,fd=40,vlan=0,name=hostnet0 -chardev pty,id=serial0 -device isa-serial,chardev=serial0 -usb -vnc 127.0.0.1:0 -k en-gb -vga cirrus -device AC97,id=sound0,bus=pci.0,addr=0x4 -device virtio-balloon-pci,id=balloon0,bus=pci.0,addr=0x6
-root         3231  3226  0    2012-03-30 -     00:00:00 gdm
-root         191   2     0    2012-03-30 -     00:00:00 [scsi_eh_6]
-root         1696  2     0    2012-03-30 -     00:00:00 [ext4-dio-unwrit]
 root         3384  1     0    2012-03-30 -     00:00:04 runsvdir -P /etc/service log: ...........................................................................................................................................................................................................................................................................................................................................................................................................
-root         2542  1     0    2012-03-30 -     00:00:00 uservd -daemon
-news         14296 1     0    2012-04-08 -     00:00:47 innd
-root         570   2     0    2012-03-30 -     00:00:00 [hd-audio0]
+root         3385  3384  0    2012-03-30 -     00:00:00 runsv git-daemon
+gitlog       3386  3385  0    2012-03-30 -     00:00:00 svlogd -tt /var/log/git-daemon
+gitdaemon    3387  3385  0    2012-03-30 -     00:00:00 git-daemon --verbose --reuseaddr --base-path=/var/cache /var/cache/git
+root         3627  1     0    2012-03-30 -     00:00:15 console-kit-daemon --no-daemon
+root         3807  2     0    2012-03-30 -     00:00:00 [kdmflush]
+root         3809  2     0    2012-03-30 -     00:00:00 [kcryptd_io]
+root         3810  2     0    2012-03-30 -     00:00:00 [kcryptd]
+root         3836  2     0    2012-03-30 -     00:01:35 [kjournald]
+root         3885  2     0    2012-03-30 -     00:00:00 [kdmflush]
+root         3886  2     0    2012-03-30 -     00:00:00 [kcryptd_io]
+root         3887  2     0    2012-03-30 -     00:00:00 [kcryptd]
+root         3906  2     0    2012-03-30 -     00:01:27 [kjournald]
+richard      3957  3357  0    13:33:55   -     00:00:00 imap
+dovecot      3958  3357  0    13:33:55   -     00:00:00 imap-login
+root         4174  2     0    08:06:00   -     00:00:00 [kworker/u:1]
+root         5893  2     0    2012-04-07 -     00:00:00 [kdmflush]
+root         8134  2621  0    11:17:21   -     00:00:00 sshd: richard [priv]
+richard      8140  8134  0    11:17:21   -     00:00:06 sshd: richard@notty
+richard      8143  8140  0    11:17:21   -     00:01:13 emacs
+richard      8150  8143  0    11:17:26   pts/3 00:00:00 idn --quiet --idna-to-ascii --usestd3asciirules
+dovecot      8163  3357  0    11:17:36   -     00:00:00 imap-login
+dovecot      8165  3357  0    11:17:39   -     00:00:00 imap-login
+root         8624  2     0    2012-03-30 -     00:00:00 [kauditd]
+root         8724  1     0    2012-03-30 -     00:00:51 udisks-daemon
+root         8726  8724  0    2012-03-30 -     00:00:35 udisks-daemon: polling /dev/sr0
+libvirt-qemu 8748  1     20   2012-04-07 -     01:58:03 kvm -S -M pc-0.12 -enable-kvm -m 512 -smp 1,sockets=1,cores=1,threads=1 -name sandestin -uuid 16a0e439-21d9-4bdc-8353-945190c29671 -nodefaults -chardev socket,id=monitor,path=/var/lib/libvirt/qemu/sandestin.monitor,server,nowait -mon chardev=monitor,mode=readline -rtc base=utc -boot c -drive file=/dev/araminta/sandestin,if=none,id=drive-virtio-disk0,boot=on,format=raw -device virtio-blk-pci,bus=pci.0,addr=0x5,drive=drive-virtio-disk0,id=virtio-disk0 -drive if=none,media=cdrom,id=drive-ide0-1-0,readonly=on,format=raw -device ide-drive,bus=ide.1,unit=0,drive=drive-ide0-1-0,id=ide0-1-0 -device virtio-net-pci,vlan=0,id=net0,mac=54:52:00:6d:e5:8d,bus=pci.0,addr=0x3 -net tap,fd=40,vlan=0,name=hostnet0 -chardev pty,id=serial0 -device isa-serial,chardev=serial0 -usb -vnc 127.0.0.1:1 -k en-gb -vga cirrus -device AC97,id=sound0,bus=pci.0,addr=0x4 -device virtio-balloon-pci,id=balloon0,bus=pci.0,addr=0x6
+root         8750  1     0    2012-03-30 -     00:00:05 polkitd
+root         8752  2     0    2012-04-07 -     00:00:00 [kvm-pit-wq]
+root         8778  1     0    2012-03-30 -     00:00:01 upowerd
+root         9450  2     0    2012-04-07 -     00:00:00 [kdmflush]
+www-data     10810 3083  0    2012-04-08 -     00:00:00 apache2 -k start
+www-data     10813 3083  0    2012-04-08 -     00:00:01 apache2 -k start
+root         10831 2     0    2012-04-07 -     00:00:00 [kdmflush]
+root         10857 2     0    14:08:24   -     00:00:00 [kworker/1:1]
+messagebus   11093 1     0    2012-04-04 -     00:00:00 dbus-daemon --system
+root         11181 2     0    2012-04-07 -     00:00:00 [kdmflush]
+libvirt-qemu 11935 1     20   2012-04-07 -     05:17:20 kvm -S -M pc-0.12 -enable-kvm -m 512 -smp 1,sockets=1,cores=1,threads=1 -name deodand -uuid bff8ab0a-6c05-4b8b-946b-8b452018b8e3 -nodefaults -chardev socket,id=monitor,path=/var/lib/libvirt/qemu/deodand.monitor,server,nowait -mon chardev=monitor,mode=readline -rtc base=utc -boot c -drive file=/dev/araminta/deodand,if=none,id=drive-virtio-disk0,boot=on,format=raw -device virtio-blk-pci,bus=pci.0,addr=0x5,drive=drive-virtio-disk0,id=virtio-disk0 -drive if=none,media=cdrom,id=drive-ide0-1-0,readonly=on,format=raw -device ide-drive,bus=ide.1,unit=0,drive=drive-ide0-1-0,id=ide0-1-0 -device virtio-net-pci,vlan=0,id=net0,mac=54:52:00:42:60:3c,bus=pci.0,addr=0x3 -net tap,fd=40,vlan=0,name=hostnet0 -chardev pty,id=serial0 -device isa-serial,chardev=serial0 -usb -vnc 127.0.0.1:0 -k en-gb -vga cirrus -device AC97,id=sound0,bus=pci.0,addr=0x4 -device virtio-balloon-pci,id=balloon0,bus=pci.0,addr=0x6
+root         11940 2     0    2012-04-07 -     00:00:00 [kvm-pit-wq]
+root         12142 2     0    2012-04-07 -     00:00:00 [kdmflush]
+root         12533 2     0    14:17:52   -     00:00:00 [flush-254:13]
+root         12540 2     0    14:17:56   -     00:00:00 [kworker/0:1]
+root         12541 2     0    14:18:04   -     00:00:00 [kworker/3:2]
+richard      12643 3357  0    11:43:49   -     00:00:00 imap
+richard      12644 3357  0    11:43:49   -     00:00:00 imap
+dovecot      12646 3357  0    11:43:50   -     00:00:00 imap-login
+dovecot      12647 3357  0    11:43:50   -     00:00:00 imap-login
+dovecot      12648 3357  0    11:43:50   -     00:00:00 imap-login
+dovecot      12649 3357  0    11:43:50   -     00:00:00 imap-login
 root         12655 2     0    2012-04-08 -     00:00:11 [jbd2/dm-3-8]
 root         12656 2     0    2012-04-08 -     00:00:00 [ext4-dio-unwrit]
-root         2781  1     0    2012-03-30 -     00:00:00 acpid
-root         3381  1     0    2012-03-30 4     00:00:00 getty 38400 tty4
-dovecot      8165  3357  0    11:17:39   -     00:00:00 imap-login
-richard      31768 3357  0    10:29:06   -     00:00:00 imap
+richard      12813 3357  0    11:44:06   -     00:00:00 imap
+www-data     13108 3083  0    2012-04-08 -     00:00:01 apache2 -k start
+www-data     13110 3083  0    2012-04-08 -     00:00:01 apache2 -k start
+www-data     13112 3083  0    2012-04-08 -     00:00:01 apache2 -k start
+www-data     13114 3083  0    2012-04-08 -     00:00:01 apache2 -k start
+root         13332 2     0    14:22:15   -     00:00:00 [flush-254:2]
+root         13979 358   0    2012-04-08 -     00:00:00 udevd --daemon
+root         13982 358   0    2012-04-08 -     00:00:00 udevd --daemon
+root         14051 2     0    2012-04-08 -     00:00:00 [kdmflush]
+root         14092 2     0    14:25:38   -     00:00:00 [kworker/2:1]
+news         14296 1     0    2012-04-08 -     00:00:47 innd
+news         14297 1     0    2012-04-08 -     00:00:00 bash /usr/lib/news/bin/rc.news
 news         14308 14296 0    2012-04-08 -     00:00:00 perl -w /usr/lib/news/bin/controlchan
-root         2621  1     0    2012-03-30 -     00:00:00 sshd
-root         3807  2     0    2012-03-30 -     00:00:00 [kdmflush]
-root         2248  1     0    2012-03-30 -     00:00:11 rsyslogd -c4
-root         4174  2     0    08:06:00   -     00:00:00 [kworker/u:1]
-root         1698  2     0    2012-03-30 -     00:00:00 [ext4-dio-unwrit]
-root         2601  1     0    2012-03-30 -     00:00:00 bluetoothd
 news         14309 14296 0    2012-04-08 -     00:00:11 innfeed
-dovecot      8163  3357  0    11:17:36   -     00:00:00 imap-login
-root         3359  3357  0    2012-03-30 -     00:00:05 dovecot-auth
+news         14388 14297 0    2012-04-08 -     00:01:55 bash /usr/lib/news/bin/innwatch
+root         15379 2     10   14:32:02   -     00:00:00 [kworker/2:0]
+root         15403 2     0    14:32:14   -     00:00:00 [kworker/3:0]
+root         15766 2     0    14:33:52   -     00:00:00 [kworker/0:0]
+root         16014 2     0    14:35:20   -     00:00:00 [kworker/1:2]
+root         16782 2     20   14:39:08   -     00:00:00 [kworker/0:2]
+root         17075 3168  0    14:40:01   -     00:00:00 CRON
+root         17077 17075 0    14:40:01   -     00:00:00 sh -c if [ -x /usr/bin/mrtg ] && [ -r /etc/mrtg.cfg ]; then mkdir -p /var/log/mrtg ; env LANG=C /usr/bin/mrtg /etc/mrtg.cfg >> /var/log/mrtg/mrtg.log 2>&1 ; fi
+root         17079 17077 0    14:40:01   -     00:00:00 perl -w /usr/bin/mrtg /etc/mrtg.cfg
+root         17112 2     0    14:40:16   -     00:00:00 [flush-254:7]
+news         17259 14388 0    14:40:22   -     00:00:00 sleep 60
+root         17274 23542 1010 14:40:27   pts/0 00:00:01 snapshot -n3 -vd testdata
+www-data     18133 3083  0    2012-04-08 -     00:00:01 apache2 -k start
+www-data     18394 3083  0    2012-04-08 -     00:00:01 apache2 -k start
+root         18410 2     0    12:12:08   -     00:00:00 [kworker/u:2]
+libvirt-qemu 18776 1     20   2012-04-09 -     00:54:18 kvm -S -M pc-0.12 -enable-kvm -m 768 -smp 1,sockets=1,cores=1,threads=1 -name neutraloid -uuid c0c26d4a-da8f-956a-d2c1-2fde643590f9 -nodefaults -chardev socket,id=monitor,path=/var/lib/libvirt/qemu/neutraloid.monitor,server,nowait -mon chardev=monitor,mode=readline -rtc base=utc -boot c -drive file=/dev/araminta/neutraloid,if=none,id=drive-ide0-0-0,boot=on,format=raw -device ide-drive,bus=ide.0,unit=0,drive=drive-ide0-0-0,id=ide0-0-0 -drive if=none,media=cdrom,id=drive-ide0-1-0,readonly=on,format=raw -device ide-drive,bus=ide.1,unit=0,drive=drive-ide0-1-0,id=ide0-1-0 -device rtl8139,vlan=0,id=net0,mac=52:54:00:43:8e:d8,bus=pci.0,addr=0x3 -net tap,fd=40,vlan=0,name=hostnet0 -chardev pty,id=serial0 -device isa-serial,chardev=serial0 -usb -vnc 127.0.0.1:2 -vga cirrus -device AC97,id=sound0,bus=pci.0,addr=0x4 -device virtio-balloon-pci,id=balloon0,bus=pci.0,addr=0x5
+root         18778 2     0    2012-04-09 -     00:00:00 [kvm-pit-wq]
+snmp         21092 1     0    09:30:11   -     00:00:04 snmpd -LSid -Lf /dev/null -u snmp -g snmp -I -smux -p /var/run/snmpd.pid
+root         23535 2621  0    09:43:45   -     00:00:00 sshd: richard [priv]
+richard      23541 23535 80   09:43:45   -     00:00:02 sshd: richard@pts/0
+richard      23542 23541 0    09:43:45   pts/0 00:00:00 -bash
+root         25058 2     0    04:15:06   -     00:00:01 [flush-254:3]
+www-data     26137 3083  0    2012-04-08 -     00:00:00 apache2 -k start
+www-data     26306 3083  0    2012-04-08 -     00:00:00 apache2 -k start
+dovecot      30070 3357  0    10:19:33   -     00:00:00 imap-login
+richard      31768 3357  0    10:29:06   -     00:00:00 imap
+root         32152 3231  0    2012-04-09 8     00:00:33 X :0 -audit 0 -auth /var/lib/gdm/:0.Xauth -nolisten tcp vt8
+gdm          32162 3231  0    2012-04-09 -     00:01:07 gdmgreeter
