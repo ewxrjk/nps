@@ -684,6 +684,10 @@ static int compare_string(const struct propinfo *prop, struct procinfo *pi,
                           taskident a, taskident b) {
   const char *av = prop->fetch.fetch_string(pi, a);
   const char *bv = prop->fetch.fetch_string(pi, b);
+  if(!av)
+    av = "";
+  if(!bv)
+    bv = "";
   return strcmp(av, bv);
 }
 
