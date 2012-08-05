@@ -25,6 +25,107 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <stdio.h>
+#if HAVE_SYS_CAPABILITY_H
+#include <sys/capability.h>
+#endif
+
+/* nps supports being installed in a variety of ways. */
+
+/* Support being installed setuid to root. */
+
+static int detect_setuid(void) {
+  if(priv_euid == priv_ruid)
+    return 0;
+#if ! SUPPORT_SETUID
+  /* If setuid support was disabled in configure, reject attempts to
+   * run that way. */
+  fatal(0, "inappropriately installed setuid");
+#endif
+  /* Drop privilege */
+  if(seteuid(priv_ruid) < 0)
+    fatal(errno, "seteuid");
+  assert(geteuid() == getuid());
+  return 1;
+}
+
+static void ascend_setuid(void) {
+  if(seteuid(priv_euid) < 0)
+    fatal(errno, "seteuid");
+}
+
+static void descend_setuid(void) {
+  if(seteuid(priv_ruid) < 0)
+    fatal(errno, "seteuid");
+}
+
+/* Support being installed setcap to CAP_SYS_PTRACE. */
+
+#if HAVE_SYS_CAPABILITY_H
+static cap_t cap;
+
+static void set_capability(cap_flag_t flag, cap_flag_value_t capvalue) {
+  const cap_value_t cap_sys_ptrace = CAP_SYS_PTRACE;
+  if(cap_set_flag(cap, flag, 1, &cap_sys_ptrace, capvalue) < 0)
+    fatal(errno, "cap_set_flag");
+  if(cap_set_proc(cap) < 0)
+    fatal(errno, "cap_set_proc");
+}
+
+static int detect_capability(void) {
+  cap_flag_value_t capvalue;
+  if(!(cap = cap_get_proc()))
+    fatal(errno, "cap_get_proc");
+  if(cap_get_flag(cap, CAP_SYS_PTRACE, CAP_PERMITTED, &capvalue) < 0)
+    fatal(errno, "cap_get_flag");
+  if(capvalue == CAP_CLEAR)
+    return 0;
+  /* Reduce our permitted set to just CAP_SYS_PTRACE and the
+   * effective set to nothing */
+  if(cap_clear(cap) < 0)
+    fatal(errno, "cap_clear");
+  set_capability(CAP_PERMITTED, CAP_SET);
+  return 1;
+}
+
+static void ascend_capability(void) {
+  set_capability(CAP_EFFECTIVE, CAP_SET);
+}
+
+static void descend_capability(void) {
+  set_capability(CAP_EFFECTIVE, CAP_CLEAR);
+}
+#endif
+
+/* Support being invoked as root */
+
+static int detect_root(void) {
+  return priv_ruid == 0;
+}
+
+/* Support being invoked completely unprivileged */
+
+static int detect_unprivileged(void) {
+  return 1;
+}
+
+static void ascend_none() {
+}
+
+typedef struct {
+  int (*detect)(void);
+  void (*ascend)(void);
+  void (*descend)(void);
+} privmode_t;
+  
+static const privmode_t privmodes[] = {
+  { detect_setuid, ascend_setuid, descend_setuid },
+#if HAVE_SYS_CAPABILITY_H
+  { detect_capability, ascend_capability, descend_capability },
+#endif
+  { detect_root, ascend_none, ascend_none },
+  { detect_unprivileged, ascend_none, ascend_none },
+}, *privmode;
 
 uid_t priv_euid, priv_ruid;
 
@@ -39,6 +140,7 @@ static void valid_fd(int fd) {
 }
 
 void priv_init(int argc, char attribute((unused)) **argv) {
+  size_t i;
   /* Sanity checking */
   /* 1. If argv is empty we conclude that something is up and refuse to proceed. */
   if(!argc)
@@ -50,29 +152,25 @@ void priv_init(int argc, char attribute((unused)) **argv) {
   /* Record what identities we run under */
   priv_euid = geteuid();
   priv_ruid = getuid();
-  /* Drop privilege */
-  if(priv_euid != priv_ruid) {
-    if(seteuid(priv_ruid) < 0)
-      fatal(errno, "seteuid");
+  /* Discover how privileged (if at all) we are */
+  for(i = 0; i < sizeof privmodes / sizeof *privmodes; ++i) {
+    if(privmodes[i].detect()) {
+      privmode = &privmodes[i];
+      return;
+    }
   }
-  assert(geteuid() == getuid());
+  fatal(0, "no privmode found");
 }
 
 int priv_run(int (*op)(void *u), void *u) {
   int rc;
   /* Elevate privilege */
-  if(priv_euid != priv_ruid) {
-    if(seteuid(priv_euid) < 0)
-      fatal(errno, "seteuid");
-  }
+  privmode->ascend();
   rc = op(u);
-  if(priv_euid != priv_ruid) {
-    if(seteuid(priv_ruid) < 0)
-      fatal(errno, "seteuid");
-  }
+  privmode->descend();
   return rc;
 }
 
 int privileged(void) {
-  return priv_euid != priv_ruid;
+  return privmode->ascend != ascend_none;
 }

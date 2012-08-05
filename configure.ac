@@ -30,6 +30,8 @@ AC_C_BIGENDIAN
 AC_CHECK_FUNCS([getc_unlocked])
 AC_CHECK_LIB([ncurses],[initscr],[LIBCURSES=-lncurses])
 AC_CHECK_LIB([rt],[clock_gettime])
+AC_CHECK_LIB([cap],[cap_get_proc])
+AC_CHECK_HEADERS([sys/capability.h])
 AC_SUBST([LIBCURSES])
 AC_CHECK_LIB([m],[floor],[LIBM=-lm])
 AC_SUBST([LIBM])
@@ -39,6 +41,21 @@ if test "x$GCC" = xyes; then
   coverage="-fprofile-arcs -ftest-coverage"
   CC="$CC -Wall -W -Wpointer-arith -Wwrite-strings -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wshadow"
 fi
+
+AC_MSG_CHECKING([whether to support setuid installation])
+AC_ARG_ENABLE([setuid],[AS_HELP_STRING([--disable-setuid],[don't support setuid installation])],
+              [],[enable_setuid=maybe])
+if test "$enable_setuid" = maybe; then
+  if test "$ac_cv_header_sys_capability_h" = yes; then
+    enable_setuid=no
+  else
+    enable_setuid=yes
+  fi
+fi
+if test "$enable_setuid" = yes; then
+  AC_DEFINE([SUPPORT_SETUID],[1],[support setuid operation])
+fi
+AC_MSG_RESULT([$enable_setuid])
 
 AC_ARG_ENABLE([werror],[AS_HELP_STRING([--disable-werror],[don't use -Werror])],
               [],[enable_werror=yes])
