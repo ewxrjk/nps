@@ -543,20 +543,29 @@ static void proc_cmdline(struct process *p) {
   p->prop_cmdline = xstrdup(buffer);
 }
 
-struct read_io_data {
-  FILE *fp;
+struct priv_callback_data {
+  char path[128];
   struct process *p;
 };
 
 static int read_io(void *u) {
-  struct read_io_data *d = u;
+  struct priv_callback_data *d = u;
   char buffer[1024], *colon;
   size_t field;
   uintmax_t *ptr;
+  FILE *fp;
+
+  if(!(fp = fopen(d->path, "r"))) {
+    if(errno != EACCES)
+      d->p->vanished = 1;
+    return -1;
+  }
   field = 0;
-  while(fgets(buffer, sizeof buffer, d->fp)) {
-    if(!strchr(buffer, '\n'))
+  while(fgets(buffer, sizeof buffer, fp)) {
+    if(!strchr(buffer, '\n')) {
+      fclose(fp);
       return -1;
+    }
     colon = strchr(buffer, ':');
     if(colon) {
       ++colon;
@@ -567,25 +576,19 @@ static int read_io(void *u) {
       ++field;
     }
   }
+  fclose(fp);
   return 0;
 }
 
 static void proc_io(struct process *p) {
-  struct read_io_data d[1];
-  char buffer[128];
+  struct priv_callback_data d[1];
 
   if(p->io || p->vanished)
     return;
   p->io = 1;
-  getpath(p, "io", buffer, sizeof buffer);
-  if(!(d->fp = fopen(buffer, "r"))) {
-    if(errno != EACCES)
-      p->vanished = 1;
-    return;
-  }
+  getpath(p, "io", d->path, sizeof d->path);
   d->p = p;
   priv_run(read_io, d);
-  fclose(d->fp);
   timespec_now(&p->io_time);
 }
 
@@ -605,46 +608,43 @@ static void proc_oom_score(struct process *p) {
   fclose(fp);
 }
 
-struct read_smaps_data {
-  FILE *fp;
-  uintmax_t pss;
-  uintmax_t swap;
-};
-
 static int read_smaps(void *u) {
-  struct read_smaps_data *d = u;
+  struct priv_callback_data *d = u;
   char buffer[1024], *ptr;
-  while(fgets(buffer, sizeof buffer, d->fp)) {
-    if(!strchr(buffer, '\n'))
+  FILE *fp;
+
+  if(!(fp = fopen(d->path, "r"))) {
+    if(errno != EACCES)
+      d->p->vanished = 1;
+    return -1;
+  }
+  while(fgets(buffer, sizeof buffer, fp)) {
+    if(!strchr(buffer, '\n')) {
+      fclose(fp);
       return -1;
+    }
     if(buffer[0] >= 'A' && buffer[0] <= 'Z'
        && (ptr = strchr(buffer, ':'))) {
       *ptr++ = 0;
       if(!strcmp(buffer, "Pss"))
-        d->pss += strtoumax(ptr, NULL, 0);
+        d->p->prop_pss += strtoumax(ptr, NULL, 0);
       else if(!strcmp(buffer, "Swap"))
-        d->swap += strtoumax(ptr, NULL, 0);
+        d->p->prop_swap += strtoumax(ptr, NULL, 0);
     }
   }
+  fclose(fp);
   return 0;
 }
 
 static void proc_smaps(struct process *p) {
-  struct read_smaps_data d[1];
-  char buffer[128];
+  struct priv_callback_data d[1];
   if(p->smaps || p->vanished)
     return;
   p->smaps = 1;
-  getpath(p, "smaps", buffer, sizeof buffer);
-  if(!(d->fp = fopen(buffer, "r"))) {
-    p->vanished = 1;
-    return;
-  }
-  d->pss = d->swap = 0;
+  getpath(p, "smaps", d->path, sizeof d->path);
+  d->p = p;
+  p->prop_pss = p->prop_swap = 0;
   priv_run(read_smaps, d);
-  fclose(d->fp);
-  p->prop_pss = d->pss;
-  p->prop_swap = d->swap;
 }
 
 // ----------------------------------------------------------------------------
