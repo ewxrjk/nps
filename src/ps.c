@@ -120,6 +120,8 @@ int main(int argc, char **argv) {
 
   /* Initialize privilege support (this must stay first) */
   priv_init(argc, argv);
+  /* Floating point fixup */
+  fpfixup();
   /* Read configuration */
   read_rc();
   /* Parse command line */

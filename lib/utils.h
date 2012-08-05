@@ -232,5 +232,18 @@ const char *signame(int sig, char buffer[], size_t bufsize);
 int xasprintf(char **sp, const char *format, ...)
   attribute((format (printf, 2, 3)));
 
+/** @brief Ensure FPU is in 64-bit mode
+ *
+ * This ensures consistent operation between architectures.
+ */
+static inline void fpfixup(void) {
+#if __i386__
+  uint16_t fpucontrol;
+  __asm__("fstcw %0" : "=m"(fpucontrol) : );
+  fpucontrol = (fpucontrol & 0xFCFF) | 0x0200;
+  __asm__("fldcw %0" : : "m" (fpucontrol));
+#endif
+}
+
 #endif /* UTILS_H */
 

@@ -215,6 +215,8 @@ int main(int argc, char **argv) {
 
   /* Initialize privilege support (this must stay first) */
   priv_init(argc, argv);
+  /* Floating point fixup */
+  fpfixup();
   /* Set locale */
   if(!setlocale(LC_ALL, ""))
     fatal(errno, "setlocale");
