@@ -98,23 +98,39 @@ try help-match --help-match
 
 try ancestor --ancestor 358
 try ancestor2 --ancestor 358,2621
+try ppid --ppid 358
+try ppid2 --ppid 358,2621
+try pid -p 358
+try pid2 --pid 358,2621
 try comm -C udevd
 
-# TODO:
+try sortrss -e -o pid,rss,vsize,comm --sort rss
+try sortrss -e -o pid,rss,vsize,comm --sort +rss
+try sortrssasc -e -o pid,rss,vsize,comm --sort -rss
+try sortvsize -e -o pid,rss,vsize,comm --sort vsize
 
-# -g
-# --group
-# -G
-# -p
-# --ppid
-# -t
-# -u
-# -U
+try tty1 -f -t /dev/pts/0
+try tty1 -f -t pts/0
+try tty2 -f -t /dev/pts/3
+try tty2 -f -t pts/3
+try tty3 -f -t /dev/pts/0,/dev/pts/3
+
+try user1 -opid,user,ruser,comm -u root
+try user2 -opid,user,ruser,comm -u richard
+try user3 -opid,user,ruser,comm -u news
+try user4 -opid,user,ruser,comm -U root
+
+try group1 -opid,group,rgroup,comm --group root
+try group2 -opid,group,rgroup,comm --group daemon
+try group3 -opid,group,rgroup,comm --group richard,news
+try group4 -opid,group,rgroup,comm -G root
+try group5 -opid,group,rgroup,comm -G daemon
+
+# TODO:
 
 # -o, -O
 # -w
 # -n
-# --sort
 
 # match expressions...
 

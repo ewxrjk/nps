@@ -1,0 +1,4 @@
+UID     PID   PPID  C    STIME    TTY   TIME     CMD
+richard 8150  8143  0    11:17:26 pts/3 00:00:00 idn --quiet --idna-to-ascii --usestd3asciirules
+root    17274 23542 1010 14:40:27 pts/0 00:00:01 snapshot -n3 -vd testdata
+richard 23542 23541 0    09:43:45 pts/0 00:00:00 -bash

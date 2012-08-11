@@ -13,7 +13,7 @@ Options:
   -H, --forest            Hierarchical display
   -L, --threads           Display threads
   -o, -O, --format PROPS  Set output format; see --help-format
-  -p, --pids PIDS         Select processes by process ID
+  -p, --pid PIDS          Select processes by process ID
   --poll SECONDS[:COUNT]  Repeat output
   --ppid PIDS             Select processes by parent process ID
   --sort [+/-]PROPS...    Set ordering; see --help-format

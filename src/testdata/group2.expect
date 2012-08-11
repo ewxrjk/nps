@@ -1,0 +1,4 @@
+PID  GROUP  RGROUP COMMAND
+2042 daemon daemon portmap
+2368 daemon root   atd
+2522 daemon daemon slpd

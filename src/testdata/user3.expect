@@ -1,0 +1,7 @@
+PID   USER RUSER COMMAND
+14296 news news  innd
+14297 news news  rc.news
+14308 news news  controlchan
+14309 news news  innfeed
+14388 news news  innwatch
+17259 news news  sleep
