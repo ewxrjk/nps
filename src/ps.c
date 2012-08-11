@@ -279,7 +279,7 @@ int main(int argc, char **argv) {
              "  -H, --forest            Hierarchical display\n"
              "  -L, --threads           Display threads\n"
              "  -o, -O, --format PROPS  Set output format; see --help-format\n"
-             "  -p, --pids PIDS         Select processes by process ID\n"
+              "  -p, --pid PIDS          Select processes by process ID\n"
              "  --poll SECONDS[:COUNT]  Repeat output\n"
              "  --ppid PIDS             Select processes by parent process ID\n"
              "  --sort [+/-]PROPS...    Set ordering; see --help-format\n"
