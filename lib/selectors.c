@@ -110,7 +110,7 @@ int select_leader(struct procinfo *pi, taskident task,
 int select_rgid(struct procinfo *pi, taskident task,
                 union arg *args, size_t nargs) {
   size_t n;
-  gid_t gid = proc_get_egid(pi, task);
+  gid_t gid = proc_get_rgid(pi, task);
   for(n = 0; n < nargs; ++n) {
     if(gid == args[n].gid)
       return 1;
