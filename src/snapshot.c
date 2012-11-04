@@ -128,7 +128,7 @@ static void snapshot_processes(const char *destdir) {
   struct dirent *de;
   if(verbose)
     xprintf("  scanning %s\n", proc);
-  dp = opendirf(NULL, proc);
+  dp = opendirf(NULL, "%s", proc);
   if(!dp)
     fatal(errno, "opendir %s", proc);
   while((de = xreaddir(proc, dp)))
