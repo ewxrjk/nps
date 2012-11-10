@@ -32,13 +32,25 @@ extern const char *forcegroups;
  * @param uid User ID
  * @return User information or NULL
  */
-const char *lookup_user(uid_t uid);
+const char *lookup_user_by_id(uid_t uid);
+
+/** @brief Look up a user
+ * @param name User name
+ * @return User ID
+ */
+uid_t lookup_user_by_name(const char *name);
 
 /** @brief Look up a user
  * @param uid User ID
  * @return User information or NULL
  */
-const char *lookup_group(gid_t gid);
+const char *lookup_group_by_id(gid_t gid);
+
+/** @brief Look up a group
+ * @param name Group name
+ * @return Group ID
+ */
+uid_t lookup_group_by_name(const char *name);
 
 #endif /* USER_H */
 

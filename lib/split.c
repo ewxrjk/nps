@@ -19,6 +19,7 @@
  */
 #include <config.h>
 #include "selectors.h"
+#include "user.h"
 #include "utils.h"
 #include <pwd.h>
 #include <grp.h>
@@ -32,13 +33,8 @@ union arg arg_user(const char *s) {
   union arg a;
   if(strspn(s, "0123456789") == strlen(s)) 
     a.uid = atol(s);
-  else {
-    struct passwd *pw = getpwnam(s);
-    if(pw)
-      a.uid = pw->pw_uid;
-    else
-      fatal(0, "unknown user '%s'", s);
-  }
+  else
+    a.uid = lookup_user_by_name(s);
   return a; 
 }
 
@@ -46,13 +42,8 @@ union arg arg_group(const char *s) {
   union arg a;
   if(strspn(s, "0123456789") == strlen(s)) 
     a.gid = atol(s);
-  else {
-    struct group *gr = getgrnam(s);
-    if(gr)
-      a.gid = gr->gr_gid;
-    else
-      fatal(0, "unknown group '%s'", s);
-  }
+  else
+    a.gid = lookup_group_by_name(s);
   return a; 
 }
 

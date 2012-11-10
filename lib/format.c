@@ -149,11 +149,11 @@ static void format_usergroup(intmax_t id, struct buffer *b, size_t columnsize,
 }
 
 static void format_user(uid_t uid, struct buffer *b, size_t columnsize) {
-  format_usergroup(uid, b, columnsize, lookup_user(uid));
+  format_usergroup(uid, b, columnsize, lookup_user_by_id(uid));
 }
 
 static void format_group(gid_t gid, struct buffer *b, size_t columnsize) {
-  format_usergroup(gid, b, columnsize, lookup_group(gid));
+  format_usergroup(gid, b, columnsize, lookup_group_by_id(gid));
 }
 
 void format_interval(long seconds, struct buffer *b,
@@ -621,10 +621,10 @@ static int compare_user(const struct propinfo *prop, struct procinfo *pi,
                         taskident a, taskident b) {
   uid_t av = prop->fetch.fetch_uid(pi, a);
   uid_t bv = prop->fetch.fetch_uid(pi, b);
-  const char *ua = lookup_user(av), *ub;
+  const char *ua = lookup_user_by_id(av), *ub;
   ua = xstrdup(ua ? ua : "");
   int rc;
-  ub = lookup_user(bv);
+  ub = lookup_user_by_id(bv);
   rc = strcmp(ua, ub ? ub : "");
   free((char *)ua);
   return rc;
@@ -664,10 +664,10 @@ static int compare_group(const struct propinfo *prop, struct procinfo *pi,
                        taskident a, taskident b) {
   uid_t av = prop->fetch.fetch_uid(pi, a);
   uid_t bv = prop->fetch.fetch_uid(pi, b);
-  const char *ga = lookup_group(av), *gb;
+  const char *ga = lookup_group_by_id(av), *gb;
   ga = xstrdup(ga ? ga : "");
   int rc;
-  gb = lookup_group(bv);
+  gb = lookup_group_by_id(bv);
   rc = strcmp(ga, gb ? gb : "");
   free((char *)ga);
   return rc;
