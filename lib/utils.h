@@ -106,6 +106,12 @@ void strfelapsed(struct buffer *b, const char *format, intmax_t seconds);
  */
 const char *device_path(int type, dev_t dev);
 
+/** @brief Return the device ID of a terminal
+ * @param name (Possibly abbreviated) terminal name
+ * @return Device ID or -1
+ */
+dev_t tty_id(const char *name);
+
 /** @brief Override for device list */
 extern const char *forcedev;
 

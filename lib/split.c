@@ -58,21 +58,9 @@ union arg arg_process(const char *s) {
 
 union arg arg_tty(const char *s) {
   union arg a;
-  struct stat sb;
-  char buffer[1024];
 
-  if(s[0] != '/') {
-    if(s[0] >= '0' && s[0] <= '9')
-      snprintf(buffer, sizeof buffer, "/dev/tty%s", s);
-    else
-      snprintf(buffer, sizeof buffer, "/dev/%s", s);
-    s = buffer;
-  }
-  if(stat(s, &sb) < 0)
+  if((a.tty = tty_id(s)) == -1)
     fatal(errno, "unrecognized tty %s", s);
-  if(!S_ISCHR(sb.st_mode))
-    fatal(0, "%s is not a terminal", s);
-  a.tty = sb.st_rdev;
   return a;
 }
 

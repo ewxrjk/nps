@@ -150,3 +150,33 @@ const char *device_path(int type, dev_t device) {
   }
   return NULL;
 }
+
+static dev_t device_id(const char *path) {
+  size_t n;
+  if(!forcedev) {
+    struct stat sb;
+    if(stat(path, &sb) < 0)
+      return -1;
+    return sb.st_rdev;
+  } else {
+    if(ndevices == 0)
+      device_force();
+    for(n = 0; n < ndevices; ++n)
+      if(!strcmp(path, devices[n].path))
+        return devices[n].device;
+    return -1;
+  }
+}
+
+dev_t tty_id(const char *name) {
+  char buffer[1024];
+
+  if(name[0] != '/') {
+    if(name[0] >= '0' && name[0] <= '9')
+      snprintf(buffer, sizeof buffer, "/dev/tty%s", name);
+    else
+      snprintf(buffer, sizeof buffer, "/dev/%s", name);
+    return device_id(buffer);
+  } else
+    return device_id(name);
+}
