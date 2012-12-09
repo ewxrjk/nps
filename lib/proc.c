@@ -349,7 +349,7 @@ static void proc_stat(struct process *p) {
   FILE *fp;
   char buffer[1024], *start, *bp;
   size_t field;
-  uintmax_t *ptr;
+  uintmax_t *ptr, value;
 
   if(p->stat || p->vanished)
     return;
@@ -369,9 +369,10 @@ static void proc_stat(struct process *p) {
       }
       switch(field) {
       default:
+	value = strtoumax(bp, &bp, 10);
         if((field - 3) < NSTATS) {
           ptr = (uintmax_t *)((char *)p + propinfo_stat[field - 3]);
-          *ptr = strtoumax(bp, &bp, 10);
+          *ptr = value;
         }
         break;
       case 0:                   /* pid */
