@@ -122,7 +122,7 @@ Moves the viewport to the left by one character, i.e. moves the
 columns to the right.
 .IP "\fBpage up"
 Moves the viewport to the left by eight characters.
-.IP "\fB^A"
+.IP "\fBhome\fR, \fB^A"
 Moves the viewport all the way to the left.
 .SS Commands
 The following keyboard commands can also be used:
@@ -155,13 +155,13 @@ Quits immediately.
 .SS Input
 When editing a value (for instance after pressing \fBd\fR) the
 following keys can be used:
-.IP "\fB^A"
+.IP "\fBhome\fR, \fB^A"
 Move the cursor to the start of the line.
 .IP "\fBleft arrow\fR, \fB^B"
 Move the cursor left.
 .IP "\fBALT-left arrow\fR, \fBALT-B"
 Move the cursor left one word.
-.IP "\fB^E"
+.IP "\fBend\fR, \fB^E"
 Move the cursor to the end of the line.
 .IP "\fBright arrow\fR, \fB^F"
 Move the cursor right.

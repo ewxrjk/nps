@@ -98,9 +98,11 @@ void input_key(int ch, struct input_context *ctx) {
       del_right(ctx);
     break;
   case 1:                       /* ^A */
+  case KEY_HOME:
     ctx->cursor = 0;
     break;
   case 5:                       /* ^E */
+  case KEY_END:
     ctx->cursor = ctx->len;
     break;
   case 12:                      /* ^L */
