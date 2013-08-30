@@ -132,6 +132,7 @@ struct process {
   unsigned vanished:1;          /* nonzero if process vanished */
   unsigned elapsed_set:1;       /* nonzero if elapsed has been set */
   unsigned oom_score_set:1;     /* nonzero if oom_score is set */
+  unsigned pss:1;               /* nonzero if prop_pss valid */
   unsigned vmbits;              /* Vm... bit set */
   char *prop_comm;
   char *prop_cmdline;
@@ -633,6 +634,7 @@ static int read_smaps(void *u) {
         d->p->prop_swap += strtoumax(ptr, NULL, 0);
     }
   }
+  d->p->pss = 1;
   fclose(fp);
   return 0;
 }
@@ -972,6 +974,9 @@ uintmax_t proc_get_mem(struct procinfo *pi, taskident taskid) {
 
 uintmax_t proc_get_pmem(struct procinfo *pi, taskident taskid) {
   return proc_get_pss(pi, taskid) + proc_get_swap(pi, taskid);
+  struct process *p = proc_find(pi, taskid);
+  uintmax_t pss = proc_get_pss(pi, taskid);
+  return p->pss ? pss + proc_get_swap(pi, taskid) : 0;
 }
 
 int proc_get_num_threads(struct procinfo *pi, taskident taskid) {
