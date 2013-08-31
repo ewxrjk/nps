@@ -351,9 +351,13 @@ static void property_gids(const struct column *col, struct buffer *b,
                           unsigned attribute((unused)) flags) {
   size_t ngids, n;
   const gid_t *gids = col->prop->fetch.fetch_gids(ti, task, &ngids);
+  if(!ngids) {
+    buffer_putc(b, '-');
+    return;
+  }
   for(n = 0; n < ngids; ++n) {
     if(n)
-      buffer_putc(b, ' ');
+      buffer_putc(b, ',');
     format_integer(gids[n], b, 'd');
   }
 }
@@ -364,9 +368,13 @@ static void property_groups(const struct column *col, struct buffer *b,
                             unsigned attribute((unused)) flags) {
   size_t ngids, n;
   const gid_t *gids = col->prop->fetch.fetch_gids(ti, task, &ngids);
+  if(!ngids) {
+    buffer_putc(b, '-');
+    return;
+  }
   for(n = 0; n < ngids; ++n) {
     if(n)
-      buffer_putc(b, ' ');
+      buffer_putc(b, ',');
     format_group(gids[n], b, SIZE_MAX);
   }
 }
