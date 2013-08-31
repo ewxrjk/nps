@@ -73,4 +73,35 @@
  *
  * Both the system information logic and the task formatting logic use
  * parse_element() to parse format strings.
+ *
+ * @section Goals
+ *
+ * A few goals are worth stating:
+ *
+ * <b>Standards Compliance</b>. @c nps is intended to comply with <a
+ * href="http://pubs.opengroup.org/onlinepubs/9699919799/utilities/ps.html">the
+ * Single Unix Specification</a>.  Obviously it goes far beyond that,
+ * and provides fixes for some of its limitations.
+ *
+ * As far as I know there is no global standard for @c top, so the
+ * only compatibility requirement there is with @c nps.
+ *
+ * <B>Scriptability</b>.  @c ps output is often read by scripts, for
+ * instance using @c awk.  Therefore, any process property ought to be
+ * represented as a single string that does not contain whitespace and
+ * is never empty, with very few exceptions (e.g. the full command
+ * line with arguments).
+ *
+ * CSV output support is another nod in this direction.
+ *
+ * @subsection Non-Goals
+ *
+ * Targets other than Linux aren't forbidden as such, but they are not
+ * an interesting priority at the moment.
+ *
+ * Much the same applies to compatibility with other implementations
+ * of @c ps and @c top.  Portability is best achieved by
+ * standardization.  If your script depends on the features of a
+ * particular @c ps implementation, the best approach is to use that
+ * implementation.
  */
