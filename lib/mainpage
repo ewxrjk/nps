@@ -4,8 +4,51 @@
  *
  * @image html arch.svg
  *
- * @see selectors.h for process/thread selection
- * @see format.h for process formatting
- * @see process.h for process data
- * @see sysinfo.h for sysetem information data and formatting
+ * @subsection process Task Information
+ *
+ * process.h provides the API for raw task information.  (A task means
+ * a thread or a process.)
+ * - proc_enumerate() is used to collect task information.  If any of
+ * the properties of interest are rates then tasks are enumerated
+ * twice, with a delay between.
+ * - For each task property there is a function to retrieve the
+ * property.  Property values are cached between enumeration calls.
+ *
+ * See @ref priv.h for handling of processes properties that are only
+ * available to root (or owner).
+ *
+ * @subsection select Task Selection
+ *
+ * selectors.h provides the API for filtering tasks in various ways.
+ * - select_add() and select_match() are used to add filters.
+ * select_default() is used to set defaults.
+ * - They control the set of tasks that will be returned by
+ * proc_get_selected(), which is used at the start of constructing
+ * output.
+ * - Note that proc_reselect() must be called if the selection changes
+ * without re-running proc_enumerate().
+ *
+ * @subsection format Task Formatting
+ *
+ * format.h provides the API for formatting task information.
+ * Output format is defined using the following functions:
+ * - format_syntax() and format_set() are used to define the format
+ * - @ref format_hierarchy is used to request hierarchical output
+ * - format_ordering() is used to control the order in which tasks
+ * appear
+ *
+ * Output is then formatted using the following functions:
+ * - format_columns() is used to work out column sizes
+ * - format_heading() is used to generate headings
+ * - format_process() is used to format each task
+ *
+ * @subsection sysinfo System Information
+ *
+ * sysinfo.h provides the API for collecting and reporting system-wide
+ * information.  Unlike task information this is not split between
+ * multiple headers.
+ * - sysinfo_set() is used to define the format
+ * - sysinfo_format() is used to format the current system information
+ * - sysinfo_reset() is used after time has elapsed to discard cached
+ * system information.
  */
