@@ -17,4 +17,6 @@
 # USA
 SUBDIRS=lib src
 EXTRA_DIST=debian/changelog debian/compat debian/control	\
-debian/copyright debian/rules debian/source/format scripts/dist
+debian/copyright debian/rules debian/source/format scripts/dist \
+README.md
+

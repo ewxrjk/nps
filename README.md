@@ -1,10 +1,10 @@
 nps
 ===
 
-This is an implementation of SUSv4 'ps', and a compatible 'top', for
+This is an implementation of SUSv4 `ps`, and a compatible `top`, for
 Linux.
 
-* Features
+It has the following features:
 
 - Process properties: memory, IO, timing information, etc
 - System properties: CPU usage, memory usage, load, etc
@@ -13,18 +13,20 @@ Linux.
 - Flexible process selection (e.g. rss>1M, regexp match on command,
   etc)
 - Flexible output formatting, including CSV output from ps
-- Modify 'top' settings on the the fly, without interrupting display
+- Modify `top` settings on the the fly, without interrupting display
 - On-screen help
 
-* Installation
+Installation
+------------
 
     ./configure
     make
     sudo make install
 
-See 'INSTALL' for generic instructions.
+See INSTALL for generic instructions.
 
-* Documentation
+Documentation
+-------------
 
     nps --help
     nps --help-format
@@ -33,9 +35,10 @@ See 'INSTALL' for generic instructions.
     nps-top --help
     man nps-top
 
-Within nps-top, press 'h' to cycle through help.
+Within nps-top, press `h` to cycle through help.
 
-* Use
+Use
+---
 
     nps
     nps -ef
@@ -46,14 +49,18 @@ If you like them more than the system versions:
     alias ps=nps
     alias top=nps-top
 
-* Maintainer
+Bugs
+----
 
-Please send bug reports to:
-  Richard Kettlewell <rjk@greenend.org.uk>
+Please report bugs via [Github](https://github.com/ewxrjk/nps).
 
-* Copyright
+Alternatively, email bug reports to Richard Kettlewell
+<rjk@greenend.org.uk>.
 
-Copyright (C) 2011 Richard Kettlewell
+Copyright
+---------
+
+Copyright © 2011-13 Richard Kettlewell
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
