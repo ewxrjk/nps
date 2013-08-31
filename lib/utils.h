@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011, 12 Richard Kettlewell
+ * Copyright (C) 2011, 12, 13 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -224,6 +224,10 @@ void free_strings(char **strings);
  * string literal instead.
  */
 const char *signame(int sig, char buffer[], size_t bufsize);
+
+// ----------------------------------------------------------------------------
+
+double parse_interval(const char *s);
 
 // ----------------------------------------------------------------------------
 

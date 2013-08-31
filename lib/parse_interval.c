@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 13 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <math.h>
-#include "opts.h"
 #include "utils.h"
 
 double parse_interval(const char *s) {
