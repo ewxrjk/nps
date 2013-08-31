@@ -22,6 +22,10 @@ src/snapshot
 stamp-h1
 *.tar.gz
 TAGS
+GPATH
+GRTAGS
+GSYMS
+GTAGS
 debian/files
 debian/nps
 debian/substvars.*
