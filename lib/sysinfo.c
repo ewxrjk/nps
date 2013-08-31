@@ -322,7 +322,7 @@ static void sysprop_swap(const struct sysinfo *si,
                       bused, sizeof bused, cutoff),
                 bytes(meminfo.SwapFree * KILOBYTE, 9, ch,
                       bfree, sizeof bfree, cutoff),
-                bytes(meminfo.Cached * KILOBYTE, 9, ch,
+                bytes(meminfo.SwapCached * KILOBYTE, 9, ch,
                       bcache, sizeof bcache, cutoff));
 }
 
