@@ -37,3 +37,4 @@ lib/t-error
 lib/t-parse
 lib/t-format
 lib/t-time
+doc/html

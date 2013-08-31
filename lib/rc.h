@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 13 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,10 @@
 
 #ifndef RC_H
 #define RC_H
+
+/** @file rc.h
+ * @brief RC file support
+ */
 
 /** @brief ps -f format */
 extern char *rc_ps_f_format;

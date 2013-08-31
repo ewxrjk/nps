@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 13 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,7 +77,8 @@ FILE *fopenf(char **pathp, const char *mode, const char *format, ...)
   attribute((format (printf, 3, 4)));
 
 /** @brief Close a file
- * @param Pointer to stream
+ * @param fp Pointer to stream
+ * @param path Filename corresponding to stream
  *
  * Calls fatal() on error.
  */

@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 12, 13 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,10 @@
  */
 #ifndef USER_H
 #define USER_H
+
+/** @file user.h
+ * @brief User and group utilities
+ */
 
 #include <sys/types.h>
 
@@ -41,7 +45,7 @@ const char *lookup_user_by_id(uid_t uid);
 uid_t lookup_user_by_name(const char *name);
 
 /** @brief Look up a user
- * @param uid User ID
+ * @param gid Group ID
  * @return User information or NULL
  */
 const char *lookup_group_by_id(gid_t gid);

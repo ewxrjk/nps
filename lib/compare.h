@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 13 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,10 @@
  */
 #ifndef COMPARE_H
 #define COMPARE_H
+
+/** @file compare.h
+ * @brief Comparison utilities
+ */
 
 /** @brief Most recent process enumeration */
 extern struct procinfo *global_procinfo;

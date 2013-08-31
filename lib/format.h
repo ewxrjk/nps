@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 12, 13 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,8 +70,15 @@ struct buffer;
 /** @brief Parse a sign specification */
 #define FORMAT_SIGN 0x0100
 
+/** @brief Possible output syntaxes */
 enum format_syntax {
+  /** @brief Normal syntax
+   *
+   * This produces traditional 'ps' output.
+   */
   syntax_normal,
+
+  /** @brief Comma-separated value syntax */
   syntax_csv
 };
 

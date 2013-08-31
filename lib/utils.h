@@ -227,6 +227,13 @@ const char *signame(int sig, char buffer[], size_t bufsize);
 
 // ----------------------------------------------------------------------------
 
+/** @brief Parse a time interval
+ * @param s Time interval
+ * @return Number of seconds
+ *
+ * Currently time intervals are just counts of seconds.
+ * This could be improved.
+ */
 double parse_interval(const char *s);
 
 // ----------------------------------------------------------------------------
