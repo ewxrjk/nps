@@ -19,9 +19,10 @@
  *
  * @subsubsection vanish Vanishing Tasks
  *
- * An important concern when enumerating tasks is that it is not
- * atomic.  Tasks can vanish at any more in the process.  When this
- * happens, the process and all its threads are marked as "vanished".
+ * An important concern when enumerating tasks and collecting data
+ * about them is that it is not atomic.  Tasks can vanish at any point
+ * in the process.  When this happens, the process and all its threads
+ * are marked as "vanished".
  *
  * Vanished tasks are never treated as selected, though since they may
  * vanish after selection runs, this doesn't necessaily stop them
@@ -54,7 +55,7 @@
  * Output is then formatted using the following functions:
  * - format_columns() is used to work out column sizes
  * - format_heading() is used to generate headings
- * - format_process() is used to format each task
+ * - format_task() is used to format each task
  *
  * @subsection sysinfo System Information
  *
