@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 2013 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
  * USA
  */
 #include <config.h>
-#include "utils.h"
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
@@ -26,64 +25,72 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <assert.h>
+#include <setjmp.h>
+#include <stdlib.h>
+#include "utils.h"
+
+static int exited, exit_status;
 
 static int before(void) {
   assert(write(2, "X", 1) == 1);
   return 0;
 }
 
+static jmp_buf env;
+
 static void launder_exit(int) attribute((noreturn));
 
 static void launder_exit(int rc) {
-  assert(write(2, "Y", 1) == 1);
-  _exit(rc);
+  exit_status = rc;
+  exited = 1;
+  longjmp(env, 1);              /* because noreturn */
+  assert(!"wtf");
 }
 
-static void check(int errno_value) {
-  int p[2], w;
+static void check(int set_onfatal, int errno_value) {
+  int p[2];
   char buffer[512], expect[512];
   ssize_t n;
   size_t total;
-  pid_t pid;
+  int save_stderr;
 
-  if(pipe(p) < 0)
-    fatal(errno, "pipe");
-  switch(pid = fork()) {
-  case 0:
-    terminate = _exit;
-    if(dup2(p[1], 2) < 0)
-      fatal(errno, "dup2");
-    onfatal = before;
-    terminate = launder_exit;
+  save_stderr = dup(2); assert(save_stderr >= 0);
+  assert(pipe(p) >= 0);
+  assert(dup2(p[1], 2) >= 0);
+  assert(close(p[1]) >= 0);
+  terminate = launder_exit;
+  onfatal = set_onfatal ? before : NULL;
+  terminate = launder_exit;
+  if(setjmp(env) == 0) {
     fatal(errno_value, "test");
-    _exit(-1);
-  case -1:
-    fatal(errno, "fork");
+    assert(!"reached");
   }
-  if(close(p[1]) < 0)
-    fatal(errno, "close");
+  assert(dup2(save_stderr, 2) >= 0);
+  assert(close(save_stderr) >= 0);
   total = 0;
   do {
     n = read(p[0], buffer + total, sizeof buffer - total);
-    if(n < 0)
-      fatal(errno, "read");
+    assert(n >= 0);
     total += n;
     assert(total < sizeof buffer - 1);
   } while(n);
   buffer[total] = 0;
-  snprintf(expect, sizeof expect, "XERROR: test%s%s\nY",
+  snprintf(expect, sizeof expect, "%sERROR: test%s%s\n",
+           set_onfatal ? "X" : "",
            errno_value == 0 ? "" : ": ",
            errno_value == 0 ? "" : strerror(errno_value));
+  if(strcmp(buffer, expect)) {
+    fprintf(stderr, "expected: %s\n", expect);
+    fprintf(stderr, "     got: %s\n", buffer);
+    exit(1);
+  }
   assert(!strcmp(buffer, expect));
-  if(close(p[0]) < 0)
-    fatal(errno, "close");
-  if(waitpid(pid, &w, 0) < 0)
-    fatal(errno, "waitpid");
-  assert(WIFEXITED(w) && WEXITSTATUS(w) == 1);
+  assert(close(p[0]) >= 0);
 }
 
 int main(void) {
-  check(0);
-  check(ENOENT);
+  check(0, 0);
+  check(0, ENOENT);
+  check(1, EFAULT);
   return 0;
 }
