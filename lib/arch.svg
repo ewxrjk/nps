@@ -7,6 +7,7 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="690"
@@ -411,49 +412,69 @@
        id="path4764"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
-    <text
-       xml:space="preserve"
-       style="font-size:12px;font-style:normal;font-weight:normal;text-align:end;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:end;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       x="296"
-       y="564"
-       id="text4768"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         id="tspan4770"
+    <a
+       xlink:href="../doc/html/tasks_8h.html"
+       target="_parent"
+       id="a3066">
+      <text
+         sodipodi:linespacing="125%"
+         id="text4768"
+         y="564"
          x="296"
-         y="564">tasks.h</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:12px;font-style:normal;font-weight:normal;text-align:end;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:end;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       x="248"
-       y="276"
-       id="text4782"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         id="tspan4784"
+         style="font-size:12px;font-style:normal;font-weight:normal;text-align:end;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:end;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         xml:space="preserve"><tspan
+           y="564"
+           x="296"
+           id="tspan4770"
+           sodipodi:role="line">tasks.h</tspan></text>
+    </a>
+    <a
+       xlink:href="../doc/html/selectors_8h.html"
+       target="_parent"
+       id="a3054">
+      <text
+         sodipodi:linespacing="125%"
+         id="text4782"
+         y="276"
          x="248"
-         y="276">selectors.h</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:12px;font-style:normal;font-weight:normal;text-align:end;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:end;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       x="472"
-       y="276"
-       id="text4788"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         id="tspan4790"
+         style="font-size:12px;font-style:normal;font-weight:normal;text-align:end;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:end;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         xml:space="preserve"><tspan
+           y="276"
+           x="248"
+           id="tspan4784"
+           sodipodi:role="line">selectors.h</tspan></text>
+    </a>
+    <a
+       xlink:href="../doc/html/format_8h.html"
+       target="_parent"
+       id="a3058">
+      <text
+         sodipodi:linespacing="125%"
+         id="text4788"
+         y="276"
          x="472"
-         y="276">format.h</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:12px;font-style:normal;font-weight:normal;text-align:end;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:end;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
-       x="696"
-       y="404"
-       id="text4794"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         id="tspan4796"
+         style="font-size:12px;font-style:normal;font-weight:normal;text-align:end;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:end;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         xml:space="preserve"><tspan
+           y="276"
+           x="472"
+           id="tspan4790"
+           sodipodi:role="line">format.h</tspan></text>
+    </a>
+    <a
+       xlink:href="../doc/html/sysinfo_8h.html"
+       target="_parent"
+       id="a3062">
+      <text
+         sodipodi:linespacing="125%"
+         id="text4794"
+         y="404"
          x="696"
-         y="404">sysinfo.h</tspan></text>
+         style="font-size:12px;font-style:normal;font-weight:normal;text-align:end;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:end;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+         xml:space="preserve"><tspan
+           y="404"
+           x="696"
+           id="tspan4796"
+           sodipodi:role="line">sysinfo.h</tspan></text>
+    </a>
   </g>
 </svg>

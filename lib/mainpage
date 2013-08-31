@@ -2,7 +2,9 @@
  *
  * @section Architecture
  *
- * @image html arch.svg
+ * @htmlonly
+ * <iframe src="../../lib/arch.svg" frameborder=0></iframe>
+ * @endhtmlonly
  *
  * @subsection process Task Information
  *
