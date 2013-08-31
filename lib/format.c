@@ -20,7 +20,7 @@
 #include <config.h>
 #include "format.h"
 #include "buffer.h"
-#include "process.h"
+#include "tasks.h"
 #include "utils.h"
 #include "parse.h"
 #include "user.h"
@@ -48,10 +48,10 @@ struct column;
 
 typedef void formatfn(const struct column *col, struct buffer *b,
                       size_t columnsize,
-                      struct procinfo *pi, taskident taskid,
+                      struct taskinfo *ti, taskident taskid,
                       unsigned flags);
 
-typedef int comparefn(const struct propinfo *prop, struct procinfo *pi, 
+typedef int comparefn(const struct propinfo *prop, struct taskinfo *ti, 
                       taskident a, taskident b);
 
 struct propinfo {
@@ -62,16 +62,16 @@ struct propinfo {
   formatfn *format;
   comparefn *compare;
   union {
-    int (*fetch_int)(struct procinfo *, taskident);
-    intmax_t (*fetch_intmax)(struct procinfo *, taskident);
-    uintmax_t (*fetch_uintmax)(struct procinfo *, taskident);
-    pid_t (*fetch_pid)(struct procinfo *, taskident);
-    uid_t (*fetch_uid)(struct procinfo *, taskident);
-    gid_t (*fetch_gid)(struct procinfo *, taskident);
-    const gid_t *(*fetch_gids)(struct procinfo *, taskident, size_t *);
-    double (*fetch_double)(struct procinfo *, taskident);
-    const char *(*fetch_string)(struct procinfo *, taskident);
-    void (*fetch_sigset)(struct procinfo *, taskident, sigset_t *);
+    int (*fetch_int)(struct taskinfo *, taskident);
+    intmax_t (*fetch_intmax)(struct taskinfo *, taskident);
+    uintmax_t (*fetch_uintmax)(struct taskinfo *, taskident);
+    pid_t (*fetch_pid)(struct taskinfo *, taskident);
+    uid_t (*fetch_uid)(struct taskinfo *, taskident);
+    gid_t (*fetch_gid)(struct taskinfo *, taskident);
+    const gid_t *(*fetch_gids)(struct taskinfo *, taskident, size_t *);
+    double (*fetch_double)(struct taskinfo *, taskident);
+    const char *(*fetch_string)(struct taskinfo *, taskident);
+    void (*fetch_sigset)(struct taskinfo *, taskident, sigset_t *);
   } fetch;
 };
 #define PROP_TEXT 1
@@ -222,31 +222,31 @@ void format_time(time_t when, struct buffer *b, size_t columnsize,
 
 static void property_decimal(const struct column *col, struct buffer *b,
                              size_t attribute((unused)) columnsize,
-                             struct procinfo *pi, taskident task,
+                             struct taskinfo *ti, taskident task,
                              unsigned attribute((unused)) flags) {
-  return format_integer(col->prop->fetch.fetch_intmax(pi, task), b, 'd');
+  return format_integer(col->prop->fetch.fetch_intmax(ti, task), b, 'd');
 }
 
 static void property_udecimal(const struct column *col, struct buffer *b,
                              size_t attribute((unused)) columnsize,
-                             struct procinfo *pi, taskident task,
+                             struct taskinfo *ti, taskident task,
                              unsigned attribute((unused)) flags) {
-  return format_integer(col->prop->fetch.fetch_intmax(pi, task), b, 'u');
+  return format_integer(col->prop->fetch.fetch_intmax(ti, task), b, 'u');
 }
 
 static void property_uoctal(const struct column *col, struct buffer *b,
                             size_t attribute((unused)) columnsize,
-                            struct procinfo *pi, taskident task,
+                            struct taskinfo *ti, taskident task,
                             unsigned attribute((unused)) flags) {
-  return format_integer(col->prop->fetch.fetch_uintmax(pi, task), b,
+  return format_integer(col->prop->fetch.fetch_uintmax(ti, task), b,
                         col->arg ? *col->arg : 'o');
 }
 
 static void property_pid(const struct column *col, struct buffer *b,
                          size_t attribute((unused)) columnsize, 
-                         struct procinfo *pi, taskident task,
+                         struct taskinfo *ti, taskident task,
                          unsigned attribute((unused)) flags) {
-  pid_t pid = col->prop->fetch.fetch_pid(pi, task);
+  pid_t pid = col->prop->fetch.fetch_pid(ti, task);
   if(pid > 0)
     format_integer(pid, b, 'd');
   else
@@ -255,9 +255,9 @@ static void property_pid(const struct column *col, struct buffer *b,
 
 static void property_num_threads(const struct column *col, struct buffer *b,
                                  size_t attribute((unused)) columnsize, 
-                                 struct procinfo *pi, taskident task,
+                                 struct taskinfo *ti, taskident task,
                                  unsigned attribute((unused)) flags) {
-  int count = col->prop->fetch.fetch_int(pi, task);
+  int count = col->prop->fetch.fetch_int(ti, task);
   if(count >= 0)
     format_integer(count, b, 'd');
   else
@@ -266,36 +266,36 @@ static void property_num_threads(const struct column *col, struct buffer *b,
 
 static void property_uid(const struct column *col, struct buffer *b,
                          size_t attribute((unused)) columnsize,
-                         struct procinfo *pi, taskident task,
+                         struct taskinfo *ti, taskident task,
                          unsigned attribute((unused)) flags) {
-  return format_integer(col->prop->fetch.fetch_uid(pi, task), b, 'd');
+  return format_integer(col->prop->fetch.fetch_uid(ti, task), b, 'd');
 }
 
 static void property_user(const struct column *col, struct buffer *b,
-                          size_t columnsize, struct procinfo *pi, taskident task,
+                          size_t columnsize, struct taskinfo *ti, taskident task,
                           unsigned attribute((unused)) flags) {
-  return format_user(col->prop->fetch.fetch_uid(pi, task), b, columnsize);
+  return format_user(col->prop->fetch.fetch_uid(ti, task), b, columnsize);
 }
 
 static void property_gid(const struct column *col, struct buffer *b,
                          size_t attribute((unused)) columnsize,
-                         struct procinfo *pi, taskident task,
+                         struct taskinfo *ti, taskident task,
                          unsigned attribute((unused)) flags) {
-  return format_integer(col->prop->fetch.fetch_gid(pi, task), b,'d');
+  return format_integer(col->prop->fetch.fetch_gid(ti, task), b,'d');
 }
 
 static void property_group(const struct column *col, struct buffer *b,
-                           size_t columnsize, struct procinfo *pi, taskident task,
+                           size_t columnsize, struct taskinfo *ti, taskident task,
                            unsigned attribute((unused)) flags) {
-  return format_group(col->prop->fetch.fetch_gid(pi, task), b, columnsize);
+  return format_group(col->prop->fetch.fetch_gid(ti, task), b, columnsize);
 }
 
 static void property_gids(const struct column *col, struct buffer *b,
                           size_t attribute((unused)) columnsize,
-                          struct procinfo *pi, taskident task,
+                          struct taskinfo *ti, taskident task,
                           unsigned attribute((unused)) flags) {
   size_t ngids, n;
-  const gid_t *gids = col->prop->fetch.fetch_gids(pi, task, &ngids);
+  const gid_t *gids = col->prop->fetch.fetch_gids(ti, task, &ngids);
   for(n = 0; n < ngids; ++n) {
     if(n)
       buffer_putc(b, ' ');
@@ -305,10 +305,10 @@ static void property_gids(const struct column *col, struct buffer *b,
 
 static void property_groups(const struct column *col, struct buffer *b,
                             size_t attribute((unused)) columnsize,
-                            struct procinfo *pi, taskident task,
+                            struct taskinfo *ti, taskident task,
                             unsigned attribute((unused)) flags) {
   size_t ngids, n;
-  const gid_t *gids = col->prop->fetch.fetch_gids(pi, task, &ngids);
+  const gid_t *gids = col->prop->fetch.fetch_gids(ti, task, &ngids);
   for(n = 0; n < ngids; ++n) {
     if(n)
       buffer_putc(b, ' ');
@@ -318,14 +318,14 @@ static void property_groups(const struct column *col, struct buffer *b,
 
 static void property_char(const struct column *col, struct buffer *b,
                           size_t attribute((unused)) columnsize,
-                          struct procinfo *pi, taskident task,
+                          struct taskinfo *ti, taskident task,
                           unsigned attribute((unused)) flags) {
-  buffer_putc(b, col->prop->fetch.fetch_int(pi, task));
+  buffer_putc(b, col->prop->fetch.fetch_int(ti, task));
 }
 
 static void property_sigset(const struct column *col, struct buffer *b,
                             size_t columnsize,
-                            struct procinfo *pi, taskident task,
+                            struct taskinfo *ti, taskident task,
                             unsigned flags) {
   int sig, first;
   size_t start;
@@ -334,7 +334,7 @@ static void property_sigset(const struct column *col, struct buffer *b,
   if(!(flags & FORMAT_RAW)) {
     start = b->pos;
     sig = first = 1;
-    col->prop->fetch.fetch_sigset(pi, task, &ss);
+    col->prop->fetch.fetch_sigset(ti, task, &ss);
     while(!sigisemptyset(&ss)) {
       if(sigismember(&ss, sig)) {
         if(!first)
@@ -353,7 +353,7 @@ static void property_sigset(const struct column *col, struct buffer *b,
     b->pos = start;
   }
   sig = first = 1;
-  col->prop->fetch.fetch_sigset(pi, task, &ss);
+  col->prop->fetch.fetch_sigset(ti, task, &ss);
   while(!sigisemptyset(&ss)) {
     if(sigismember(&ss, sig)) {
       if(!first)
@@ -384,27 +384,27 @@ static void property_sigset(const struct column *col, struct buffer *b,
 
 static void property_time(const struct column *col, struct buffer *b,
                           size_t columnsize,
-                          struct procinfo *pi, taskident task,
+                          struct taskinfo *ti, taskident task,
                           unsigned flags) {
   /* time wants [dd-]hh:mm:ss */
-  return format_interval(col->prop->fetch.fetch_intmax(pi, task), b, 1, columnsize,
+  return format_interval(col->prop->fetch.fetch_intmax(ti, task), b, 1, columnsize,
                          col->arg, flags);
 }
 
 static void property_etime(const struct column *col, struct buffer *b,
                            size_t attribute((unused)) columnsize,
-                           struct procinfo *pi, taskident task,
+                           struct taskinfo *ti, taskident task,
                            unsigned flags) {
   /* etime wants [[dd-]hh:]mm:ss */
-  return format_interval(col->prop->fetch.fetch_intmax(pi, task), b, 0, columnsize,
+  return format_interval(col->prop->fetch.fetch_intmax(ti, task), b, 0, columnsize,
                          col->arg, flags);
 }
 
 static void property_stime(const struct column *col, struct buffer *b,
                            size_t columnsize,
-                           struct procinfo *pi, taskident task,
+                           struct taskinfo *ti, taskident task,
                            unsigned flags) {
-  return format_time(col->prop->fetch.fetch_intmax(pi, task), b, columnsize,
+  return format_time(col->prop->fetch.fetch_intmax(ti, task), b, columnsize,
                      col->arg, flags);
 }
 
@@ -412,10 +412,10 @@ static void property_stime(const struct column *col, struct buffer *b,
 
 static void property_tty(const struct column *col, struct buffer *b,
                          size_t attribute((unused)) columnsize,
-                         struct procinfo *pi, taskident task,
+                         struct taskinfo *ti, taskident task,
                          unsigned flags) {
   const char *path;
-  int tty = col->prop->fetch.fetch_int(pi, task);
+  int tty = col->prop->fetch.fetch_int(ti, task);
   if(tty <= 0) {
     buffer_putc(b, '-');
     return;
@@ -438,11 +438,11 @@ static void property_tty(const struct column *col, struct buffer *b,
   buffer_append(b, path);
 }
 
-static const char *shim_get_pcomm(struct procinfo *pi, taskident task) {
-  pid_t parent = proc_get_ppid(pi, task);
+static const char *shim_get_pcomm(struct taskinfo *ti, taskident task) {
+  pid_t parent = task_get_ppid(ti, task);
   if(parent) {
     taskident parent_task = { parent, -1 };
-    return proc_get_comm(pi, parent_task);
+    return task_get_comm(ti, parent_task);
   } else
     return NULL;
 }
@@ -450,11 +450,11 @@ static const char *shim_get_pcomm(struct procinfo *pi, taskident task) {
 static void property_command_general(const struct column *col, 
                                      struct buffer *b,
                                      size_t columnsize,
-                                     struct procinfo *pi,
+                                     struct taskinfo *ti,
                                      taskident task, int brief) {
   int n;
   size_t start = b->pos;
-  const char *comm = col->prop->fetch.fetch_string(pi, task), *ptr;
+  const char *comm = col->prop->fetch.fetch_string(ti, task), *ptr;
   if(!comm)
     comm = "";
   if(brief && comm[0] != '[') {
@@ -463,12 +463,12 @@ static void property_command_general(const struct column *col,
         comm = ptr + 1;
   }
   if(format_hierarchy) {
-    for(n = proc_get_depth(pi, task); n > 0; --n)
+    for(n = task_get_depth(ti, task); n > 0; --n)
       buffer_putc(b,' ');
   }
   /* "A process that has exited and has a parent, but has not yet been
    * waited for by the parent, shall be marked defunct." */
-  if(proc_get_state(pi, task) != 'Z')
+  if(task_get_state(ti, task) != 'Z')
     buffer_append(b, comm);
   else
     buffer_printf(b, "%s <defunct>", comm);
@@ -479,24 +479,24 @@ static void property_command_general(const struct column *col,
 
 static void property_command(const struct column *col, struct buffer *b,
                              size_t columnsize,
-                             struct procinfo *pi, taskident task,
+                             struct taskinfo *ti, taskident task,
                              unsigned attribute((unused)) flags) {
-  return property_command_general(col, b, columnsize, pi, task, 0);
+  return property_command_general(col, b, columnsize, ti, task, 0);
 }
 
 static void property_command_brief(const struct column *col,
                                    struct buffer *b, size_t columnsize, 
-                                   struct procinfo *pi,
+                                   struct taskinfo *ti,
                                    taskident task,
                                    unsigned attribute((unused)) flags) {
-  return property_command_general(col, b, columnsize, pi, task, 1);
+  return property_command_general(col, b, columnsize, ti, task, 1);
 }
 
 static void property_pcpu(const struct column *col, struct buffer *b,
                           size_t attribute((unused)) columnsize,
-                          struct procinfo *pi, taskident task,
+                          struct taskinfo *ti, taskident task,
                           unsigned flags) {
-  double pcpu = 100 * col->prop->fetch.fetch_double(pi, task);
+  double pcpu = 100 * col->prop->fetch.fetch_double(ti, task);
   int prec;
   if((flags & FORMAT_RAW) || syntax == syntax_csv)
     buffer_printf(b, "%g", pcpu);
@@ -509,21 +509,21 @@ static void property_pcpu(const struct column *col, struct buffer *b,
 
 static void property_mem(const struct column *col, struct buffer *b,
                          size_t attribute((unused)) columnsize,
-                         struct procinfo *pi, taskident task,
+                         struct taskinfo *ti, taskident task,
                          unsigned flags) {
   char buffer[64];
   unsigned cutoff = 0;
   int ch = (syntax == syntax_csv ? 'b' : parse_byte_arg(col->arg, &cutoff, flags));
   buffer_append(b,
-                bytes(col->prop->fetch.fetch_uintmax(pi, task),
+                bytes(col->prop->fetch.fetch_uintmax(ti, task),
                       0, ch, buffer, sizeof buffer, cutoff));
 }
 
 static void property_address(const struct column *col, struct buffer *b,
                              size_t attribute((unused)) columnsize,
-                             struct procinfo *pi, taskident task,
+                             struct taskinfo *ti, taskident task,
                              unsigned attribute((unused)) flags) {
-  unsigned long long addr = col->prop->fetch.fetch_uintmax(pi, task);
+  unsigned long long addr = col->prop->fetch.fetch_uintmax(ti, task);
   /* 0 and all-bits-1 are not very interesting addresses */
   if(addr && addr + 1 && addr != 0xFFFFFFFF)
     format_addr(addr, b);
@@ -534,21 +534,21 @@ static void property_address(const struct column *col, struct buffer *b,
 
 static void property_iorate(const struct column *col, struct buffer *b,
                             size_t attribute((unused)) columnsize,
-                            struct procinfo *pi, taskident task,
+                            struct taskinfo *ti, taskident task,
                             unsigned flags) {
   char buffer[64];
   unsigned cutoff = 0;
   int ch = (syntax == syntax_csv ? 'b' : parse_byte_arg(col->arg, &cutoff, flags));
   buffer_append(b,
-                bytes(col->prop->fetch.fetch_double(pi, task),
+                bytes(col->prop->fetch.fetch_double(ti, task),
                       0, ch, buffer, sizeof buffer, cutoff));
 }
 
 static void property_sched(const struct column *col, struct buffer *b,
                            size_t columnsize,
-                           struct procinfo *pi, taskident task,
+                           struct taskinfo *ti, taskident task,
                            unsigned flags) {
-  unsigned policy = col->prop->fetch.fetch_int(pi, task);
+  unsigned policy = col->prop->fetch.fetch_int(ti, task);
   const char *name;
   int reset;
   
@@ -573,54 +573,54 @@ static void property_sched(const struct column *col, struct buffer *b,
     buffer_append(b, "/-");
 }
 
-static intmax_t shim_get_time(struct procinfo *pi,
+static intmax_t shim_get_time(struct taskinfo *ti,
                               taskident attribute((unused)) task) {
   struct timespec ts;
-  proc_time(pi, &ts);
+  task_time(ti, &ts);
   return ts.tv_sec;
 }
 
 // ----------------------------------------------------------------------------
 
-static int compare_int(const struct propinfo *prop, struct procinfo *pi,
+static int compare_int(const struct propinfo *prop, struct taskinfo *ti,
                        taskident a, taskident b) {
-  int av = prop->fetch.fetch_int(pi, a);
-  int bv = prop->fetch.fetch_int(pi, b);
+  int av = prop->fetch.fetch_int(ti, a);
+  int bv = prop->fetch.fetch_int(ti, b);
   return av < bv ? -1 : av > bv ? 1 : 0;
 }
 
-static int compare_intmax(const struct propinfo *prop, struct procinfo *pi,
+static int compare_intmax(const struct propinfo *prop, struct taskinfo *ti,
                           taskident a, taskident b) {
-  intmax_t av = prop->fetch.fetch_intmax(pi, a);
-  intmax_t bv = prop->fetch.fetch_intmax(pi, b);
+  intmax_t av = prop->fetch.fetch_intmax(ti, a);
+  intmax_t bv = prop->fetch.fetch_intmax(ti, b);
   return av < bv ? -1 : av > bv ? 1 : 0;
 }
 
-static int compare_uintmax(const struct propinfo *prop, struct procinfo *pi,
+static int compare_uintmax(const struct propinfo *prop, struct taskinfo *ti,
                            taskident a, taskident b) {
-  uintmax_t av = prop->fetch.fetch_uintmax(pi, a);
-  uintmax_t bv = prop->fetch.fetch_uintmax(pi, b);
+  uintmax_t av = prop->fetch.fetch_uintmax(ti, a);
+  uintmax_t bv = prop->fetch.fetch_uintmax(ti, b);
   return av < bv ? -1 : av > bv ? 1 : 0;
 }
 
-static int compare_pid(const struct propinfo *prop, struct procinfo *pi,
+static int compare_pid(const struct propinfo *prop, struct taskinfo *ti,
                           taskident a, taskident b) {
-  pid_t av = prop->fetch.fetch_pid(pi, a);
-  pid_t bv = prop->fetch.fetch_pid(pi, b);
+  pid_t av = prop->fetch.fetch_pid(ti, a);
+  pid_t bv = prop->fetch.fetch_pid(ti, b);
   return av < bv ? -1 : av > bv ? 1 : 0;
 }
 
-static int compare_uid(const struct propinfo *prop, struct procinfo *pi,
+static int compare_uid(const struct propinfo *prop, struct taskinfo *ti,
                        taskident a, taskident b) {
-  uid_t av = prop->fetch.fetch_uid(pi, a);
-  uid_t bv = prop->fetch.fetch_uid(pi, b);
+  uid_t av = prop->fetch.fetch_uid(ti, a);
+  uid_t bv = prop->fetch.fetch_uid(ti, b);
   return av < bv ? -1 : av > bv ? 1 : 0;
 }
 
-static int compare_user(const struct propinfo *prop, struct procinfo *pi,
+static int compare_user(const struct propinfo *prop, struct taskinfo *ti,
                         taskident a, taskident b) {
-  uid_t av = prop->fetch.fetch_uid(pi, a);
-  uid_t bv = prop->fetch.fetch_uid(pi, b);
+  uid_t av = prop->fetch.fetch_uid(ti, a);
+  uid_t bv = prop->fetch.fetch_uid(ti, b);
   const char *ua = lookup_user_by_id(av), *ub;
   ua = xstrdup(ua ? ua : "");
   int rc;
@@ -630,18 +630,18 @@ static int compare_user(const struct propinfo *prop, struct procinfo *pi,
   return rc;
 }
 
-static int compare_gid(const struct propinfo *prop, struct procinfo *pi,
+static int compare_gid(const struct propinfo *prop, struct taskinfo *ti,
                        taskident a, taskident b) {
-  gid_t av = prop->fetch.fetch_gid(pi, a);
-  gid_t bv = prop->fetch.fetch_gid(pi, b);
+  gid_t av = prop->fetch.fetch_gid(ti, a);
+  gid_t bv = prop->fetch.fetch_gid(ti, b);
   return av < bv ? -1 : av > bv ? 1 : 0;
 }
 
-static int compare_gids(const struct propinfo *prop, struct procinfo *pi,
+static int compare_gids(const struct propinfo *prop, struct taskinfo *ti,
                         taskident a, taskident b) {
   size_t an, bn;
-  const gid_t *av = prop->fetch.fetch_gids(pi, a, &an);
-  const gid_t *bv = prop->fetch.fetch_gids(pi, b, &bn);
+  const gid_t *av = prop->fetch.fetch_gids(ti, a, &an);
+  const gid_t *bv = prop->fetch.fetch_gids(ti, b, &bn);
   while(an && bn) {
     if(*av < *bv)
       return -1;
@@ -660,10 +660,10 @@ static int compare_gids(const struct propinfo *prop, struct procinfo *pi,
     return 0;
 }
 
-static int compare_group(const struct propinfo *prop, struct procinfo *pi,
+static int compare_group(const struct propinfo *prop, struct taskinfo *ti,
                        taskident a, taskident b) {
-  uid_t av = prop->fetch.fetch_uid(pi, a);
-  uid_t bv = prop->fetch.fetch_uid(pi, b);
+  uid_t av = prop->fetch.fetch_uid(ti, a);
+  uid_t bv = prop->fetch.fetch_uid(ti, b);
   const char *ga = lookup_group_by_id(av), *gb;
   ga = xstrdup(ga ? ga : "");
   int rc;
@@ -673,17 +673,17 @@ static int compare_group(const struct propinfo *prop, struct procinfo *pi,
   return rc;
 }
 
-static int compare_double(const struct propinfo *prop, struct procinfo *pi,
+static int compare_double(const struct propinfo *prop, struct taskinfo *ti,
                           taskident a, taskident b) {
-  double av = prop->fetch.fetch_double(pi, a);
-  double bv = prop->fetch.fetch_double(pi, b);
+  double av = prop->fetch.fetch_double(ti, a);
+  double bv = prop->fetch.fetch_double(ti, b);
   return av < bv ? -1 : av > bv ? 1 : 0;
 }
 
-static int compare_string(const struct propinfo *prop, struct procinfo *pi,
+static int compare_string(const struct propinfo *prop, struct taskinfo *ti,
                           taskident a, taskident b) {
-  const char *av = prop->fetch.fetch_string(pi, a);
-  const char *bv = prop->fetch.fetch_string(pi, b);
+  const char *av = prop->fetch.fetch_string(ti, a);
+  const char *bv = prop->fetch.fetch_string(ti, b);
   if(!av)
     av = "";
   if(!bv)
@@ -691,41 +691,41 @@ static int compare_string(const struct propinfo *prop, struct procinfo *pi,
   return strcmp(av, bv);
 }
 
-static int compare_hier(const struct propinfo *prop, struct procinfo *pi,
+static int compare_hier(const struct propinfo *prop, struct taskinfo *ti,
                         taskident a, taskident b) {
   pid_t bp;
   taskident bptask;
   int adepth, bdepth;
-  /* Deal with equal processes first */
+  /* Deal with equal tasks first */
   if(a.pid == b.pid)
     return 0;
   /* Put the depths in order */
-  adepth = proc_get_depth(pi, a);
-  bdepth = proc_get_depth(pi, b);
+  adepth = task_get_depth(ti, a);
+  bdepth = task_get_depth(ti, b);
   if(adepth > bdepth)
-    return -compare_hier(prop, pi, b, a);
+    return -compare_hier(prop, ti, b, a);
   assert(adepth <= bdepth);
   /* Now adepth <= bdepth. */
   /* If A is B's parent, A < B */
-  bp = proc_get_ppid(pi, b);
+  bp = task_get_ppid(ti, b);
   if(a.pid == bp)
     return -1;
   /* If A and B share a parent, order them by PID */
-  if(proc_get_ppid(pi, a) == bp)
+  if(task_get_ppid(ti, a) == bp)
     return a.pid < b.pid ? -1 : 1;
   /* Otherwise work back up the tree a bit */
   bptask.pid = bp;
   bptask.tid = -1;
-  return compare_hier(prop, pi, a, bptask);
+  return compare_hier(prop, ti, a, bptask);
 }
 
-static int compare_sigset(const struct propinfo *prop, struct procinfo *pi,
+static int compare_sigset(const struct propinfo *prop, struct taskinfo *ti,
                           taskident a, taskident b) {
   sigset_t sa, sb;
   int sig, d;
 
-  prop->fetch.fetch_sigset(pi, a, &sa);
-  prop->fetch.fetch_sigset(pi, b, &sb);
+  prop->fetch.fetch_sigset(ti, a, &sa);
+  prop->fetch.fetch_sigset(ti, b, &sb);
   sig = 1;
   while(!sigisemptyset(&sa) && !sigisemptyset(&sb)) {
     if((d = sigismember(&sa, sig) - sigismember(&sb, sig)))
@@ -751,17 +751,17 @@ static const struct propinfo properties[] = {
   {
     "addr", "ADDR", "Instruction pointer address (hex)",
     PROP_NUMERIC,
-    property_address, compare_uintmax, { .fetch_uintmax = proc_get_insn_pointer }
+    property_address, compare_uintmax, { .fetch_uintmax = task_get_insn_pointer }
   },
   {
     "args", "COMMAND", "Command with arguments (but path removed)",
     PROP_TEXT,
-    property_command_brief, compare_string, { .fetch_string = proc_get_cmdline }
+    property_command_brief, compare_string, { .fetch_string = task_get_cmdline }
   },
   {
     "argsfull", "COMMAND", "Command with arguments",
     PROP_TEXT,
-    property_command, compare_string, { .fetch_string = proc_get_cmdline }
+    property_command, compare_string, { .fetch_string = task_get_cmdline }
   },
   {
     "cmd", NULL, "=args", 0, NULL, NULL, {}
@@ -769,7 +769,7 @@ static const struct propinfo properties[] = {
   {
     "comm", "COMMAND", "Command",
     PROP_TEXT,
-    property_command, compare_string, { .fetch_string = proc_get_comm }
+    property_command, compare_string, { .fetch_string = task_get_comm }
   },
   {
     "command", NULL, "=args", 0, NULL, NULL, {}
@@ -786,7 +786,7 @@ static const struct propinfo properties[] = {
   {
     "etime", "ELAPSED", "Elapsed time (argument: format string)",
     PROP_NUMERIC,
-    property_etime, compare_intmax, { .fetch_intmax = proc_get_elapsed_time }
+    property_etime, compare_intmax, { .fetch_intmax = task_get_elapsed_time }
   },
   {
     "euid", NULL, "=uid", 0, NULL, NULL, {}
@@ -803,42 +803,42 @@ static const struct propinfo properties[] = {
   {
     "flags", "F", "Flags (octal; argument o/d/x/X)",
     PROP_NUMERIC,
-    property_uoctal, compare_uintmax, { .fetch_uintmax = proc_get_flags }
+    property_uoctal, compare_uintmax, { .fetch_uintmax = task_get_flags }
   },
   {
     "fsgid", "FSGID", "Filesystem group ID (decimal)",
     PROP_NUMERIC,
-    property_gid, compare_gid, { .fetch_gid = proc_get_fsgid }
+    property_gid, compare_gid, { .fetch_gid = task_get_fsgid }
   },
   {
     "fsgroup", "FSGROUP", "Filesystem group ID (name)",
     PROP_TEXT,
-    property_group, compare_group, { .fetch_gid = proc_get_fsgid }
+    property_group, compare_group, { .fetch_gid = task_get_fsgid }
   },
   {
     "fsuid", "FSUID", "Filesysem user ID (decimal)",
     PROP_NUMERIC,
-    property_uid, compare_uid, { .fetch_uid = proc_get_fsuid }
+    property_uid, compare_uid, { .fetch_uid = task_get_fsuid }
   },
   {
     "fsuser", "FSUSER", "Filesystem user ID (name)",
     PROP_NUMERIC,
-    property_user, compare_user, { .fetch_uid = proc_get_fsuid }
+    property_user, compare_user, { .fetch_uid = task_get_fsuid }
   },
   {
     "gid", "GID","Effective group ID (decimal)",
     PROP_NUMERIC,
-    property_gid, compare_gid, { .fetch_gid = proc_get_egid }
+    property_gid, compare_gid, { .fetch_gid = task_get_egid }
   },
   {
     "group", "GROUP", "Effective group ID (name)",
     PROP_TEXT,
-    property_group, compare_group, { .fetch_gid = proc_get_egid }
+    property_group, compare_group, { .fetch_gid = task_get_egid }
   },
   {
     "io", "IO", "Recent read+write rate (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_iorate, compare_double, { .fetch_double = proc_get_rw_bytes }
+    property_iorate, compare_double, { .fetch_double = task_get_rw_bytes }
   },
   {
     "localtime", "LTIME", "Timestamp (argument: strftime format string)",
@@ -848,7 +848,7 @@ static const struct propinfo properties[] = {
   {
     "locked", "LCK", "Locked memory (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_locked }
+    property_mem, compare_uintmax, { .fetch_uintmax = task_get_locked }
   },    
   {
     "lwp", NULL, "=tid", 0, NULL, NULL, {}
@@ -859,17 +859,17 @@ static const struct propinfo properties[] = {
   {
     "majflt", "+FLT", "Major fault rate (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_iorate, compare_double, { .fetch_double = proc_get_majflt }
+    property_iorate, compare_double, { .fetch_double = task_get_majflt }
   },
   {
     "mem", "MEM", "Memory usage (argument: K/M/G/T/P/p) ",
     PROP_NUMERIC,
-    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_mem }
+    property_mem, compare_uintmax, { .fetch_uintmax = task_get_mem }
   },
   {
     "minflt", "-FLT", "Minor fault rate (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_iorate, compare_double, { .fetch_double = proc_get_minflt }
+    property_iorate, compare_double, { .fetch_double = task_get_minflt }
   },
   {
     "ni", NULL, "=ni", 0, NULL, NULL, {}
@@ -877,12 +877,12 @@ static const struct propinfo properties[] = {
   {
     "nice", "NI", "Nice value",
     PROP_NUMERIC,
-    property_decimal, compare_intmax, { .fetch_intmax = proc_get_nice }
+    property_decimal, compare_intmax, { .fetch_intmax = task_get_nice }
   },
   {
     "oom", "OOM", "OOM score",
     PROP_NUMERIC,
-    property_decimal, compare_intmax, { .fetch_intmax = proc_get_oom_score }
+    property_decimal, compare_intmax, { .fetch_intmax = task_get_oom_score }
   },
   {
     "pcomm", "PCMD", "Parent command name",
@@ -892,12 +892,12 @@ static const struct propinfo properties[] = {
   {
     "pcpu", "%CPU", "%age CPU used (argument: precision)",
     PROP_NUMERIC,
-    property_pcpu, compare_double, { .fetch_double = proc_get_pcpu }
+    property_pcpu, compare_double, { .fetch_double = task_get_pcpu }
   },
   {
     "pgrp", "PGRP", "Process group ID",
     PROP_NUMERIC,
-    property_pid, compare_pid, { .fetch_pid = proc_get_pgrp }
+    property_pid, compare_pid, { .fetch_pid = task_get_pgrp }
   },
   {
     "pgrp", NULL, "=pgid", 0, NULL, NULL, {}
@@ -905,62 +905,62 @@ static const struct propinfo properties[] = {
   {
     "pid", "PID", "Process ID",
     PROP_NUMERIC,
-    property_pid, compare_pid, { .fetch_pid = proc_get_pid }
+    property_pid, compare_pid, { .fetch_pid = task_get_pid }
   },
   {
     "pinned", "PIN", "Pinned memory (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pinned }
+    property_mem, compare_uintmax, { .fetch_uintmax = task_get_pinned }
   },    
   {
     "pmem", "PMEM", "Proportional memory usage (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pmem }
+    property_mem, compare_uintmax, { .fetch_uintmax = task_get_pmem }
   },
   {
     "ppid", "PPID", "Parent process ID",
     PROP_NUMERIC,
-    property_pid, compare_pid, { .fetch_pid = proc_get_ppid }
+    property_pid, compare_pid, { .fetch_pid = task_get_ppid }
   },
   {
     "pri", "PRI", "Priority",
     PROP_NUMERIC,
-    property_decimal, compare_intmax, { .fetch_intmax = proc_get_priority }
+    property_decimal, compare_intmax, { .fetch_intmax = task_get_priority }
   },
   {
     "pss", "PSS", "Proportional resident set size (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pss }
+    property_mem, compare_uintmax, { .fetch_uintmax = task_get_pss }
   },
   {
     "pte", "PTE", "Page table memory (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_pte }
+    property_mem, compare_uintmax, { .fetch_uintmax = task_get_pte }
   },    
   {
     "read", "RD", "Recent read rate (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_iorate, compare_double, { .fetch_double = proc_get_read_bytes }
+    property_iorate, compare_double, { .fetch_double = task_get_read_bytes }
   },
   {
     "rgid", "RGID", "Real group ID (decimal)",
     PROP_NUMERIC,
-    property_gid, compare_gid, { .fetch_gid = proc_get_rgid }
+    property_gid, compare_gid, { .fetch_gid = task_get_rgid }
   },
   {
     "rgroup", "RGROUP", "Real group ID (name)",
     PROP_TEXT,
-    property_group, compare_group, { .fetch_gid = proc_get_rgid }
+    property_group, compare_group, { .fetch_gid = task_get_rgid }
   },
   {
     "rss", "RSS", "Resident set size (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_rss }
+    property_mem, compare_uintmax, { .fetch_uintmax = task_get_rss }
   },
   {
     "rsspk", "RSSPK", "Peak resident set size (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_peak_rss }
+    property_mem, compare_uintmax, { .fetch_uintmax = task_get_peak_rss }
   },
   {
     "rssize", NULL, "=rss", 0, NULL, NULL, {},
@@ -971,22 +971,22 @@ static const struct propinfo properties[] = {
   {
     "rtprio", "RTPRI", "Realtime scheduling priority",
     PROP_NUMERIC,
-    property_udecimal, compare_uintmax, { .fetch_uintmax = proc_get_rtprio }
+    property_udecimal, compare_uintmax, { .fetch_uintmax = task_get_rtprio }
   },
   {
     "ruid", "RUID", "Real user ID (decimal)",
     PROP_NUMERIC,
-    property_uid, compare_uid, { .fetch_uid = proc_get_ruid }
+    property_uid, compare_uid, { .fetch_uid = task_get_ruid }
   },
   {
     "ruser", "RUSER", "Real user ID (name)",
     PROP_TEXT,
-    property_user, compare_user, { .fetch_uid = proc_get_ruid }
+    property_user, compare_user, { .fetch_uid = task_get_ruid }
   },
   {
     "sched", "SCHED", "Scheduling policy",
     PROP_NUMERIC,
-    property_sched, compare_int, { .fetch_int = proc_get_sched_policy }
+    property_sched, compare_int, { .fetch_int = task_get_sched_policy }
   },
   {
     "sess", NULL, "=sid", 0, NULL, NULL, {},
@@ -997,77 +997,77 @@ static const struct propinfo properties[] = {
   {
     "sgid", "SGID", "Saved group ID (decimal)",
     PROP_NUMERIC,
-    property_gid, compare_gid, { .fetch_gid = proc_get_sgid }
+    property_gid, compare_gid, { .fetch_gid = task_get_sgid }
   },
   {
     "sgroup", "SGROUP", "Saved group ID (name)",
     PROP_TEXT,
-    property_group, compare_group, { .fetch_gid = proc_get_sgid }
+    property_group, compare_group, { .fetch_gid = task_get_sgid }
   },
   {
     "sid", "SID", "Session ID",
     PROP_NUMERIC,
-    property_pid, compare_pid, { .fetch_pid = proc_get_session }
+    property_pid, compare_pid, { .fetch_pid = task_get_session }
   },
   {
     "sigblocked", "BLOCKED", "Blocked signals",
     PROP_TEXT,
-    property_sigset, compare_sigset, { .fetch_sigset = proc_get_sig_blocked },
+    property_sigset, compare_sigset, { .fetch_sigset = task_get_sig_blocked },
   },
   {
     "sigcaught", "CAUGHT", "Caught signals",
     PROP_TEXT,
-    property_sigset, compare_sigset, { .fetch_sigset = proc_get_sig_caught },
+    property_sigset, compare_sigset, { .fetch_sigset = task_get_sig_caught },
   },
   {
     "sigignored", "IGNORED", "Ignored signals",
     PROP_TEXT,
-    property_sigset, compare_sigset, { .fetch_sigset = proc_get_sig_ignored },
+    property_sigset, compare_sigset, { .fetch_sigset = task_get_sig_ignored },
   },
   {
     "sigpending", "PENDING", "Pending signals",
     PROP_TEXT,
-    property_sigset, compare_sigset, { .fetch_sigset = proc_get_sig_pending },
+    property_sigset, compare_sigset, { .fetch_sigset = task_get_sig_pending },
   },
   {
     "stack", "STK", "Stack size (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_stack }
+    property_mem, compare_uintmax, { .fetch_uintmax = task_get_stack }
   },    
   {
     "state", "S", "Process state",
     PROP_TEXT,
-    property_char, compare_int, { .fetch_int = proc_get_state }
+    property_char, compare_int, { .fetch_int = task_get_state }
   },
   {
     "stime", "STIME", "Start time (argument: strftime format string)",
     PROP_TEXT,
-    property_stime, compare_intmax, { .fetch_intmax = proc_get_start_time }
+    property_stime, compare_intmax, { .fetch_intmax = task_get_start_time }
   },
   {
     "suid", "SUID", "Saved user ID (decimal)",
     PROP_NUMERIC,
-    property_uid, compare_uid, { .fetch_uid = proc_get_suid }
+    property_uid, compare_uid, { .fetch_uid = task_get_suid }
   },
   {
     "supgid", "SUPGID", "Supplementary group IDs (decimal)",
     PROP_TEXT,
-    property_gids, compare_gids, { .fetch_gids = proc_get_supgids }
+    property_gids, compare_gids, { .fetch_gids = task_get_supgids }
   },
   {
     "supgrp", "SUPGRP", "Supplementary group IDs (names)",
     PROP_TEXT,
-    property_groups, compare_gids, { .fetch_gids = proc_get_supgids }
+    property_groups, compare_gids, { .fetch_gids = task_get_supgids }
   },
   {
     "suser", "SUSER", "Saved user ID (name)",
     PROP_TEXT,
-    property_user, compare_user, { .fetch_uid = proc_get_suid }
+    property_user, compare_user, { .fetch_uid = task_get_suid }
   },
   {
     "swap", "SWAP", "Swap usage (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_swap }
+    property_mem, compare_uintmax, { .fetch_uintmax = task_get_swap }
   },
   {
     "thcount", NULL, "=threads", 0, NULL, NULL, {}
@@ -1075,17 +1075,17 @@ static const struct propinfo properties[] = {
   {
     "threads", "T", "Number of threads",
     PROP_NUMERIC,
-    property_num_threads, compare_pid, { .fetch_int = proc_get_num_threads }
+    property_num_threads, compare_pid, { .fetch_int = task_get_num_threads }
   },
   {
     "tid", "TID", "Thread ID",
     PROP_NUMERIC,
-    property_pid, compare_pid, { .fetch_pid = proc_get_tid }
+    property_pid, compare_pid, { .fetch_pid = task_get_tid }
   },
   {
     "time", "TIME", "Scheduled time (argument: format string)",
     PROP_TEXT,
-    property_time, compare_intmax, { .fetch_intmax = proc_get_scheduled_time }
+    property_time, compare_intmax, { .fetch_intmax = task_get_scheduled_time }
   },
   {
     "tname", NULL, "=tty", 0, NULL, NULL, {}
@@ -1093,7 +1093,7 @@ static const struct propinfo properties[] = {
   {
     "tpgid", "TPGID", "Foreground progress group on controlling terminal",
     PROP_NUMERIC,
-    property_pid, compare_pid, { .fetch_pid = proc_get_tpgid }
+    property_pid, compare_pid, { .fetch_pid = task_get_tpgid }
   },
   {
     "tt", NULL, "=tty", 0, NULL, NULL, {}
@@ -1101,17 +1101,17 @@ static const struct propinfo properties[] = {
   {
     "tty", "TT", "Terminal",
     PROP_TEXT,
-    property_tty, compare_int, { .fetch_int = proc_get_tty }
+    property_tty, compare_int, { .fetch_int = task_get_tty }
   },
   {
     "uid", "UID", "Effective user ID (decimal)",
     PROP_NUMERIC,
-    property_uid, compare_uid, { .fetch_uid = proc_get_euid }
+    property_uid, compare_uid, { .fetch_uid = task_get_euid }
   },
   {
     "user", "USER", "Effective user ID (name)",
     PROP_TEXT,
-    property_user, compare_user, { .fetch_uid = proc_get_euid }
+    property_user, compare_user, { .fetch_uid = task_get_euid }
   },
   {
     "vsize", NULL, "=vsz", 0, NULL, NULL, {}
@@ -1119,22 +1119,22 @@ static const struct propinfo properties[] = {
   {
     "vsz", "VSZ", "Virtual memory used (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_vsize }
+    property_mem, compare_uintmax, { .fetch_uintmax = task_get_vsize }
   },
   {
     "vszpk", "VSZPK", "Peak virtual memory used (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_mem, compare_uintmax, { .fetch_uintmax = proc_get_peak_vsize }
+    property_mem, compare_uintmax, { .fetch_uintmax = task_get_peak_vsize }
   },
   {
     "wchan", "WCHAN", "Wait channel (hex)",
     PROP_NUMERIC,
-    property_address, compare_uintmax, { .fetch_uintmax = proc_get_wchan }
+    property_address, compare_uintmax, { .fetch_uintmax = task_get_wchan }
   },
   {
     "write", "WR", "Recent write rate (argument: K/M/G/T/P/p)",
     PROP_NUMERIC,
-    property_iorate, compare_double, { .fetch_double = proc_get_write_bytes }
+    property_iorate, compare_double, { .fetch_double = task_get_write_bytes }
   },
 };
 #define NPROPERTIES (sizeof properties / sizeof *properties)
@@ -1180,7 +1180,7 @@ int format_set(const char *f, unsigned flags) {
         return 0;
     } else {
       if(!prop)
-        fatal(0, "unknown process property '%s'", name);
+        fatal(0, "unknown task property '%s'", name);
       if((ssize_t)(ncolumns + 1) < 0)
         fatal(0, "too many columns");
       columns = xrecalloc(columns, ncolumns + 1, sizeof *columns);
@@ -1208,7 +1208,7 @@ void format_clear(void) {
   columns = NULL;
 }
 
-void format_columns(struct procinfo *pi, const taskident *tasks, size_t ntasks) {
+void format_columns(struct taskinfo *ti, const taskident *tasks, size_t ntasks) {
   size_t n = 0, c;
 
   /* "The field widths shall be selected by the system to be at least
@@ -1226,7 +1226,7 @@ void format_columns(struct procinfo *pi, const taskident *tasks, size_t ntasks) 
       struct buffer b[1];
       buffer_init(b);
       columns[c].prop->format(&columns[c], b, columns[c].reqwidth,
-                              pi, tasks[n], 0);
+                              ti, tasks[n], 0);
       free(b->base);
       if(b->pos > w)
         w = b->pos;
@@ -1247,16 +1247,16 @@ void format_columns(struct procinfo *pi, const taskident *tasks, size_t ntasks) 
   }
 }
 
-void format_heading(struct procinfo *pi, struct buffer *b) {
+void format_heading(struct taskinfo *ti, struct buffer *b) {
   static const taskident tnone = { -1, -1 };
   size_t c;
   for(c = 0; c < ncolumns && !*columns[c].heading; ++c)
     ;
   if(c < ncolumns)
-    format_process(pi, tnone, b);
+    format_task(ti, tnone, b);
 }
 
-void format_process(struct procinfo *pi, taskident task, struct buffer *b) {
+void format_task(struct taskinfo *ti, taskident task, struct buffer *b) {
   struct buffer bb[1];
   size_t i, c;
   ssize_t left;
@@ -1270,7 +1270,7 @@ void format_process(struct procinfo *pi, taskident task, struct buffer *b) {
     if(task.pid == -1)
       buffer_append(bb, columns[c].heading);
     else
-      columns[c].prop->format(&columns[c], bb, columns[c].width, pi, task, 0);
+      columns[c].prop->format(&columns[c], bb, columns[c].width, ti, task, 0);
     switch(syntax) {
     case syntax_normal:
       buffer_append_n(b, bb->base, bb->pos);
@@ -1304,21 +1304,21 @@ void format_process(struct procinfo *pi, taskident task, struct buffer *b) {
   free(bb->base);
 }
 
-void format_value(struct procinfo *pi, taskident task,
+void format_value(struct taskinfo *ti, taskident task,
                   const char *property,
                   struct buffer *b,
                   unsigned flags) {
   struct column c;              /* stunt column */
   const struct propinfo *prop = find_property(property, 0);
   if(!prop)
-    fatal(0, "unknown process property '%s'", property);
+    fatal(0, "unknown task property '%s'", property);
   c.prop = prop;
   c.reqwidth = SIZE_MAX;
   c.width = SIZE_MAX;
   c.heading = NULL;
   c.arg = NULL;
   b->pos = 0;
-  prop->format(&c, b, SIZE_MAX, pi, task, flags);
+  prop->format(&c, b, SIZE_MAX, ti, task, flags);
   buffer_terminate(b);
 }
 
@@ -1346,7 +1346,7 @@ int format_ordering(const char *ordering, unsigned flags) {
         return 0;
     } else {
       if(!prop)
-        fatal(0, "unknown process property '%s'", name);
+        fatal(0, "unknown task property '%s'", name);
       if((ssize_t)(norders + 1) < 0)
         fatal(0, "too many columns");
       orders = xrecalloc(orders, norders + 1, sizeof *orders);
@@ -1374,11 +1374,11 @@ char *format_get_ordering(void) {
   return b->base;
 }
 
-int format_compare(struct procinfo *pi, taskident a, taskident b) {
+int format_compare(struct taskinfo *ti, taskident a, taskident b) {
   size_t n;
   int c;
   for(n = 0; n < norders; ++n)
-    if((c = orders[n].prop->compare(orders[n].prop, pi, a, b)))
+    if((c = orders[n].prop->compare(orders[n].prop, ti, a, b)))
       return orders[n].sign < 0 ? -c : c;
   /* Default order is by PID */
   if(a.pid < b.pid)
@@ -1455,7 +1455,7 @@ void format_get_arg(struct buffer *b, const char *arg, int quote) {
     buffer_append(b, arg);
 }
 
-int format_rate(struct procinfo *pi, unsigned procflags) {
+int format_rate(struct taskinfo *ti, unsigned procflags) {
   size_t n, i;
   int rate = 1;
   taskident *tasks = NULL;
@@ -1468,10 +1468,10 @@ int format_rate(struct procinfo *pi, unsigned procflags) {
        || columns[n].prop->format == property_iorate) {
       rate = 1;
       if(!tasks)
-        tasks = proc_get_all(pi, &ntasks, procflags);
+        tasks = task_get_all(ti, &ntasks, procflags);
       for(i = 0; i < ntasks; ++i) {
         b->pos = 0;
-        columns[n].prop->format(&columns[n], b, SIZE_MAX, pi, tasks[i], 
+        columns[n].prop->format(&columns[n], b, SIZE_MAX, ti, tasks[i], 
                                 FORMAT_RAW);
       }
     }

@@ -25,9 +25,9 @@ static int thread_mode;
 
 /** @brief Mapping of thread mode to selection flags */
 static unsigned thread_mode_flags[] = {
-  PROC_PROCESSES,
-  PROC_THREADS,
-  PROC_PROCESSES|PROC_THREADS
+  TASK_PROCESSES,
+  TASK_THREADS,
+  TASK_PROCESSES|TASK_THREADS
 };
 
 #define THREAD_MODES (sizeof thread_mode_flags / sizeof *thread_mode_flags)

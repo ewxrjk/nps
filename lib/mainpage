@@ -6,9 +6,9 @@
  *
  * @subsection process Task Information
  *
- * process.h provides the API for raw task information.  (A task means
+ * tasks.h provides the API for raw task information.  (A task means
  * a thread or a process.)
- * - proc_enumerate() is used to collect task information.  If any of
+ * - task_enumerate() is used to collect task information.  If any of
  * the properties of interest are rates then tasks are enumerated
  * twice, with a delay between.
  * - For each task property there is a function to retrieve the
@@ -23,10 +23,10 @@
  * - select_add() and select_match() are used to add filters.
  * select_default() is used to set defaults.
  * - They control the set of tasks that will be returned by
- * proc_get_selected(), which is used at the start of constructing
+ * task_get_selected(), which is used at the start of constructing
  * output.
- * - Note that proc_reselect() must be called if the selection changes
- * without re-running proc_enumerate().
+ * - Note that task_reselect() must be called if the selection changes
+ * without re-running task_enumerate().
  *
  * @subsection format Task Formatting
  *

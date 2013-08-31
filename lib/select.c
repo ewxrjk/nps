@@ -131,11 +131,11 @@ void select_match(const char *expr) {
   }
 }
 
-int select_test(struct procinfo *pi, taskident task) {
+int select_test(struct taskinfo *ti, taskident task) {
   size_t n;
   assert(nselectors > 0);
   for(n = 0; n < nselectors; ++n)
-    if(selectors[n].sfn(pi, task, selectors[n].args, selectors[n].nargs))
+    if(selectors[n].sfn(ti, task, selectors[n].args, selectors[n].nargs))
       return 1;
   return 0;
 }

@@ -20,7 +20,7 @@
 #include <config.h>
 #include "selectors.h"
 #include "format.h"
-#include "process.h"
+#include "tasks.h"
 #include "utils.h"
 #include "rc.h"
 #include "compare.h"
@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
   size_t nargs;
   char **help, *t;
   int format = 0;
-  struct procinfo *p;
+  struct taskinfo *p;
   int sample_interval = 100000/*μs*/;
   double update_interval = 0;
   long poll_count = -1;
@@ -344,7 +344,7 @@ int main(int argc, char **argv) {
   case 0:
     if(rc_ps_format)
       format_set(rc_ps_format, FORMAT_QUOTED);
-    else if(procflags & PROC_THREADS)
+    else if(procflags & TASK_THREADS)
       format_set("pid,tid,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
     else
       format_set("pid,tty=TTY,time,comm=CMD", FORMAT_QUOTED);
@@ -354,7 +354,7 @@ int main(int argc, char **argv) {
       format_set(rc_ps_f_format, FORMAT_QUOTED);
     else {
       format_set("user=UID,pid", FORMAT_QUOTED);
-      if(procflags & PROC_THREADS)
+      if(procflags & TASK_THREADS)
         format_set("tid", FORMAT_QUOTED|FORMAT_ADD);
       format_set("ppid,pcpu=C,stime,tty=TTY,time,args=CMD", FORMAT_ADD|FORMAT_QUOTED);
     }
@@ -364,7 +364,7 @@ int main(int argc, char **argv) {
       format_set(rc_ps_l_format, FORMAT_QUOTED);
     else {
       format_set("flags,state,uid,pid", FORMAT_QUOTED);
-      if(procflags & PROC_THREADS)
+      if(procflags & TASK_THREADS)
         format_set("tid", FORMAT_QUOTED|FORMAT_ADD);
       format_set("ppid,pcpu=C,pri,nice,addr,vsz='SZ'/K,wchan,tty=TTY,time,comm=CMD", FORMAT_QUOTED|FORMAT_ADD);
     }
@@ -372,17 +372,17 @@ int main(int argc, char **argv) {
   }
   /* Set the default selection */
   select_default(select_uid_tty, NULL, 0);
-  /* Get the list of processes */
-  global_procinfo = proc_enumerate(NULL, procflags);
-  if(format_rate(global_procinfo, procflags)) {
+  /* Get the list of tasks */
+  global_taskinfo = task_enumerate(NULL, procflags);
+  if(format_rate(global_taskinfo, procflags)) {
     usleep(sample_interval);
-    p = global_procinfo;
+    p = global_taskinfo;
     if(proc2)
       proc = proc2;
     if(forcetime.tv_sec)
       forcetime.tv_nsec = sample_interval * 1000;
-    global_procinfo = proc_enumerate(p, procflags);
-    proc_free(p);
+    global_taskinfo = task_enumerate(p, procflags);
+    task_free(p);
   }
   if(update_interval) {
     int first = 1;
@@ -399,14 +399,14 @@ int main(int argc, char **argv) {
       while(rc < 0 && errno == EINTR);
       if(rc < 0)
         fatal(errno, "nanosleep");
-      p = global_procinfo;
-      global_procinfo = proc_enumerate(p, procflags);
-      proc_free(p);
+      p = global_taskinfo;
+      global_taskinfo = task_enumerate(p, procflags);
+      task_free(p);
       first = 0;
     }
   } else
     report(1/*first*/);
-  proc_free(global_procinfo);
+  task_free(global_taskinfo);
   xexit(0);
 }
 
@@ -418,15 +418,15 @@ static void report(int first) {
   const char *s;
   int n;
 
-  tasks = proc_get_selected(global_procinfo, &ntasks, procflags);
+  tasks = task_get_selected(global_taskinfo, &ntasks, procflags);
   /* Put them into order */
   if(sorting)
     qsort(tasks, ntasks, sizeof *tasks, compare_task);
   /* Set up output formatting */
-  format_columns(global_procinfo, tasks, ntasks);
+  format_columns(global_taskinfo, tasks, ntasks);
   buffer_init(b);
   if(first || !csv)
-    format_heading(global_procinfo, b);
+    format_heading(global_taskinfo, b);
   /* Figure out the display width */
   if(!width) {
     if((s = getenv("COLUMNS")) && (n = atoi(s)))
@@ -444,7 +444,7 @@ static void report(int first) {
     xprintf("%.*s\n", (int)min(b->pos, chosen_width), b->base);
   for(i = 0; i < ntasks; ++i) {
     b->pos = 0;
-    format_process(global_procinfo, tasks[i], b);
+    format_task(global_taskinfo, tasks[i], b);
     xprintf("%.*s\n", (int)min(b->pos, chosen_width), b->base);
   }
   free(b->base);

@@ -25,8 +25,8 @@
  * nps was not initially designed with setuid operation in mind.
  *
  * However, the kernel restricts access to certain files in /proc
- * making certain process properties only available to root or the
- * process's own user.  For a system administrator it shouldn't be a
+ * making certain task properties only available to root or the
+ * task's own user.  For a system administrator it shouldn't be a
  * big deal to become root to see these properties.  However for
  * "mortal" users the only way to make them available is to run ps/top
  * at higher privilege, and this may cause some installations to want

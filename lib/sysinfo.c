@@ -20,7 +20,7 @@
 #include <config.h>
 #include "sysinfo.h"
 #include "format.h"
-#include "process.h"
+#include "tasks.h"
 #include "utils.h"
 #include "general.h"
 #include "buffer.h"
@@ -40,7 +40,7 @@ struct sysprop {
   const char *heading;
   const char *description;
   void (*format)(const struct sysinfo *sp,
-                 struct procinfo *pi, struct buffer *b);
+                 struct taskinfo *ti, struct buffer *b);
 };
 
 struct sysinfo {
@@ -237,7 +237,7 @@ static void sysprop_format_time(intmax_t t, const char *format, struct buffer *b
 // ----------------------------------------------------------------------------
 
 static void sysprop_localtime(const struct sysinfo *si,
-                              struct procinfo attribute((unused)) *pi,
+                              struct taskinfo attribute((unused)) *ti,
                               struct buffer *b) {
   time_t now = timespec_now(NULL);
   struct tm now_tm;
@@ -246,32 +246,32 @@ static void sysprop_localtime(const struct sysinfo *si,
 }
 
 static void sysprop_processes(const struct sysinfo attribute((unused)) *si,
-                              struct procinfo *pi,
+                              struct taskinfo *ti,
                               struct buffer *b) {
-  buffer_printf(b, "%d", proc_processes(pi));
+  buffer_printf(b, "%d", task_processes(ti));
 }
 
 static void sysprop_threads(const struct sysinfo attribute((unused)) *si,
-                            struct procinfo *pi,
+                            struct taskinfo *ti,
                             struct buffer *b) {
-  buffer_printf(b, "%d", proc_threads(pi));
+  buffer_printf(b, "%d", task_threads(ti));
 }
 
 static void sysprop_uptime(const struct sysinfo *si,
-                           struct procinfo attribute((unused)) *pi,
+                           struct taskinfo attribute((unused)) *ti,
                            struct buffer *b) {
   sysprop_format_time(uptime_up(), si->arg, b);
 }
 
 static void sysprop_idletime(const struct sysinfo *si,
-                             struct procinfo attribute((unused)) *pi,
+                             struct taskinfo attribute((unused)) *ti,
                              struct buffer *b) {
   get_stat();
   sysprop_format_time(clock_to_seconds(cpuinfos[0].curr.idle), si->arg, b);
 }
 
 static void sysprop_load(const struct sysinfo attribute((unused)) *si,
-                         struct procinfo attribute((unused)) *pi,
+                         struct taskinfo attribute((unused)) *ti,
                          struct buffer *b) {
   FILE *fp;
   double l1, l2, l3;
@@ -286,7 +286,7 @@ static void sysprop_load(const struct sysinfo attribute((unused)) *si,
 }
 
 static void sysprop_mem(const struct sysinfo *si,
-                        struct procinfo attribute((unused)) *pi,
+                        struct taskinfo attribute((unused)) *ti,
                         struct buffer *b) {
   char btot[16], bused[16], bfree[16], bbuf[16], bcache[16];
   unsigned cutoff = 1;
@@ -307,7 +307,7 @@ static void sysprop_mem(const struct sysinfo *si,
 }
 
 static void sysprop_swap(const struct sysinfo *si,
-                         struct procinfo attribute((unused)) *pi,
+                         struct taskinfo attribute((unused)) *ti,
                          struct buffer *b) {
   char btot[32], bused[32], bfree[32], bcache[32];
   unsigned cutoff = 1;
@@ -360,7 +360,7 @@ static void sysprop_cpu_one(int prec,
 }
 
 static void sysprop_cpu(const struct sysinfo *si,
-                        struct procinfo attribute((unused)) *pi,
+                        struct taskinfo attribute((unused)) *ti,
                         struct buffer *b) {
   const int prec = si->arg && *si->arg ? atoi(si->arg) : 0;
   get_stat();
@@ -370,7 +370,7 @@ static void sysprop_cpu(const struct sysinfo *si,
 }
 
 static void sysprop_cpus(const struct sysinfo attribute((unused)) *si,
-                         struct procinfo attribute((unused)) *pi,
+                         struct taskinfo attribute((unused)) *ti,
                          struct buffer *b) {
   const int prec = si->arg && *si->arg ? atoi(si->arg) : 0;
   size_t n;
@@ -503,7 +503,7 @@ size_t sysinfo_reset(void) {
   return nsysinfos;
 }
 
-int sysinfo_format(struct procinfo *pi, size_t n, struct buffer *b) {
+int sysinfo_format(struct taskinfo *ti, size_t n, struct buffer *b) {
   size_t i;
   int rc;
   b->pos = 0;
@@ -519,7 +519,7 @@ int sysinfo_format(struct procinfo *pi, size_t n, struct buffer *b) {
                (int)i, heading,
                (int)(strlen(heading) - i + 1), "");
     }
-    sysinfos[n].prop->format(&sysinfos[n], pi, b);
+    sysinfos[n].prop->format(&sysinfos[n], ti, b);
     rc = 0;
   } else
     rc = -1;

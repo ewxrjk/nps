@@ -24,8 +24,8 @@
  * @brief Comparison utilities
  */
 
-/** @brief Most recent process enumeration */
-extern struct procinfo *global_procinfo;
+/** @brief Most recent task enumeration */
+extern struct taskinfo *global_taskinfo;
 
 /** @brief Shim for use with qsort() */
 int compare_task(const void *av, const void *bv);

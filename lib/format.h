@@ -21,7 +21,7 @@
 #define FORMAT_H
 
 /** @file format.h
- * @brief Formatting process information
+ * @brief Formatting task information
  *
  * There are two format string syntaxes.  The first is argument
  * syntax, which follows the SUSv4 rules.  In this format any column
@@ -33,7 +33,7 @@
  * for non-final columns.
  */
 
-#include "process.h"
+#include "tasks.h"
 
 #include <stdint.h>
 #include <sys/types.h>
@@ -114,14 +114,14 @@ int format_set(const char *f, unsigned flags);
 void format_clear(void);
 
 /** @brief Set internal column sizes
- * @param pi Pointer to process information
+ * @param ti Pointer to task information
  * @param tasks Process or thread IDs
- * @param ntasks Number of processes
+ * @param ntasks Number of tasks
  */
-void format_columns(struct procinfo *pi, const taskident *tasks, size_t ntasks);
+void format_columns(struct taskinfo *ti, const taskident *tasks, size_t ntasks);
 
 /** @brief Construct the heading
- * @param pi Pointer to process information
+ * @param ti Pointer to task information
  * @param b Where to put heading string
  *
  * format_columns() must have been called.
@@ -129,10 +129,10 @@ void format_columns(struct procinfo *pi, const taskident *tasks, size_t ntasks);
  * Any existing contents of @p b will be overwritten.  It will be
  * 0-terminated.
  */
-void format_heading(struct procinfo *pi, struct buffer *b);
+void format_heading(struct taskinfo *ti, struct buffer *b);
 
-/** @brief Construct the output for one process
- * @param pi Pointer to process information
+/** @brief Construct the output for one task
+ * @param ti Pointer to task information
  * @param task Process or thread ID
  * @param b Where to store output
  *
@@ -141,10 +141,10 @@ void format_heading(struct procinfo *pi, struct buffer *b);
  * Any existing contents of @p b will be overwritten.  It will be
  * 0-terminated.
  */
-void format_process(struct procinfo *pi, taskident task, struct buffer *b);
+void format_task(struct taskinfo *ti, taskident task, struct buffer *b);
 
 /** @brief Format a single property
- * @param pi Pointer to process information
+ * @param ti Pointer to task information
  * @param task Process or thread ID
  * @param property Property name
  * @param b Where to store output
@@ -156,12 +156,12 @@ void format_process(struct procinfo *pi, taskident task, struct buffer *b);
  * Any existing contents of @p b will be overwritten.  It will be
  * 0-terminated.
  */
-void format_value(struct procinfo *pi, taskident task,
+void format_value(struct taskinfo *ti, taskident task,
                   const char *property,
                   struct buffer *b,
                   unsigned flags);
 
-/** @brief Set the process ordering
+/** @brief Set the task ordering
  * @param ordering Ordering specification
  * @param flags Flags
  * @return Nonzero on success, 0 if @p ordering is not valid
@@ -176,13 +176,13 @@ void format_value(struct procinfo *pi, taskident task,
  */
 int format_ordering(const char *ordering, unsigned flags);
 
-/** @brief Compare process properties
- * @param pi Pointer to process information
- * @param a First process ID
- * @param b Second process ID
+/** @brief Compare task properties
+ * @param ti Pointer to task information
+ * @param a First task ID
+ * @param b Second task ID
  * @return -1, 0 or -1
  */
-int format_compare(struct procinfo *pi, taskident a, taskident b);
+int format_compare(struct taskinfo *ti, taskident a, taskident b);
 
 /** @brief Return formatting help
  * @return NULL-terminated list of strings
@@ -199,7 +199,7 @@ char **format_help(void);
  */
 char *format_get(void);
 
-/** @brief Retrieve the process ordering as a single string
+/** @brief Retrieve the task ordering as a single string
  * @return Orderinf specification
  *
  * Caller is responsible for freeing the returned string.
@@ -255,7 +255,7 @@ int parse_byte_arg(const char *arg, unsigned *cutoff, unsigned flags);
 void format_get_arg(struct buffer *b, const char *arg, int quote);
 
 /** @brief Return true if there are any rate properties
- * @param pi Process information
+ * @param ti Pointer to task information
  * @param procflags Flags
  * @return Nonzero iff there are any rate properties
  *
@@ -266,10 +266,10 @@ void format_get_arg(struct buffer *b, const char *arg, int quote);
  * than lifetime values.
  *
  * @p flags should be a combination of:
- * - @ref PROC_PROCESSES to include processes
- * - @ref PROC_THREADS to include threads
+ * - @ref TASK_PROCESSES to include processes
+ * - @ref TASK_THREADS to include threads
  */
-int format_rate(struct procinfo *pi, unsigned procflags);
+int format_rate(struct taskinfo *ti, unsigned procflags);
 
 /** @brief Format an integer value
  * @param im Value to format

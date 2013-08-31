@@ -26,7 +26,7 @@
 
 #include <stddef.h>
 
-struct procinfo;
+struct taskinfo;
 struct buffer;
 
 /** @brief Set system information format
@@ -51,7 +51,7 @@ int sysinfo_set(const char *format,
 size_t sysinfo_reset(void);
 
 /** @brief Get a system information element
- * @param pi Pointer to process information
+ * @param ti Pointer to task information
  * @param n Element number
  * @param b String buffer for output
  * @return 0 on success, -1 if there are no more elements
@@ -59,7 +59,7 @@ size_t sysinfo_reset(void);
  * Any existing contents of @p b will be overwritten.  It will not be
  * 0-terminated.
  */
-int sysinfo_format(struct procinfo *pi, size_t n, struct buffer *b);
+int sysinfo_format(struct taskinfo *ti, size_t n, struct buffer *b);
 
 /** @brief Return system information help
  * @return NULL-terminated list of strings

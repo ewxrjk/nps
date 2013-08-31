@@ -18,7 +18,7 @@
  * USA
  */
 #include <config.h>
-#include "process.h"
+#include "tasks.h"
 #include "io.h"
 #include "utils.h"
 #include <stdlib.h>

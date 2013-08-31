@@ -20,7 +20,7 @@
 #include <config.h>
 #include "selectors.h"
 #include "format.h"
-#include "process.h"
+#include "tasks.h"
 #include "sysinfo.h"
 #include "utils.h"
 #include "input.h"
@@ -67,16 +67,16 @@ const struct option options[] = {
 
 /** @brief What loop() and await() should do next */
 enum next_action {
-  /** @brief Re-enumerate processes */
+  /** @brief Re-enumerate tasks */
   NEXT_RESAMPLE = 1,
   
   /** @brief Re-run column formatting */
   NEXT_REFORMAT = 2,
   
-  /** @brief Re-select processes */
+  /** @brief Re-select tasks */
   NEXT_RESELECT = 4,
   
-  /** @brief Re-sort processes */
+  /** @brief Re-sort tasks */
   NEXT_RESORT = 8,
 
   /** @brief Redraw system information */
@@ -412,7 +412,7 @@ static void sighandler(int sig) {
 
 /** @brief The main display loop */
 static void loop(void) {
-  struct procinfo *last = NULL;
+  struct taskinfo *last = NULL;
   char *ptr, *newline;
   int x, y, maxx, maxy, ystart = 0, ylimit;
   size_t n, ntasks, len, offset;
@@ -425,38 +425,38 @@ static void loop(void) {
   while(!(next & NEXT_QUIT)) {
     if(next & NEXT_RESAMPLE) {
       /* Get fresh data */
-      proc_free(last);
-      last = global_procinfo;
+      task_free(last);
+      last = global_taskinfo;
       update_last = clock_now();
-      global_procinfo = proc_enumerate(last, PROC_PROCESSES|PROC_THREADS);
+      global_taskinfo = task_enumerate(last, TASK_PROCESSES|TASK_THREADS);
       if(last == NULL
-         && format_rate(global_procinfo, PROC_PROCESSES|PROC_THREADS)) {
+         && format_rate(global_taskinfo, TASK_PROCESSES|TASK_THREADS)) {
         usleep(100 * 1000);
-        last = global_procinfo;
-        global_procinfo = proc_enumerate(last, PROC_PROCESSES|PROC_THREADS);
+        last = global_taskinfo;
+        global_taskinfo = task_enumerate(last, TASK_PROCESSES|TASK_THREADS);
       }
       sysinfo_reset();
       free(tasks);
-      tasks = proc_get_selected(global_procinfo, &ntasks, 
+      tasks = task_get_selected(global_taskinfo, &ntasks, 
                                 thread_mode_flags[thread_mode]);
       next |= NEXT_RESYSINFO|NEXT_RESORT|NEXT_REFORMAT;
     }
     if(next & NEXT_RESELECT) {
-      /* Reselect processes to display after selection has changed */
+      /* Reselect tasks to display after selection has changed */
       free(tasks);
-      proc_reselect(global_procinfo);
-      tasks = proc_get_selected(global_procinfo, &ntasks,
+      task_reselect(global_taskinfo);
+      tasks = task_get_selected(global_taskinfo, &ntasks,
                                 thread_mode_flags[thread_mode]);
       next |= NEXT_RESORT|NEXT_REFORMAT;
     }
     if(next & NEXT_RESORT) {
-      /* Put processes into order */
+      /* Put tasks into order */
       qsort(tasks, ntasks, sizeof *tasks, compare_task);
       next |= NEXT_REDRAW;
     }
     if(next & NEXT_REFORMAT) {
       /* Work out column widths */
-      format_columns(global_procinfo, tasks, ntasks);
+      format_columns(global_taskinfo, tasks, ntasks);
       next |= NEXT_REDRAW;
     }
     if(next & NEXT_RESYSINFO) {
@@ -466,7 +466,7 @@ static void loop(void) {
       x = y = 0;
       getmaxyx(stdscr, maxy, maxx);
       /* System information */
-      for(n = 0; !sysinfo_format(global_procinfo, n, b); ++n) {
+      for(n = 0; !sysinfo_format(global_taskinfo, n, b); ++n) {
         ptr = b->base;
         while(*ptr) {
           if((newline = strchr(ptr, '\n')))
@@ -496,7 +496,7 @@ static void loop(void) {
     }
     if(next & NEXT_REDRAW) {
       getmaxyx(stdscr, maxy, maxx);
-      /* (Re-)draw the process list */
+      /* (Re-)draw the task list */
       y = ystart;
       help = input_help.nlines ? &input_help : &help_pages[help_page];
       ylimit = maxy - min(help->nlines, 8);
@@ -506,7 +506,7 @@ static void loop(void) {
       /* Heading */
       if(y < ylimit) {
         attron(A_REVERSE);
-        format_heading(global_procinfo, b);
+        format_heading(global_taskinfo, b);
         offset = min(display_offset, b->pos);
         if(mvaddnstr(y, 0, b->base + offset, maxx) == ERR)
           fatal(0, "mvaddstr %d failed", y);
@@ -518,7 +518,7 @@ static void loop(void) {
 
       /* Processes */
       for(n = 0; n < ntasks && y < ylimit; ++n) {
-        format_process(global_procinfo, tasks[n], b);
+        format_task(global_taskinfo, tasks[n], b);
         offset = min(display_offset, b->pos);
         // curses seems to have trouble with the last position on the screen
         if(mvaddnstr(y, 0, b->base + offset,
@@ -546,8 +546,8 @@ static void loop(void) {
     } while(next == NEXT_WAIT);
   }
   free(tasks);
-  proc_free(global_procinfo);
-  proc_free(last);
+  task_free(global_taskinfo);
+  task_free(last);
   free(b->base);
 }
 

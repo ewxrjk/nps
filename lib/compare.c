@@ -28,12 +28,12 @@
 #include "compare.h"
 #include "general.h"
 
-struct procinfo *global_procinfo;
+struct taskinfo *global_taskinfo;
 
 int compare_task(const void *av, const void *bv) {
   taskident a = *(const taskident *)av;
   taskident b = *(const taskident *)bv;
-  return format_compare(global_procinfo, a, b);
+  return format_compare(global_taskinfo, a, b);
 }
 
 #define GET_VALUE(W) do {                                       \
