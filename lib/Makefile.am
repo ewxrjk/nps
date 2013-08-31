@@ -18,6 +18,7 @@
 noinst_LIBRARIES=libps.a
 noinst_PROGRAMS=$(TESTS)
 LDADD=libps.a
+EXTRA_DIST=mainpage arch.svg
 
 libps_a_SOURCES=buffer.h compare.h format.h general.h io.h parse.h	\
 priv.h process.h rc.h selectors.h sysinfo.h utils.h buffer.c bytes.c	\

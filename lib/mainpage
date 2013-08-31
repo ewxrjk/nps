@@ -1,0 +1,11 @@
+/** @mainpage NPS Design Documentation
+ *
+ * @section Architecture
+ *
+ * @image html arch.svg
+ *
+ * @see selectors.h for process/thread selection
+ * @see format.h for process formatting
+ * @see process.h for process data
+ * @see sysinfo.h for sysetem information data and formatting
+ */
