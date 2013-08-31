@@ -344,6 +344,18 @@ void format_interval(long seconds, struct buffer *b,
 void format_time(time_t when, struct buffer *b, size_t columnsize,
                  const char *format, unsigned flags);
 
+/** @brief Format a user or group ID
+ * @param id User or group ID
+ * @param b String buffer for output
+ * @param columnsize The column size
+ * @param name User or group name
+ *
+ * If @p name is non-NULL and fits in @p columnsize, the name is used;
+ * otherwise, the ID is used (in decimal).
+ */
+void format_usergroup(intmax_t id, struct buffer *b, size_t columnsize,
+                      const char *name);
+
 /** @brief Include hierarchy spacing in comm/args */
 extern int format_hierarchy;
 

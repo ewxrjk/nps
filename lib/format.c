@@ -140,8 +140,8 @@ void format_addr(uintmax_t im, struct buffer *b) {
   }
 }
 
-static void format_usergroup(intmax_t id, struct buffer *b, size_t columnsize,
-                             const char *name) {
+void format_usergroup(intmax_t id, struct buffer *b, size_t columnsize,
+                      const char *name) {
   if(name && strlen(name) <= columnsize)
     buffer_append(b, name);
   else

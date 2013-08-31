@@ -152,5 +152,14 @@ int main() {
   INTERVAL(86400, 0, SIZE_MAX, NULL, 0, "86400");
   INTERVAL(172800, 1, 0, NULL, 0, "172800");
 
+  b->pos = 0;
+  format_usergroup(99, b, 10, "spong");
+  buffer_terminate(b);
+  assert(!strcmp(b->base, "spong"));
+  b->pos = 0;
+  format_usergroup(99, b, 2, "spong");
+  buffer_terminate(b);
+  assert(!strcmp(b->base, "99"));
+
   return 0;
 }
