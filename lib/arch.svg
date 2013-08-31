@@ -276,7 +276,7 @@
          sodipodi:role="line"
          id="tspan3905"
          x="312"
-         y="188">process formatters</tspan></text>
+         y="188">task formatters</tspan></text>
     <rect
        y="156"
        x="512"
@@ -344,7 +344,7 @@
          sodipodi:role="line"
          id="tspan3862"
          x="88"
-         y="188">process selectors</tspan></text>
+         y="188">task selectors</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow2Mend)"
        d="m 96,92 0,64"
