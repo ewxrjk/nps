@@ -47,23 +47,28 @@
  *
  * format.h provides the API for formatting task information.
  * Output format is defined using the following functions:
- * - format_syntax() and format_set() are used to define the format
- * - @ref format_hierarchy is used to request hierarchical output
+ * - format_syntax() and format_set() are used to define the format.
+ * - @ref format_hierarchy is used to request hierarchical output.
  * - format_ordering() is used to control the order in which tasks
- * appear
+ * appear.
+ * (The sort operation is triggered by the UI, but it uses
+ * compare_task() as the ordering function.)
  *
  * Output is then formatted using the following functions:
- * - format_columns() is used to work out column sizes
- * - format_heading() is used to generate headings
- * - format_task() is used to format each task
+ * - format_columns() is used to work out column sizes.
+ * - format_heading() is used to generate headings.
+ * - format_task() is used to format each task.
  *
  * @subsection sysinfo System Information
  *
  * sysinfo.h provides the API for collecting and reporting system-wide
  * information.  Unlike task information this is not split between
  * multiple headers.
- * - sysinfo_set() is used to define the format
- * - sysinfo_format() is used to format the current system information
+ * - sysinfo_set() is used to define the format.
+ * - sysinfo_format() is used to format the current system information.
  * - sysinfo_reset() is used after time has elapsed to discard cached
  * system information.
+ *
+ * Both the system information logic and the task formatting logic use
+ * parse_element() to parse format strings.
  */
