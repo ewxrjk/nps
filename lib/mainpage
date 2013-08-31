@@ -17,6 +17,20 @@
  * See @ref priv.h for handling of processes properties that are only
  * available to root (or owner).
  *
+ * @subsubsection vanish Vanishing Tasks
+ *
+ * An important concern when enumerating tasks is that it is not
+ * atomic.  Tasks can vanish at any more in the process.  When this
+ * happens, the process and all its threads are marked as "vanished".
+ *
+ * Vanished tasks are never treated as selected, though since they may
+ * vanish after selection runs, this doesn't necessaily stop them
+ * appearing in the output.
+ *
+ * Uncollectable properties of vanished tasks are reported as 0.  Rate
+ * propertes of a vanished task are reported as 0, even if the
+ * necessary data had actually been collected and cached.
+ *
  * @subsection select Task Selection
  *
  * selectors.h provides the API for filtering tasks in various ways.

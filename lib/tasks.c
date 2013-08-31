@@ -215,6 +215,16 @@ void task_free(struct taskinfo *ti) {
   }
 }
 
+/* Called when a process or one of its thread has vanished.
+ * The process and all its threads (if they have been enumerated)
+ * are all marked as vanished. */
+static void task_vanished(struct taskinfo *ti, pid_t pid) {
+  size_t n;
+  for(n = 0; n < ti->ntasks; ++n)
+    if(ti->tasks[n].taskid.pid == pid)
+      ti->tasks[n].vanished = 1;
+}
+
 static struct task *task_add(struct taskinfo *ti, struct taskinfo *last,
                                 pid_t pid, pid_t tid) {
   struct task *t, *lastt;
@@ -250,8 +260,8 @@ static void task_enumerate_threads(struct taskinfo *ti, struct taskinfo *last,
   pid_t tid;
 
   if(!(dp = opendirf(&path, "%s/%ld/task", proc, (long)pid))) {
+    task_vanished(ti, pid);
     free(path);
-    /* TODO we should mark the process as vanished */
     return;
   }
   while((de = xreaddir(path, dp))) {
@@ -346,7 +356,7 @@ static void getpath(const struct task *t,
              proc, (long)t->taskid.pid, (long)t->taskid.tid, what);
 }
 
-static void task_stat(struct task *t) {
+static void task_stat(struct taskinfo *ti, struct task *t) {
   FILE *fp;
   char buffer[1024], *start, *bp;
   size_t field;
@@ -357,7 +367,7 @@ static void task_stat(struct task *t) {
   t->stat = 1;
   getpath(t, "stat", buffer, sizeof buffer);
   if(!(fp = fopen(buffer, "r"))) {
-    t->vanished = 1;
+    task_vanished(ti, t->taskid.pid);
     return;
   }
   field = 0;
@@ -448,7 +458,7 @@ static void parse_sigset(sigset_t *ss, const char *ptr) {
   }
 }
 
-static void task_status(struct task *t) {
+static void task_status(struct taskinfo *ti, struct task *t) {
   char buffer[1024], *ptr;
   size_t i, n;
   FILE *fp;
@@ -460,7 +470,7 @@ static void task_status(struct task *t) {
   t->status = 1;
   getpath(t, "status", buffer, sizeof buffer);
   if(!(fp = fopen(buffer, "r"))) {
-    t->vanished = 1;
+    task_vanished(ti, t->taskid.pid);
     return;
   }
   i = 0;
@@ -515,7 +525,7 @@ static void task_status(struct task *t) {
   fclose(fp);
 }
 
-static void task_cmdline(struct task *t) {
+static void task_cmdline(struct taskinfo *ti, struct task *t) {
   char buffer[1024];
   size_t i;
   FILE *fp;
@@ -525,7 +535,7 @@ static void task_cmdline(struct task *t) {
     return;
   getpath(t, "cmdline", buffer, sizeof buffer);
   if(!(fp = fopen(buffer, "r"))) {
-    t->vanished = 1;
+    task_vanished(ti, t->taskid.pid);
     return;
   }
   i = 0;
@@ -547,6 +557,7 @@ static void task_cmdline(struct task *t) {
 
 struct priv_callback_data {
   char path[128];
+  struct taskinfo *ti;
   struct task *t;
 };
 
@@ -559,7 +570,7 @@ static int read_io(void *u) {
 
   if(!(fp = fopen(d->path, "r"))) {
     if(errno != EACCES)
-      d->t->vanished = 1;
+      task_vanished(d->ti, d->t->taskid.pid);
     return -1;
   }
   field = 0;
@@ -582,19 +593,20 @@ static int read_io(void *u) {
   return 0;
 }
 
-static void task_io(struct task *t) {
+static void task_io(struct taskinfo *ti, struct task *t) {
   struct priv_callback_data d[1];
 
   if(t->io || t->vanished)
     return;
   t->io = 1;
   getpath(t, "io", d->path, sizeof d->path);
+  d->ti = ti;
   d->t = t;
   priv_run(read_io, d);
   timespec_now(&t->io_time);
 }
 
-static void task_oom_score(struct task *t) {
+static void task_oom_score(struct taskinfo *ti, struct task *t) {
   char buffer[128];
   FILE *fp;
   if(t->oom_score_set || t->vanished)
@@ -602,11 +614,11 @@ static void task_oom_score(struct task *t) {
   t->oom_score_set =1;
   getpath(t, "oom_score", buffer, sizeof buffer);
   if(!(fp = fopen(buffer, "r"))) {
-    t->vanished = 1;
+    task_vanished(ti, t->taskid.pid);
     return;
   }
   if(fscanf(fp, "%jd", &t->oom_score) < 0)
-    t->vanished = 1;
+    task_vanished(ti, t->taskid.pid);
   fclose(fp);
 }
 
@@ -617,7 +629,7 @@ static int read_smaps(void *u) {
 
   if(!(fp = fopen(d->path, "r"))) {
     if(errno != EACCES)
-      d->t->vanished = 1;
+      task_vanished(d->ti, d->t->taskid.pid);
     return -1;
   }
   while(fgets(buffer, sizeof buffer, fp)) {
@@ -639,12 +651,13 @@ static int read_smaps(void *u) {
   return 0;
 }
 
-static void task_smaps(struct task *t) {
+static void task_smaps(struct taskinfo *ti, struct task *t) {
   struct priv_callback_data d[1];
   if(t->smaps || t->vanished)
     return;
   t->smaps = 1;
   getpath(t, "smaps", d->path, sizeof d->path);
+  d->ti = ti;
   d->t = t;
   t->prop_pss = t->prop_swap = 0;
   priv_run(read_smaps, d);
@@ -661,112 +674,112 @@ pid_t task_get_tid(struct taskinfo attribute((unused)) *ti, taskident taskid) {
 }
 
 pid_t task_get_session(struct taskinfo *ti, taskident taskid) {
- struct task *t = task_find(ti, taskid);
+  struct task *t = task_find(ti, taskid);
 
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_session;
 }
 
 uid_t task_get_ruid(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
 
-  task_status(t);
+  task_status(ti, t);
   return t->prop_ruid;
 }
 
 uid_t task_get_euid(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
 
-  task_status(t);
+  task_status(ti, t);
   return t->prop_euid;
 }
 
 uid_t task_get_suid(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
 
-  task_status(t);
+  task_status(ti, t);
   return t->prop_suid;
 }
 
 uid_t task_get_fsuid(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
 
-  task_status(t);
+  task_status(ti, t);
   return t->prop_fsuid;
 }
 
 gid_t task_get_rgid(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
 
-  task_status(t);
+  task_status(ti, t);
   return t->prop_rgid;
 }
 
 gid_t task_get_egid(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
 
-  task_status(t);
+  task_status(ti, t);
   return t->prop_egid;
 }
 
 gid_t task_get_sgid(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
 
-  task_status(t);
+  task_status(ti, t);
   return t->prop_sgid;
 }
 
 gid_t task_get_fsgid(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
 
-  task_status(t);
+  task_status(ti, t);
   return t->prop_fsgid;
 }
 
 pid_t task_get_ppid(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
 
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_ppid;
 }
 
 pid_t task_get_pgrp(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
 
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_pgrp;
 }
 
 pid_t task_get_tpgid(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
 
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_tpgid;
 }
 
 int task_get_tty(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
 
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_tty_nr;
 }
 
 const char *task_get_comm(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
 
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_comm;
 }
 
 const char *task_get_cmdline(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
 
-  task_cmdline(t);
+  task_cmdline(ti, t);
   if(!t->prop_cmdline || !*t->prop_cmdline) {
     /* "Failing this, the command name, as it would appear without the
      * option -f, is written in square brackets. */
     free(t->prop_cmdline);
-    task_stat(t);
+    task_stat(ti, t);
     xasprintf(&t->prop_cmdline, "[%s]", t->prop_comm);
   }
   return t->prop_cmdline;
@@ -775,7 +788,7 @@ const char *task_get_cmdline(struct taskinfo *ti, taskident taskid) {
 intmax_t task_get_scheduled_time(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
   
-  task_stat(t);
+  task_stat(ti, t);
   return clock_to_seconds(t->prop_utime + t->prop_stime);
 }
 
@@ -785,7 +798,7 @@ intmax_t task_get_elapsed_time(struct taskinfo *ti, taskident taskid) {
   /* We have to return consistent values, otherwise the column size
    * computation becomes inconsistent */
   if(!t->elapsed_set) {
-    task_stat(t);
+    task_stat(ti, t);
     t->elapsed = time(NULL) - clock_to_time(t->prop_starttime);
     t->elapsed_set = 1;
   }
@@ -794,31 +807,31 @@ intmax_t task_get_elapsed_time(struct taskinfo *ti, taskident taskid) {
 
 intmax_t task_get_start_time(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_stat(t);
+  task_stat(ti, t);
   return clock_to_time(t->prop_starttime);
 }
 
 uintmax_t task_get_flags(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_flags;
 }
 
 intmax_t task_get_nice(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_nice;
 }
 
 intmax_t task_get_priority(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_priority;
 }
 
 int task_get_state(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_state;
 }
 
@@ -848,7 +861,7 @@ static double task_rate(struct task *t,
 
 double task_get_pcpu(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_stat(t);
+  task_stat(ti, t);
   return task_rate(t, t->base_stat_time, t->stat_time,
                    clock_to_seconds((t->prop_utime + t->prop_stime)
                                     - (t->base_utime + t->base_stime)));
@@ -858,13 +871,13 @@ uintmax_t task_get_vsize(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
   if(t->vmbits & bit_VmSize)
     return t->prop_VmSize * KILOBYTE;
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_vsize;
 }
 
 uintmax_t task_get_peak_vsize(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_status(t);
+  task_status(ti, t);
   return t->prop_VmPeak * KILOBYTE;
 }
 
@@ -872,59 +885,59 @@ uintmax_t task_get_rss(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
   if(t->vmbits & bit_VmRSS)
     return t->prop_VmRSS * KILOBYTE;
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_rss * sysconf(_SC_PAGESIZE);
 }
 
 uintmax_t task_get_peak_rss(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_status(t);
+  task_status(ti, t);
   return t->prop_VmHWM * KILOBYTE;
 }
 
 uintmax_t task_get_insn_pointer(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_kstkeip;
 }
 
 uintmax_t task_get_wchan(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_wchan;
 }
 
 double task_get_rchar(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_io(t);
+  task_io(ti, t);
   return task_rate(t, t->base_io_time, t->io_time,
                    t->prop_rchar - t->base_rchar);
 }
 
 double task_get_wchar(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_io(t);
+  task_io(ti, t);
   return task_rate(t, t->base_io_time, t->io_time,
                    t->prop_wchar - t->base_wchar);
 }
 
 double task_get_read_bytes(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_io(t);
+  task_io(ti, t);
   return task_rate(t, t->base_io_time, t->io_time,
                    t->prop_read_bytes - t->base_read_bytes);
 }
 
 double task_get_write_bytes(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_io(t);
+  task_io(ti, t);
   return task_rate(t, t->base_io_time, t->io_time,
                    t->prop_write_bytes - t->base_write_bytes);
 }
 
 double task_get_rw_bytes(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_io(t);
+  task_io(ti, t);
   return task_rate(t, t->base_io_time, t->io_time,
                    t->prop_read_bytes + t->prop_write_bytes
                    - t->base_read_bytes - t->base_write_bytes);
@@ -932,39 +945,39 @@ double task_get_rw_bytes(struct taskinfo *ti, taskident taskid) {
 
 intmax_t task_get_oom_score(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_oom_score(t);
+  task_oom_score(ti, t);
   return t->oom_score;
 }
 
 double task_get_majflt(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_stat(t);
+  task_stat(ti, t);
   return task_rate(t, t->base_stat_time, t->stat_time,
                    t->prop_majflt - t->base_majflt) * sysconf(_SC_PAGE_SIZE);
 }
 
 double task_get_minflt(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_stat(t);
+  task_stat(ti, t);
   return task_rate(t, t->base_stat_time, t->stat_time,
                    t->prop_minflt - t->base_minflt) * sysconf(_SC_PAGE_SIZE);
 }
 
 uintmax_t task_get_pss(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_smaps(t);
+  task_smaps(ti, t);
   return t->prop_pss * KILOBYTE;
 }
 
 uintmax_t task_get_swap(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_status(t);
+  task_status(ti, t);
   /* Since 2.6.34 (b084d4353ff99d824d3bc5a5c2c22c70b1fba722), swap
    * usage has been exposed directly */
   if(t->vmbits & bit_VmSwap)
     return t->prop_VmSwap * KILOBYTE;
   /* Prior to that we have to work it out by adding up smaps entries */
-  task_smaps(t);
+  task_smaps(ti, t);
   return t->prop_swap * KILOBYTE;
 }
 
@@ -982,7 +995,7 @@ uintmax_t task_get_pmem(struct taskinfo *ti, taskident taskid) {
 int task_get_num_threads(struct taskinfo *ti, taskident taskid) {
   if(taskid.tid < 0) {
     struct task *t = task_find(ti, taskid);
-    task_stat(t);
+    task_stat(ti, t);
     return t->prop_num_threads;
   } else
     return -1;
@@ -991,7 +1004,7 @@ int task_get_num_threads(struct taskinfo *ti, taskident taskid) {
 const gid_t *task_get_supgids(struct taskinfo *ti, taskident taskid,
                               size_t *countp) {
   struct task *t = task_find(ti, taskid);
-  task_status(t);
+  task_status(ti, t);
   if(countp)
     *countp = t->ngroups;
   return t->groups;
@@ -999,65 +1012,65 @@ const gid_t *task_get_supgids(struct taskinfo *ti, taskident taskid,
 
 uintmax_t task_get_rtprio(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_rt_priority;
 }
 
 int task_get_sched_policy(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_stat(t);
+  task_stat(ti, t);
   return t->prop_policy;
 }
 
 void task_get_sig_pending(struct taskinfo *ti, taskident taskid,
                           sigset_t *signals) {
   struct task *t = task_find(ti, taskid);
-  task_status(t);
+  task_status(ti, t);
   *signals = t->sigpending;
 }
 
 void task_get_sig_blocked(struct taskinfo *ti, taskident taskid,
                           sigset_t *signals) {
   struct task *t = task_find(ti, taskid);
-  task_status(t);
+  task_status(ti, t);
   *signals = t->sigblocked;
 }
 
 void task_get_sig_ignored(struct taskinfo *ti, taskident taskid,
                           sigset_t *signals) {
   struct task *t = task_find(ti, taskid);
-  task_status(t);
+  task_status(ti, t);
   *signals = t->sigignored;
 }
 
 void task_get_sig_caught(struct taskinfo *ti, taskident taskid,
                           sigset_t *signals) {
   struct task *t = task_find(ti, taskid);
-  task_status(t);
+  task_status(ti, t);
   *signals = t->sigcaught;
 }
 
 uintmax_t task_get_stack(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_status(t);
+  task_status(ti, t);
   return t->prop_VmStk * KILOBYTE;
 }
 
 uintmax_t task_get_locked(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_status(t);
+  task_status(ti, t);
   return t->prop_VmLck * KILOBYTE;
 }
 
 uintmax_t task_get_pinned(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_status(t);
+  task_status(ti, t);
   return t->prop_VmPin * KILOBYTE;
 }
 
 uintmax_t task_get_pte(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
-  task_status(t);
+  task_status(ti, t);
   return t->prop_VmPTE * KILOBYTE;
 }
 
@@ -1067,7 +1080,7 @@ int task_get_depth(struct taskinfo *ti, taskident taskid) {
   struct task *t = task_find(ti, taskid);
   if(!t)
     return -1;
-  task_stat(t);
+  task_stat(ti, t);
   if(taskid.pid == t->prop_ppid)
     return 0;
   else {
@@ -1083,7 +1096,7 @@ int task_is_ancestor(struct taskinfo *ti, taskident a, taskident b) {
   t = task_find(ti, b);
   if(!t)
     return 0;
-  task_stat(t);
+  task_stat(ti, t);
   taskident parent = { t->prop_ppid, -1 };
   return task_is_ancestor(ti, a, parent);
 }
