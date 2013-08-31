@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011,13 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 #include "buffer.h"
 #include "parse.h"
 #include "io.h"
-#include "uptime.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>

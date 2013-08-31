@@ -231,6 +231,14 @@ double parse_interval(const char *s);
 
 // ----------------------------------------------------------------------------
 
+/** @brief Return the number of seconds the system has been up */
+double uptime_up(void);
+
+/** @brief Return the time at which the system was booted */
+double uptime_booted(void);
+
+// ----------------------------------------------------------------------------
+
 /** @brief Error-checking asprintf() wrapper
  * @param sp Where to put result
  * @param format Format string

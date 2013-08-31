@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011, 12 Richard Kettlewell
+ * Copyright (C) 2011, 12, 13 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #include "buffer.h"
 #include "io.h"
 #include "process.h"
-#include "uptime.h"
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
