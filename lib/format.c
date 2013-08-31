@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 12, 13 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -216,6 +216,61 @@ void format_time(time_t when, struct buffer *b, size_t columnsize,
     buffer_strftime(b, "%Y-%m-%d", &when_tm);
 }
 
+void format_sigset(const sigset_t *ssp, struct buffer *b, size_t columnsize,
+                   unsigned flags) {
+  int sig, first;
+  size_t start;
+  char namebuf[64];
+  sigset_t ss;
+  if(!(flags & FORMAT_RAW)) {
+    start = b->pos;
+    sig = first = 1;
+    ss = *ssp;
+    while(!sigisemptyset(&ss)) {
+      if(sigismember(&ss, sig)) {
+        if(!first)
+          buffer_putc(b, ',');
+        else
+          first = 0;
+        buffer_append(b, signame(sig, namebuf, sizeof namebuf));
+        sigdelset(&ss, sig);
+      }
+      ++sig;
+    }
+    if(first)
+      buffer_putc(b, '-');
+    if(b->pos - start <= columnsize)
+      return;
+    b->pos = start;
+  }
+  sig = first = 1;
+  ss = *ssp;
+  while(!sigisemptyset(&ss)) {
+    if(sigismember(&ss, sig)) {
+      if(!first)
+        buffer_putc(b, ',');
+      else
+        first = 0;
+      format_integer(sig, b, 'd');
+      sigdelset(&ss, sig);
+      if(!(flags & FORMAT_RAW)) {
+        if(sigismember(&ss, sig + 1)
+           && sigismember(&ss, sig + 2)) {
+          while(sigismember(&ss, sig + 1)) {
+            ++sig;
+            sigdelset(&ss, sig);
+          }
+          buffer_putc(b, '-');
+          format_integer(sig, b, 'd');
+        }
+      }
+    }
+    ++sig;
+  }
+  if(first)
+    buffer_putc(b, '-');
+}
+
 // ----------------------------------------------------------------------------
 
 /* generic properties */
@@ -327,57 +382,9 @@ static void property_sigset(const struct column *col, struct buffer *b,
                             size_t columnsize,
                             struct taskinfo *ti, taskident task,
                             unsigned flags) {
-  int sig, first;
-  size_t start;
-  char namebuf[64];
   sigset_t ss;
-  if(!(flags & FORMAT_RAW)) {
-    start = b->pos;
-    sig = first = 1;
-    col->prop->fetch.fetch_sigset(ti, task, &ss);
-    while(!sigisemptyset(&ss)) {
-      if(sigismember(&ss, sig)) {
-        if(!first)
-          buffer_putc(b, ',');
-        else
-          first = 0;
-        buffer_append(b, signame(sig, namebuf, sizeof namebuf));
-        sigdelset(&ss, sig);
-      }
-      ++sig;
-    }
-    if(first)
-      buffer_putc(b, '-');
-    if(b->pos - start <= columnsize)
-      return;
-    b->pos = start;
-  }
-  sig = first = 1;
   col->prop->fetch.fetch_sigset(ti, task, &ss);
-  while(!sigisemptyset(&ss)) {
-    if(sigismember(&ss, sig)) {
-      if(!first)
-        buffer_putc(b, ',');
-      else
-        first = 0;
-      format_integer(sig, b, 'd');
-      sigdelset(&ss, sig);
-      if(!(flags & FORMAT_RAW)) {
-        if(sigismember(&ss, sig + 1)
-           && sigismember(&ss, sig + 2)) {
-          while(sigismember(&ss, sig + 1)) {
-            ++sig;
-            sigdelset(&ss, sig);
-          }
-          buffer_putc(b, '-');
-          format_integer(sig, b, 'd');
-        }
-      }
-    }
-    ++sig;
-  }
-  if(first)
-    buffer_putc(b, '-');
+  format_sigset(&ss, b, columnsize, flags);
 }
 
 /* time properties */

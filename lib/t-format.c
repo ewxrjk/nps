@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2012 Richard Kettlewell
+ * Copyright (C) 2012, 13 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <signal.h>
+#include <limits.h>
 
 /* TODO this a bit rudimentary - there is lots of complicated stuff in
  * format.c that could use some tests. */
@@ -56,10 +58,22 @@
   assert(!strcmp(b->base, RESULT));                     \
 } while(0)
 
+#define SIGSET(CS, STRVAL, RAWVAL) do {         \
+  b->pos = 0;                                   \
+  format_sigset(&ss, b, CS, 0);                 \
+  buffer_terminate(b);                          \
+  assert(!strcmp(b->base, STRVAL));             \
+  b->pos = 0;                                   \
+  format_sigset(&ss, b, CS, FORMAT_RAW);        \
+  buffer_terminate(b);                          \
+  assert(!strcmp(b->base, RAWVAL));             \
+} while(0)
+
 int main() {
   struct buffer b[1];
   time_t today, thisyear;
   struct tm t;
+  sigset_t ss;
 
   putenv(strdup("TZ=UTC"));     /* force UTC for localtime */
 
@@ -160,6 +174,24 @@ int main() {
   format_usergroup(99, b, 2, "spong");
   buffer_terminate(b);
   assert(!strcmp(b->base, "99"));
+
+  sigemptyset(&ss);
+  SIGSET(INT_MAX, "-", "-");
+
+  sigaddset(&ss, SIGHUP);
+  SIGSET(INT_MAX, "HUP", "1");
+
+  sigaddset(&ss, SIGINT);
+  SIGSET(INT_MAX, "HUP,INT", "1,2");
+
+  sigaddset(&ss, SIGQUIT);
+  SIGSET(INT_MAX, "HUP,INT,QUIT", "1,2,3");
+
+  sigaddset(&ss, SIGKILL);
+  SIGSET(INT_MAX, "HUP,INT,QUIT,KILL", "1,2,3,9");
+
+  sigaddset(&ss, SIGKILL);
+  SIGSET(8, "1-3,9", "1,2,3,9");
 
   return 0;
 }

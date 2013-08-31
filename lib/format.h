@@ -356,6 +356,18 @@ void format_time(time_t when, struct buffer *b, size_t columnsize,
 void format_usergroup(intmax_t id, struct buffer *b, size_t columnsize,
                       const char *name);
 
+/** @brief Format a signal set
+ * @param ssp Pointer to signal set to format
+ * @param b String buffer for output
+ * @param columnsize The column size
+ * @param flags Flags
+ *
+ * If flags includes @ref FORMAT_RAW, the signal set is always written
+ * in numeric form.
+ */
+void format_sigset(const sigset_t *ssp, struct buffer *b, size_t columnsize,
+                   unsigned flags);
+
 /** @brief Include hierarchy spacing in comm/args */
 extern int format_hierarchy;
 
