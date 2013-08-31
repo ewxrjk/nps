@@ -17,17 +17,21 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 
+include /usr/share/hardening-includes/hardening.make
+
 # Options to configure.  This can be overridden by the caller if necessary.
 CONFIGURE=--prefix=/usr --sysconfdir=/etc --mandir=/usr/share/man
 # ...you can also set CONFIGURE_EXTRA.
 
 # Set DEB_BUILD_OPTIONS=noopt to produce a non-optimized build.
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
-CFLAGS=-O0 -g
+CFLAGS+=-O0 -g
 else
-CFLAGS=-O2 -g
+CFLAGS+=-O2 -g
 endif
-export CFLAGS
+
+CFLAGS += $(HARDENING_CFLAGS)
+LDFLAGS += $(HARDENING_LDFLAGS)
 
 # Set DEB_BUILD_OPTIONS=nostrip to install debuggable executables.
 ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
@@ -57,7 +61,7 @@ SHELL=bash
 # run if building from a checkout rather than a tarball.
 build:
 	test -f configure || ./autogen.sh
-	./configure ${CONFIGURE} ${CONFIGURE_EXTRA}
+	./configure ${CONFIGURE} CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" ${CONFIGURE_EXTRA}
 	$(MAKE)
 
 pkg-nps: build
