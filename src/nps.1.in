@@ -135,7 +135,7 @@ exactly one megabyte.
 .IP \(bu
 Terminal paths are not abbreviated.
 .IP \(bu
-Times are represnted as second counts.
+Times are represented as second counts.
 .PP
 The possible match expressions are \fIPROPERTY\fB<\fIVALUE\fR,
 \fIPROPERTY\fB<=\fIVALUE\fR, \fIPROPERTY\fB>\fIVALUE\fR,
