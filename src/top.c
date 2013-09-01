@@ -176,7 +176,7 @@ static struct help_page input_help;
  */
 #define HELP_SIZE 8
 
-static const const char *const command_help[] = {
+static const char *const command_help[] = {
   "Keyboard commands:",
   "^L  Redisplay                j  Edit system info",
   " d  Edit update interval     o  Edit column list",
@@ -185,7 +185,7 @@ static const const char *const command_help[] = {
   "                             q  Quit",
 };
 
-static const const char *const panning_help[] = {
+static const char *const panning_help[] = {
   "Panning:",
   "  ^F, right arrow    Move viewport right by 1",
   "  page down          Move viewport right by 8",
