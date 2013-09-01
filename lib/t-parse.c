@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 12, 13 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ static void try(const char *string,
   char *name, *heading, *arg;
   size_t size = SIZE_MAX;
   int sign = 99;
-  
+
   if(verbose)
     fprintf(stderr, "%15s %3zu %2d %10s %20zu %10s %10s %04x\n",
             string, consumed, xsign, xname, xsize,
@@ -74,6 +74,26 @@ static void try(const char *string,
   }
 }
 
+static void try_eof(const char *string) {
+  enum parse_status ps;
+  const char *ptr = string;
+  ps = parse_element(&ptr, NULL, NULL, NULL, NULL, NULL, 0);
+  assert(ps == parse_eof);
+  assert(ptr == string + strlen(string));
+}
+
+static void try_error(const char *string, unsigned flags) {
+  enum parse_status ps;
+  const char *ptr = string;
+  char *name, *heading, *arg;
+  size_t size = SIZE_MAX;
+  int sign = 99;
+  ps = parse_element(&ptr, &sign, &name, &size, &heading, &arg,
+                     FORMAT_CHECK|flags);
+  assert(ps == parse_error);
+  assert(ptr == string);
+}
+
 int main(void) {
   verbose = !!getenv("VERBOSE");
 
@@ -82,6 +102,9 @@ int main(void) {
   try("rss pss", 3, 99, "rss", SIZE_MAX, NULL, NULL, 0);
 
   try("rss", 3, 0, "rss", SIZE_MAX, NULL, NULL, FORMAT_SIGN);
+  try("+rss", 4, '+', "rss", SIZE_MAX, NULL, NULL, FORMAT_SIGN);
+  try("-rss", 4, '-', "rss", SIZE_MAX, NULL, NULL, FORMAT_SIGN);
+  try("-rss", 4, 99, "-rss", SIZE_MAX, NULL, NULL, 0);
 
   try("rss:23", 6, 99, "rss", 23, NULL, NULL, FORMAT_SIZE);
 
@@ -95,6 +118,28 @@ int main(void) {
   try("rss/\"K\"", 7, 99, "rss", SIZE_MAX, NULL, "K", FORMAT_ARG);
 
   try("rss=\"RSS\"/K", 11, 99, "rss", SIZE_MAX, "RSS", "K", FORMAT_HEADING|FORMAT_QUOTED|FORMAT_ARG);
+  try("rss=\"RS\\\\\"/K", 12, 99, "rss", SIZE_MAX, "RS\\", "K", FORMAT_HEADING|FORMAT_QUOTED|FORMAT_ARG);
   try("rss:23=\"RSS\"/K", 14, 99, "rss", 23, "RSS", "K", FORMAT_SIZE|FORMAT_HEADING|FORMAT_QUOTED|FORMAT_ARG);
+
+  try(" rss", 4, 99, "rss", SIZE_MAX, NULL, NULL, 0);
+  try(",rss", 4, 99, "rss", SIZE_MAX, NULL, NULL, 0);
+  try(", rss", 5, 99, "rss", SIZE_MAX, NULL, NULL, 0);
+  try(" ,rss", 5, 99, "rss", SIZE_MAX, NULL, NULL, 0);
+
+  try_eof("");
+  try_eof(" ");
+  try_eof(",");
+  try_eof(",,");
+  try_eof(" ,");
+  try_eof(",");
+
+  try_error("-", FORMAT_SIGN);
+  try_error("rss:", FORMAT_SIZE);
+  try_error("rss:z", FORMAT_SIZE);
+  try_error("rss:18446744073709551616", FORMAT_SIZE);
+  try_error("rss=\"x", FORMAT_QUOTED|FORMAT_HEADING);
+  try_error("rss=\"\\", FORMAT_QUOTED|FORMAT_HEADING);
+
+
   return 0;
 }

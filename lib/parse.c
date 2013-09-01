@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 13 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,9 +66,15 @@ enum parse_status parse_element(const char **ptrp,
   }
   buffer_init(b);
   if(flags & FORMAT_SIGN) {
-    if(*ptr == '+' || *ptr == '-')
+    if(*ptr == '+' || *ptr == '-') {
       sign = *ptr++;
-    else
+      if(!*ptr || separator(*ptr, flags)) {
+        if(flags & FORMAT_CHECK)
+          return parse_error;
+        else
+          fatal(errno, "invalid column name");
+      }
+    } else
       sign = 0;
     if(signp)
       *signp = sign;
