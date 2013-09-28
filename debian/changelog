@@ -1,6 +1,5 @@
-nps (0.DEV) unstable; urgency=low
+nps (0.1) unstable; urgency=low
 
-  * This is the development branch.
+  * Initial release.
 
- -- Richard Kettlewell <rjk@greenend.org.uk>  Sat, 26 Nov 2011 10:59:30 +0000
-
+ -- Richard Kettlewell <rjk@greenend.org.uk>  Sat, 28 Sep 2013 13:53:23 +0100
