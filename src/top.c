@@ -479,7 +479,7 @@ static void loop(void) {
           if(y >= maxy)
             break;
           if(mvaddnstr(y, x, ptr, maxx - x) == ERR)
-            fatal(0, "mvaddstr %d,%d failed", y, x);
+            fatal(0, "mvaddnstr %d,%d[%d] failed", y, x, maxx-x);
           x += strlen(ptr) + 2;
           if(newline) {
             ++y;
@@ -509,7 +509,7 @@ static void loop(void) {
         format_heading(global_taskinfo, b);
         offset = min(display_offset, b->pos);
         if(mvaddnstr(y, 0, b->base + offset, maxx) == ERR)
-          fatal(0, "mvaddstr %d failed", y);
+          fatal(0, "mvaddnstr %d,%d[%d] failed", y, 0, maxx);
         ++y;
         for(x = strlen(b->base + offset); x < maxx; ++x)
           addch(' ');
@@ -523,7 +523,8 @@ static void loop(void) {
         // curses seems to have trouble with the last position on the screen
         if(mvaddnstr(y, 0, b->base + offset,
                      y == ylimit - 1 ? maxx - 1 : maxx) == ERR)
-          fatal(0, "mvaddstr %d failed", y);
+          fatal(0, "mvaddnstr %d,%d[%d] failed", y, 0,
+                y == ylimit - 1 ? maxx - 1 : maxx);
         ++y;
       }
 
@@ -934,7 +935,7 @@ static void display_help(const struct help_page *page) {
       if(mvaddnstr(y, 0,
                    page->lines[actual_line],
                    y == maxy - 1 ? maxx - 1 : maxx) == ERR)
-        fatal(0, "mvaddstr %d failed", y);
+        fatal(0, "mvaddnstr %d,%d[%d] failed", y, 0, y == maxy - 1 ? maxx - 1 : maxx);
       if(line == 0)
         for(x = strlen(page->lines[0]); x < maxx; ++x)
           if(mvaddch(y, x, ' ') == ERR)
