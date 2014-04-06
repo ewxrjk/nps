@@ -1288,10 +1288,22 @@ void format_task(struct taskinfo *ti, taskident task, struct buffer *b) {
       columns[c].prop->format(&columns[c], bb, columns[c].width, ti, task, 0);
     switch(syntax) {
     case syntax_normal:
-      buffer_append_n(b, bb->base, bb->pos);
+      /* Replace unprintable characters with ?
+       *
+       * This is a bit stricter than procps, which accepts bytes from
+       * non-ASCII characters.
+       */
+      for(i = 0; i < bb->pos; ++i) {
+        ch = (unsigned char)bb->base[i];
+        if(ch < ' ' || ch >= 0x7F)
+          buffer_putc(b, '?');
+        else
+          buffer_putc(b, ch);
+      }
       /* For non-final columns, pad to the column width and one more for
        * the column separator */
       if(c + 1 < ncolumns) {
+        /* NB assumes that number of bytes = displayed width */
         left = 1 + columns[c].width - bb->pos;
         while(left-- > 0)
           buffer_putc(b, ' ');
