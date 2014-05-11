@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 2014 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,19 +81,24 @@ static char *rcpath(const char *extra) {
 }
 
 void read_rc(void) {
+  char *path = rcpath(NULL);
+  if(!path)
+    return;
+  read_rc_path(path);
+  free(path);
+}
+
+void read_rc_path(const char *path) {
   FILE *fp;
-  char *path = rcpath(NULL), *ptr, *eq;
+  char *ptr, *eq;
   char buffer[1024];
   int line = 0;
   const struct rc_map *m;
 
-  if(!path)
-    return;
   assert(getuid() == geteuid());
   if(!(fp = fopen(path, "r"))) {
     if(errno != ENOENT)
       fatal(errno, "opening %s", path);
-    free(path);
     return;
   }
   while(fgets(buffer, sizeof buffer, fp)) {
@@ -111,8 +116,15 @@ void read_rc(void) {
     if(!*ptr || *ptr == '#')
       continue;
     /* Format is key=value */
-    eq = strchr(buffer, '=');
-    if(!eq)
+    for(eq = ptr; *eq && *eq != '=' && !isspace((unsigned char)*eq); ++eq)
+      ;
+    /* Skip whitespace before the '=' */
+    if(isspace((unsigned char)*eq)) {
+      *eq++ = 0;
+      while(isspace((unsigned char)*eq))
+        ++eq;
+    }
+    if(*eq != '=')
       fatal(0, "%s:%d: missing '='", path, line);
     *eq++ = 0;
     /* Skip whitespace after the '=' */
@@ -123,32 +135,45 @@ void read_rc(void) {
       fatal(0, "%s:%d: unknown key '%s'", path, line, ptr);
     /* Replace the value */
     if(*m->value)
-      free(m->value);
+      free(*m->value);
     *m->value = xstrdup(eq);
   }
   if(ferror(fp))
     fatal(errno, "reading %s", path);
   fclose(fp);
-  free(path);
 }
 
 void write_rc(void) {
-  FILE *fp;
   char *path = rcpath(NULL), *tmp = rcpath(".new");
-  size_t n;
 
   if(!path)
     fatal(0, "cannot determine path to .npsrc");
-  assert(getuid() == geteuid());
-  fp = xfopen(tmp, "w");
-  for(n = 0; n < NRC; ++n) {
-    if(*rc_map[n].value)
-      if(fprintf(fp, "%s=%s\n", rc_map[n].name, *rc_map[n].value) < 0)
-        fatal(errno, "writing %s", tmp);
-  }
-  xfclose(fp, tmp);
+  write_rc_path(tmp);
   if(rename(tmp, path) < 0)
     fatal(errno, "renaming %s to %s", tmp, path);
   free(path);
   free(tmp);
+}
+
+void write_rc_path(const char *path) {
+  FILE *fp;
+  size_t n;
+
+  assert(getuid() == geteuid());
+  fp = xfopen(path, "w");
+  for(n = 0; n < NRC; ++n) {
+    if(*rc_map[n].value)
+      if(fprintf(fp, "%s=%s\n", rc_map[n].name, *rc_map[n].value) < 0)
+        fatal(errno, "writing %s", path);
+  }
+  xfclose(fp, path);
+}
+
+void reset_rc(void) {
+  size_t n;
+
+  for(n = 0; n < NRC; ++n) {
+    free(*rc_map[n].value);
+    *rc_map[n].value = NULL;
+  }
 }

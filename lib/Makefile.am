@@ -27,8 +27,9 @@ tasks.c rc.c select.c selectors.c signal.c split.c sysinfo.c time.c	\
 uptime.c user.h user.c parse_interval.c
 
 TESTS=t-buffer t-bytes t-device t-error t-parse t-compare t-format	\
-t-time t-priv t-uptime
+t-time t-priv t-uptime t-rc
 
 clean-local:
 	rm -f *.gcno *.gcda *.gcov
 
+export srcdir

@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011, 13 Richard Kettlewell
+ * Copyright (C) 2011, 13, 14 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,20 @@ extern char *rc_top_sysinfo;
 /** @brief Read the RC file, if one exists */
 void read_rc(void);
 
+/** @brief Read config from @p path
+ * @param path Config file path
+ */
+void read_rc_path(const char *path);
+
 /** @brief (Re-)write the RC file with current settings */
 void write_rc(void);
+
+/** @brief Write config to @p path
+ * @param path Config file path
+ */
+void write_rc_path(const char *path);
+
+/** @brief Reset config */
+void reset_rc(void);
 
 #endif /* RC_H */

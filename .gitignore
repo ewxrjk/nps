@@ -37,7 +37,9 @@ lib/t-error
 lib/t-format
 lib/t-parse
 lib/t-priv
+lib/t-rc
 lib/t-time
 lib/t-uptime
+lib/testdata-rc/*.out
 doc/html
 products

@@ -1,0 +1,7 @@
+ps_f_format=flags,state
+ps_format=user=UID,
+ps_l_format=time,comm
+top_delay=123
+top_format=comm,time
+top_order=cpu,vsize
+top_sysinfo=cpus,load
