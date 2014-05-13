@@ -4,6 +4,8 @@
 *.gcno
 *.gcda
 *.gcov
+*.log
+*.trs
 .deps
 Makefile
 Makefile.in
