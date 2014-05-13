@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 2014 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,13 +27,19 @@
 void *xmalloc(size_t n) {
   void *ptr;
 
-  if(!(ptr = malloc(n)) && n)
+  if(!n)
+    return NULL;
+  if(!(ptr = malloc(n)))
     fatal(errno, "malloc");
   return ptr;
 }
 
 void *xrealloc(void *ptr, size_t n) {
-  if(!(ptr = realloc(ptr, n)) && n)
+  if(!n) {
+    free(ptr);
+    return NULL;
+  }
+  if(!(ptr = realloc(ptr, n)))
     fatal(errno, "realloc");
   return ptr;
 }
