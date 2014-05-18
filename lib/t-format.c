@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2012, 13 Richard Kettlewell
+ * Copyright (C) 2012, 13, 14 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 #include <config.h>
 #include "format.h"
 #include "buffer.h"
+#include "utils.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -74,8 +75,9 @@ int main() {
   time_t today, thisyear;
   struct tm t;
   sigset_t ss;
+  char *tz;
 
-  putenv(strdup("TZ=UTC"));     /* force UTC for localtime */
+  putenv(xstrdup("TZ=UTC"));     /* force UTC for localtime */
 
   today = time(NULL) / 86400 * 86400;
   localtime_r(&today, &t);
