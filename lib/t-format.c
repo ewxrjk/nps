@@ -75,7 +75,6 @@ int main() {
   time_t today, thisyear;
   struct tm t;
   sigset_t ss;
-  char *tz;
 
   putenv(xstrdup("TZ=UTC"));     /* force UTC for localtime */
 
