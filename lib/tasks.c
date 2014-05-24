@@ -856,7 +856,10 @@ static double task_rate(struct task *t,
   else
     seconds = end_time.tv_sec + end_time.tv_nsec / 1000000000.0
       - clock_to_time(t->prop_starttime);
-  return quantity / seconds;
+  if(seconds)
+    return quantity / seconds;
+  else
+    return 0;                   /* ugh */
 }
 
 double task_get_pcpu(struct taskinfo *ti, taskident taskid) {

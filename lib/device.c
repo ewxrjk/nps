@@ -127,7 +127,7 @@ const char *device_path(int type, dev_t device) {
   int i;
   for(i = 0; i < 2; ++i) {
     l = 0;
-    r = ndevices - 1;
+    r = (ssize_t)ndevices - 1;
     while(l <= r) {
       m = l + (r - l) / 2;
       if(type  < devices[m].type)

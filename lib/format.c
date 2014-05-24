@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <linux/sched.h>        /* we want the kernel's SCHED_... not glibc's */
 #include <signal.h>
+#include <limits.h>
 
 #ifndef SCHED_RESET_ON_FORK
 /* Not in older kernels, but we'd like binaries built on old systems
@@ -540,7 +541,7 @@ static void property_address(const struct column *col, struct buffer *b,
                              unsigned attribute((unused)) flags) {
   unsigned long long addr = col->prop->fetch.fetch_uintmax(ti, task);
   /* 0 and all-bits-1 are not very interesting addresses */
-  if(addr && addr + 1 && addr != 0xFFFFFFFF)
+  if(addr && addr != ULLONG_MAX && addr != 0xFFFFFFFF)
     format_addr(addr, b);
   else
     /* suppress pointless values */
