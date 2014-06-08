@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 2014 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,27 +23,44 @@
 #include <string.h>
 #include <assert.h>
 #include <sys/stat.h>
+#include <stdio.h>
 
-static void check(const char *path) {
+static int check(const char *path) {
   struct stat s;
   const char *p;
-  if(stat(path, &s) < 0)
-    fatal(errno, "stat %s", path);
+  if(stat(path, &s) < 0)        /* skip nonexistent devices */
+    return 0;
   p = device_path(S_ISBLK(s.st_mode), s.st_rdev);
   assert(!strcmp(p, path));
+  return 1;
 }
 
 int main() {
+  int chardevs_checked = 0, blockdevs_checked = 0, rc = 0;
   /* A bunch of character devices which are reasonably likely to be
    * present */
-  check("/dev/null");
-  check("/dev/tty");
-  check("/dev/zero");
-  check("/dev/full");
-  check("/dev/random");
-  check("/dev/urandom");
-  /* loop0 seems to be there even if you're not using any loop
-   * devices, so let's use that */
-  check("/dev/loop0");
-  return 0;
+  chardevs_checked += check("/dev/null");
+  chardevs_checked += check("/dev/tty");
+  chardevs_checked += check("/dev/zero");
+  chardevs_checked += check("/dev/full");
+  chardevs_checked += check("/dev/random");
+  chardevs_checked += check("/dev/urandom");
+  if(chardevs_checked == 0) {
+    fprintf(stderr, "-- couldn't find any character devices to check\n");
+    rc = 77;
+  }
+  /* A bunch of block devices which might be present */
+  blockdevs_checked += check("/dev/sda");
+  blockdevs_checked += check("/dev/hda");
+  blockdevs_checked += check("/dev/vda");
+  blockdevs_checked += check("/dev/loop0");
+  blockdevs_checked += check("/dev/dm0");
+  blockdevs_checked += check("/dev/dm-0");
+  blockdevs_checked += check("/dev/sr0");
+  blockdevs_checked += check("/dev/md127");
+  if(blockdevs_checked == 0) {
+    fprintf(stderr, "-- couldn't find any block devices to check\n");
+    rc = 77;
+  }
+  return rc;
 }
