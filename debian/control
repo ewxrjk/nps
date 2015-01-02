@@ -4,7 +4,7 @@ Section: admin
 Priority: extra
 Standards-Version: 3.9.1.0
 Build-Depends: libncurses5-dev,hardening-includes
-Homepage: http://www.greenend.org.uk/rjk/2012/nps.html
+Homepage: http://www.greenend.org.uk/rjk/nps/
 
 Package: nps
 Architecture: any
