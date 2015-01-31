@@ -1,5 +1,5 @@
 # This file is part of nps.
-# Copyright (C) 2011 Richard Kettlewell
+# Copyright (C) 2011, 2015 Richard Kettlewell
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ AM_CONFIG_HEADER([config.h])
 AC_LANG([C])
 AC_PROG_CC
 AC_PROG_RANLIB
+AM_PROG_AR
 AC_SET_MAKE
 AC_C_BIGENDIAN
 AC_CHECK_FUNCS([getc_unlocked])
