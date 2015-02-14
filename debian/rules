@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 # This file is part of nps.
-# Copyright (C) 2011 Richard Kettlewell
+# Copyright (C) 2011, 2015 Richard Kettlewell
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,8 +75,8 @@ pkg-nps: build
 	$(MAKE) installdirs install DESTDIR=$(shell pwd)/debian/nps
 	strip --remove-section=.comment debian/nps/usr/bin/nps
 	strip --remove-section=.comment debian/nps/usr/bin/nps-top
-	gzip -9f debian/nps/usr/share/doc/nps/changelog*
-	gzip -9f debian/nps/usr/share/man/man*/*
+	gzip -9nf debian/nps/usr/share/doc/nps/changelog*
+	gzip -9nf debian/nps/usr/share/man/man*/*
 	dpkg-shlibdeps -Tdebian/substvars.nps \
 		debian/nps/usr/bin/*
 	cd debian/nps && \
