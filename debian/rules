@@ -17,21 +17,12 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 
-include /usr/share/hardening-includes/hardening.make
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/buildflags.mk
 
 # Options to configure.  This can be overridden by the caller if necessary.
 CONFIGURE=--prefix=/usr --sysconfdir=/etc --mandir=/usr/share/man
 # ...you can also set CONFIGURE_EXTRA.
-
-# Set DEB_BUILD_OPTIONS=noopt to produce a non-optimized build.
-ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
-CFLAGS+=-O0 -g
-else
-CFLAGS+=-O2 -g
-endif
-
-CFLAGS += $(HARDENING_CFLAGS)
-LDFLAGS += $(HARDENING_LDFLAGS)
 
 # Set DEB_BUILD_OPTIONS=nostrip to install debuggable executables.
 ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
