@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011, 12, 13 Richard Kettlewell
+ * Copyright (C) 2011, 12, 13, 17 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,6 +72,9 @@ static void try(const char *string,
     assert(arg != NULL);
     assert(!strcmp(arg, xarg));
   }
+  free(name);
+  free(heading);
+  free(arg);
 }
 
 static void try_eof(const char *string) {
@@ -92,6 +95,9 @@ static void try_error(const char *string, unsigned flags) {
                      FORMAT_CHECK|flags);
   assert(ps == parse_error);
   assert(ptr == string);
+  free(name);
+  free(heading);
+  free(arg);
 }
 
 int main(void) {

@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 2017 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -98,13 +98,18 @@ FILE *xfopenf(char **pathp, const char *mode, const char *format, ...) {
 DIR *opendirf(char **pathp, const char *format, ...) {
   char *path;
   va_list ap;
+  DIR *dp;
+
   va_start(ap, format);
   if(vasprintf(&path, format, ap) < 0)
     fatal(errno, "vasprintf");
   va_end(ap);
   if(pathp)
     *pathp = path;
-  return opendir(path);
+  dp = opendir(path);
+  if(!pathp)
+    free(path);
+  return dp;
 }
 
 struct dirent *xreaddir(const char *dir, DIR *dp) {

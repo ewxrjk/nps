@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011, 13 Richard Kettlewell
+ * Copyright (C) 2011, 13, 17 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,9 +55,12 @@ enum parse_status parse_element(const char **ptrp,
   int sign;
   size_t size;
   char *end;
-
   struct buffer b[1];
   const char *ptr = *ptrp;
+
+  if(namep) *namep = NULL;
+  if(headingp) *headingp = NULL;
+  if(argp) *argp = NULL;
   while(*ptr == ' ' || *ptr == ',')
     ++ptr;
   if(!*ptr) {
@@ -103,17 +106,28 @@ enum parse_status parse_element(const char **ptrp,
       *sizep = size;
   }
   if((flags & FORMAT_HEADING) && *ptr == '=') {
-    if(!(ptr = parse_arg(ptr + 1, headingp, flags)))
-      return parse_error;
+    if(!(ptr = parse_arg(ptr + 1, headingp, flags))) {
+      goto error;
+    }
   } else if(headingp)
     *headingp = NULL;
   if((flags & FORMAT_ARG) && *ptr == '/') {
     if(!(ptr = parse_arg(ptr + 1, argp, flags|FORMAT_QUOTED)))
-      return parse_error;
+      goto error;
   } else if(argp)
     *argp = NULL;
   *ptrp = ptr;
   return parse_ok;
+error:
+  if(namep) {
+    free(*namep);
+    *namep = NULL;
+  }
+  if(headingp) {
+    free(*headingp);
+    *headingp = NULL;
+  }
+  return parse_error;
 }
 
 static const char *parse_arg(const char *ptr,
@@ -135,7 +149,7 @@ static const char *parse_arg(const char *ptr,
           if(ptr[1] != 0)
             ++ptr;
           else if(flags & FORMAT_CHECK)
-            return NULL;
+            goto error;
         }
         if(resultp)
           buffer_putc(b, *ptr);
@@ -145,7 +159,7 @@ static const char *parse_arg(const char *ptr,
       if(*ptr == q)
         ++ptr;
       else if(flags & FORMAT_CHECK)
-        return NULL;
+        goto error;
     } else {
       /* unquoted heading */
       while(*ptr && (*ptr != ' ' && *ptr != ',')) {
@@ -171,4 +185,7 @@ static const char *parse_arg(const char *ptr,
     *resultp = b->base;
   }
   return ptr;
+error:
+  free(b->base);
+  return NULL;
 }

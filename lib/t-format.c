@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2012, 13, 14 Richard Kettlewell
+ * Copyright (C) 2012, 13, 14, 17 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -194,5 +194,6 @@ int main() {
   sigaddset(&ss, SIGKILL);
   SIGSET(8, "1-3,9", "1,2,3,9");
 
+  free(b->base);
   return 0;
 }

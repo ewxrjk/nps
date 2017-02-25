@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2011 Richard Kettlewell
+ * Copyright (C) 2011, 2017 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "buffer.h"
 #include <time.h>
 #include <assert.h>
+#include <stdlib.h>
 
 int main() {
   struct tm t;
@@ -89,5 +90,6 @@ int main() {
   buffer_terminate(b);
   assert(!strcmp(b->base, "1970-01-01 00:00:00"));
 
+  free(b->base);
   return 0;
 }

@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2012 Richard Kettlewell
+ * Copyright (C) 2012, 17 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include "buffer.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define ELAPSED(FORMAT,SECONDS,RESULT) do {     \
   b->pos = 0;                                   \
@@ -103,6 +104,7 @@ int main() {
   ELAPSED("%?+:d%?+:h%?+:m%s", 0, "0");
 
   ELAPSED("%3+:s", 0, "  0:");
-  
+
+  free(b->base);
   return 0;
 }

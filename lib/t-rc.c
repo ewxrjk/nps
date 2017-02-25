@@ -1,6 +1,6 @@
 /*
  * This file is part of nps.
- * Copyright (C) 2014 Richard Kettlewell
+ * Copyright (C) 2014, 17 Richard Kettlewell
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,11 @@ int main() {
     xasprintf(&diffcmd, "diff -u %s %s", testexp, testout);
     if(system(diffcmd))
       exit(1);
+    free(testin);
+    free(testout);
+    free(testexp);
+    free(diffcmd);
   }
-
+  free(testdata);
   return 0;
 }
