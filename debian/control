@@ -3,7 +3,7 @@ Maintainer: Richard Kettlewell <rjk@terraraq.org.uk>
 Section: admin
 Priority: extra
 Standards-Version: 3.9.1.0
-Build-Depends: libncurses5-dev,hardening-includes
+Build-Depends: libncurses5-dev
 Homepage: http://www.greenend.org.uk/rjk/nps/
 
 Package: nps
