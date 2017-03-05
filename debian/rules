@@ -17,23 +17,13 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/buildflags.mk
 
 # Options to configure.  This can be overridden by the caller if necessary.
 CONFIGURE=--prefix=/usr --sysconfdir=/etc --mandir=/usr/share/man
 # ...you can also set CONFIGURE_EXTRA.
-
-# Set DEB_BUILD_OPTIONS=nostrip to install debuggable executables.
-ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
-INSTALL_PROGRAM += -s
-endif
-
-# Set DEB_BUILD_OPTIONS=parallel=N to do make -jN
-ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
-NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
-PARALLEL = -j$(NUMJOBS)
-endif
 
 # Install commands.  You wouldn't normally override these.
 INSTALL=install
