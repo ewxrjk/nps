@@ -40,7 +40,7 @@ Select all the processes in \fILIST\fR.
 Select all the processes in whose parent is in \fILIST\fR.
 .IP "\fB-t \fILIST\fR, \fB--tty \fILIST"
 Select all the processes whose controlling terminals are in \fILIST\fR.
-Terminal names may be abbreviated by ommitting the initial \fB/dev\fR.
+Terminal names may be abbreviated by omitting the initial \fB/dev\fR.
 .IP "\fB-u \fILIST\fR, \fB--user \fILIST"
 Select all the processes whose effective user ID is in \fILIST\fR (by
 name or number).
@@ -195,6 +195,7 @@ The \fB-l\fR option is equivalent to:
 .PP
 .RS
 \fB-Oflags,state,uid,pid,ppid,pcpu=C,pri,nice,addr,vsz="SZ"/K,
+.br
 wchan,tty=TTY,time,args=CMD
 .RE
 .PP
