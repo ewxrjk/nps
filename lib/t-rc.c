@@ -20,6 +20,7 @@
 #include <config.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "rc.h"
 #include "io.h"
 #include "utils.h"
@@ -33,6 +34,7 @@ int main() {
   if(!(srcdir = getenv("srcdir")))
     srcdir = ".";
   dp = opendirf(&testdata, "%s/%s", srcdir, "testdata-rc");
+  assert(dp != NULL);
   while((de = xreaddir(testdata, dp))) {
     if(strchr(de->d_name, '.') || strchr(de->d_name, '~'))
       continue;
@@ -51,5 +53,6 @@ int main() {
     free(diffcmd);
   }
   free(testdata);
+  closedir(dp);
   return 0;
 }
