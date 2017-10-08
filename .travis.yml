@@ -1,0 +1,16 @@
+dist: trusty
+language: c
+compiler:
+- clang
+- gcc
+
+addons:
+  apt:
+    packages:
+    - libncurses5-dev
+
+script:
+- ./autogen.sh
+- ./configure
+- make
+- VERBOSE=true make check

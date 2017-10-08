@@ -1,6 +1,8 @@
 nps
 ===
 
+[![Build Status](https://travis-ci.org/ewxrjk/nps.svg?branch=master)](https://travis-ci.org/ewxrjk/nps)
+
 This is an implementation of SUSv4 `ps`, and a compatible `top`, for
 Linux.
 
