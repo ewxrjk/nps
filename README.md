@@ -18,6 +18,8 @@ It has the following features:
 - Modify `top` settings on the the fly, without interrupting display
 - On-screen help
 
+⚠ I don't use this program any more, do not expect updates. ⚠
+
 Installation
 ------------
 
